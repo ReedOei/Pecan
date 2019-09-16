@@ -1,0 +1,17 @@
+# Set the build language to Python
+language: python
+
+# Set the python version to 2.7
+python: 3.7
+
+cache:
+    directories:
+        - /home/travis/spot-2.8.1
+
+before_install:
+  - bash install-spot.sh
+
+# Run the unit test
+script:
+  - python3 pecan/tests/tests.py
+
