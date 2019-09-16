@@ -1,3 +1,4 @@
+import spot
 import sys
 
 def main(args):
