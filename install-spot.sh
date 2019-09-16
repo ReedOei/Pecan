@@ -15,5 +15,5 @@ cd "spot-$SPOT_VERSION"
 
 ./configure --prefix ~/usr
 make
-make install
+sudo make install
 
