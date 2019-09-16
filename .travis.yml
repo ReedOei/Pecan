@@ -11,10 +11,6 @@ cache:
 before_install:
   - bash install-spot.sh
 
-# Install the codecov pip dependency
-install:
-  - sudo apt install -y pip3
-
 # Run the unit test
 script:
   - python3 tests.py
