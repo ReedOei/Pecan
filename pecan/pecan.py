@@ -1,3 +1,5 @@
+#!/usr/bin/env
+
 import spot
 import sys
 
