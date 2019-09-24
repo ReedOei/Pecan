@@ -13,5 +13,5 @@ before_install:
 
 # Run the unit test
 script:
-  - python3 pecan/tests/tests.py
+  - python3 -m unittest discover
 
