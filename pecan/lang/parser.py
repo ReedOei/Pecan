@@ -1,4 +1,6 @@
-from pecan_ast import *
+# -*- coding=utf-8 -*-
+
+from pecan.lang.pecan_ast import *
 
 from lark import Lark, Transformer, v_args
 
@@ -14,8 +16,6 @@ pecan_grammar = """
          | pred IFF pred                    -> iff
          | pred "if" "and" "only" "if" pred -> iff_words
          | pred IMPLIES pred                -> implies
-         | pred "if" pred                   -> back_implies_words
-         | pred BACK_IMPLIES pred           -> back_implies
          | "if" pred "then" pred            -> implies_words
          | pred CONJ pred                   -> conj
          | pred DISJ pred                   -> disj
@@ -36,10 +36,10 @@ pecan_grammar = """
           | arith "-" product -> sub
 
     ?product: atom
-            | product mul atom -> mul
+            | product MUL atom -> mul
             | product "/" atom -> div
 
-    ?mul: "*" | "⋅"
+    MUL: "*" | "⋅"
 
     ?atom: var         -> var_ref
          | NUMBER      -> const
@@ -54,7 +54,6 @@ pecan_grammar = """
     LE: "<=" | "≤"
 
     IMPLIES: "=>" | "⇒" | "⟹ "
-    BACK_IMPLIES: "<=" | "⇐" | "⟸"
     IFF: "<=>" | "⟺" | "⇔"
 
     CONJ: "&" | "/\\\\" | "∧" | "and"
@@ -77,8 +76,8 @@ pecan_grammar = """
 
 @v_args(inline=True)
 class PecanTransformer(Transformer):
-    def __init__(self):
-        pass
+    def var(self, letter, *args):
+        return letter + ''.join(args)
 
     def add(self, a, b):
         return Add(a, b)
@@ -86,7 +85,7 @@ class PecanTransformer(Transformer):
     def sub(self, a, b):
         return Sub(a, b)
 
-    def mul(self, a, b):
+    def mul(self, a, sym, b):
         return Mul(a, b)
 
     def div(self, a, b):
@@ -113,41 +112,34 @@ class PecanTransformer(Transformer):
     def less(self, a, b):
         return Less(a, b)
 
-    def greater(self, a, b):
+    def greater(self, a, sym, b):
         return Greater(a, b)
 
-    def less_equal(self, a, b):
+    def less_equal(self, a, sym, b):
         return LessEquals(a, b)
 
-    def greater_equal(self, a, b):
+    def greater_equal(self, a, sym, b):
         return GreaterEquals(a, b)
 
-    def iff(self, a, b):
+    def iff(self, a, sym, b):
         return Iff(a, b)
 
     def iff_words(self, a, b):
         return Iff(a, b)
 
-    def implies(self, a, b):
+    def implies(self, a, sym, b):
         return Implies(a, b)
 
-    # We directly convert the back_implies into regular implies
-    def back_implies(self, a, b):
-        return Implies(b, a)
-
-    def back_implies_words(self, a, b):
-        return Implies(b, a)
-
-    def implies_words(self, a, b):
+    def implies_words(self, a, sym, b):
         return Implies(a, b)
 
-    def conj(self, a, b):
+    def conj(self, a, sym, b):
         return Conjunction(a, b)
 
-    def disj(self, a, b):
+    def disj(self, a, sym, b):
         return Disjunction(a, b)
 
-    def comp(self, a):
+    def comp(self, sym, a):
         return Complement(a)
 
     def forall(self, quant, var_name, pred):
@@ -166,6 +158,4 @@ class PecanTransformer(Transformer):
         return [arg] + args
 
 pecan_parser = Lark(pecan_grammar, parser='lalr', transformer=PecanTransformer(), propagate_positions=True)
-print(pecan_parser.parse('forall x.x=x'))
-print(pecan_parser.parse('forall x.if 1 = C[x + y] then (a = b if (exists z. a + b = z))'))
 
