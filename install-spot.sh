@@ -13,7 +13,7 @@ gunzip "spot-$SPOT_VERSION.tar.gz"
 tar xvf "spot-$SPOT_VERSION.tar"
 cd "spot-$SPOT_VERSION"
 
-./configure --prefix ~/usr
+./configure --prefix /usr
 make
 sudo make install
 
