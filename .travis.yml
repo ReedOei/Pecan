@@ -10,6 +10,7 @@ cache:
 
 before_install:
   - bash install-spot.sh
+  - source /home/travis/.bashrc
 
 # Run the unit test
 script:
