@@ -205,3 +205,25 @@ class Implies(Predicate):
     def __repr__(self):
         return '({} ⟹  {})'.format(self.a, self.b)
 
+class NamedPred(ASTNode):
+    def __init__(self, name, args, body):
+        super().__init__()
+        self.name = name
+        self.args = args
+        self.body = body
+
+    def __repr__(self):
+        return '{}({}) := {}'.format(self.name, ', '.join(self.args), self.body)
+
+class Program(ASTNode):
+    def __init__(self, preds, query):
+        super().__init__()
+        self.preds = preds
+        self.query = query
+
+    def __repr__(self):
+        if len(self.preds) > 0:
+            return '{}\n\n{}'.format('\n'.join(self.preds), self.query)
+        else:
+            return '{}'.format(self.query)
+

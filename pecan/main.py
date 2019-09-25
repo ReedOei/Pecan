@@ -1,16 +1,18 @@
-#!/usr/bin/env
+#!/usr/bin/env python3.6
+# -*- coding=utf-8 -*-
 
+import argparse
 import spot
-import sys
 
 from pecan.lang.parser import pecan_parser
 
-def main(args):
-    pass
+def main():
+    parser = argparse.ArgumentParser(description='An automated theorem prover for Büchi Automata')
+    parser.add_argument('-f', '--file', help='a file containing commands to run')
 
-print(pecan_parser.parse('x = alpha'))
+    args = parser.parse_args()
 
 if __name__ == '__main__':
     spot.setup()
-    main(sys.argv)
+    main()
 
