@@ -16,4 +16,5 @@ cd "spot-$SPOT_VERSION"
 ./configure --prefix /usr
 make
 sudo make install
+echo "export PYTHONPATH=/usr/lib/python3.6/site-packages:$PYTHONPATH" >> "$HOME/.bashrc"
 

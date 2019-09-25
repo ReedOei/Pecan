@@ -1,6 +1,8 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
+import spot
+
 class ASTNode:
     def __init__(self):
         pass
@@ -8,6 +10,9 @@ class ASTNode:
 class Expression(ASTNode):
     def __init__(self):
         super().__init__()
+
+    def evaluate(self):
+        return None
 
 class BinaryExpression(ASTNode):
     def __init__(self, a, b):
@@ -80,11 +85,18 @@ class Predicate(ASTNode):
     def __init__(self):
         super().__init__()
 
+    # The evaluate function returns an automaton representing the expression
+    def evaluate(self):
+        return None # Should never be called on the base Predicate class
+
 class Equals(Predicate):
     def __init__(self, a, b):
         super().__init__()
         self.a = a
         self.b = b
+
+    def evaluate(self):
+        return Iff(self.a, self.b).evaluate()
 
     def __repr__(self):
         return '({} = {})'.format(self.a, self.b)
@@ -94,6 +106,9 @@ class NotEquals(Predicate):
         super().__init__()
         self.a = a
         self.b = b
+
+    def evaluate(self):
+        return Iff(Complement(self.a), self.b).evaluate()
 
     def __repr__(self):
         return '({} ≠ {})'.format(self.a, self.b)
@@ -140,6 +155,9 @@ class Conjunction(Predicate):
         self.a = a
         self.b = b
 
+    def evaluate(self):
+        return spot.product(self.a.evaluate(), self.b.evaluate())
+
     def __repr__(self):
         return '({} ∧ {})'.format(self.a, self.b)
 
@@ -149,6 +167,9 @@ class Disjunction(Predicate):
         self.a = a
         self.b = b
 
+    def evaluate(self):
+        return spot.product_or(self.a.evaluate(), self.b.evaluate())
+
     def __repr__(self):
         return '({} ∨ {})'.format(self.a, self.b)
 
@@ -156,6 +177,9 @@ class Complement(Predicate):
     def __init__(self, a):
         super().__init__()
         self.a = a
+
+    def evaluate(self):
+        return spot.complement(self.a.evaluate())
 
     def __repr__(self):
         return '(¬{})'.format(self.a, self.b)
@@ -193,6 +217,9 @@ class Iff(Predicate):
         self.a = a
         self.b = b
 
+    def evaluate(self):
+        return Disjunction(Conjunction(self.a, self.b), Conjunction(Complement(self.a), Complement(self.b))).evaluate()
+
     def __repr__(self):
         return '({} ⟺  {})'.format(self.a, self.b)
 
@@ -201,6 +228,9 @@ class Implies(Predicate):
         super().__init__()
         self.a = a
         self.b = b
+
+    def evaluate(self):
+        return Disjunction(Complement(self.a), self.b).evaluate()
 
     def __repr__(self):
         return '({} ⟹  {})'.format(self.a, self.b)
