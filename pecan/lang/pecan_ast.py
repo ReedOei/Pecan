@@ -11,7 +11,7 @@ class Expression(ASTNode):
     def __init__(self):
         super().__init__()
 
-    def evaluate(self):
+    def evaluate(self, prog):
         return None
 
 class BinaryExpression(ASTNode):
@@ -61,6 +61,9 @@ class VarRef(Expression):
         super().__init__()
         self.var_name = var_name
 
+    def evaluate(self, prog):
+        return spot.translate(spot.formula(var_name)) # Make a simple formula for just this one variable
+
     def __repr__(self):
         return self.var_name
 
@@ -72,6 +75,7 @@ class IntConst(Expression):
     def __repr__(self):
         return str(self.val)
 
+# is this something that we will want?
 class Index(Expression):
     def __init__(self, var_name, index_expr):
         super().__init__()
@@ -86,7 +90,7 @@ class Predicate(ASTNode):
         super().__init__()
 
     # The evaluate function returns an automaton representing the expression
-    def evaluate(self):
+    def evaluate(self, prog):
         return None # Should never be called on the base Predicate class
 
 class Equals(Predicate):
@@ -95,8 +99,8 @@ class Equals(Predicate):
         self.a = a
         self.b = b
 
-    def evaluate(self):
-        return Iff(self.a, self.b).evaluate()
+    def evaluate(self, prog):
+        return Iff(self.a, self.b).evaluate(prog)
 
     def __repr__(self):
         return '({} = {})'.format(self.a, self.b)
@@ -107,8 +111,8 @@ class NotEquals(Predicate):
         self.a = a
         self.b = b
 
-    def evaluate(self):
-        return Iff(Complement(self.a), self.b).evaluate()
+    def evaluate(self, prog):
+        return Iff(Complement(self.a), self.b).evaluate(prog)
 
     def __repr__(self):
         return '({} ≠ {})'.format(self.a, self.b)
@@ -155,8 +159,8 @@ class Conjunction(Predicate):
         self.a = a
         self.b = b
 
-    def evaluate(self):
-        return spot.product(self.a.evaluate(), self.b.evaluate())
+    def evaluate(self, prog):
+        return spot.product(self.a.evaluate(prog), self.b.evaluate(prog))
 
     def __repr__(self):
         return '({} ∧ {})'.format(self.a, self.b)
@@ -167,8 +171,8 @@ class Disjunction(Predicate):
         self.a = a
         self.b = b
 
-    def evaluate(self):
-        return spot.product_or(self.a.evaluate(), self.b.evaluate())
+    def evaluate(self, prog):
+        return spot.product_or(self.a.evaluate(prog), self.b.evaluate(prog))
 
     def __repr__(self):
         return '({} ∨ {})'.format(self.a, self.b)
@@ -178,8 +182,8 @@ class Complement(Predicate):
         super().__init__()
         self.a = a
 
-    def evaluate(self):
-        return spot.complement(self.a.evaluate())
+    def evaluate(self, prog):
+        return spot.complement(self.a.evaluate(prog))
 
     def __repr__(self):
         return '(¬{})'.format(self.a, self.b)
@@ -217,8 +221,8 @@ class Iff(Predicate):
         self.a = a
         self.b = b
 
-    def evaluate(self):
-        return Disjunction(Conjunction(self.a, self.b), Conjunction(Complement(self.a), Complement(self.b))).evaluate()
+    def evaluate(self, prog):
+        return Disjunction(Conjunction(self.a, self.b), Conjunction(Complement(self.a), Complement(self.b))).evaluate(prog)
 
     def __repr__(self):
         return '({} ⟺  {})'.format(self.a, self.b)
@@ -229,8 +233,8 @@ class Implies(Predicate):
         self.a = a
         self.b = b
 
-    def evaluate(self):
-        return Disjunction(Complement(self.a), self.b).evaluate()
+    def evaluate(self, prog):
+        return Disjunction(Complement(self.a), self.b).evaluate(prog)
 
     def __repr__(self):
         return '({} ⟹  {})'.format(self.a, self.b)
@@ -248,8 +252,15 @@ class NamedPred(ASTNode):
 class Program(ASTNode):
     def __init__(self, preds, query):
         super().__init__()
-        self.preds = preds
+
+        self.preds = {}
+        for pred in preds:
+            self.preds[pred.name] = pred
+
         self.query = query
+
+    def evaluate(self):
+        return self.query.evaluate(self)
 
     def __repr__(self):
         if len(self.preds) > 0:
