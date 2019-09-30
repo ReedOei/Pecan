@@ -62,7 +62,7 @@ class VarRef(Expression):
         self.var_name = var_name
 
     def evaluate(self, prog):
-        return spot.translate(spot.formula(var_name)) # Make a simple formula for just this one variable
+        return spot.translate(spot.formula(self.var_name)) # Make a simple formula for just this one variable
 
     def __repr__(self):
         return self.var_name
@@ -222,7 +222,7 @@ class Iff(Predicate):
         self.b = b
 
     def evaluate(self, prog):
-        return Disjunction(Conjunction(self.a, self.b), Conjunction(Complement(self.a), Complement(self.b))).evaluate(prog)
+        return Conjunction(Implies(self.a, self.b), Implies(self.b, self.a)).evaluate(prog)
 
     def __repr__(self):
         return '({} ⟺  {})'.format(self.a, self.b)
@@ -253,18 +253,19 @@ class Program(ASTNode):
     def __init__(self, defs):
         super().__init__()
 
+        self.defs = defs
         self.preds = {}
 
-    def evaluate(self):
-        for d in defs:
+    def evaluate(self, old_env=None):
+        if old_env is not None:
+            self.preds.update(old_env.preds)
+
+        for d in self.defs:
             if type(d) is NamedPred:
                 self.preds[d.name] = d
             else:
                 d.evaluate(self)
 
     def __repr__(self):
-        if len(self.preds) > 0:
-            return '{}\n\n{}'.format('\n'.join(self.preds), self.query)
-        else:
-            return '{}'.format(self.query)
+        return repr(self.defs)
 

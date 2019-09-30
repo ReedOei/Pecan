@@ -5,9 +5,10 @@ from pecan.lang.pecan_ast import *
 from lark import Lark, Transformer, v_args
 
 pecan_grammar = """
-    ?start: defs
+    ?start: defs  -> prog
 
     ?defs:          -> nil_def
+         | def -> single_def
          | def NEWLINES defs -> multi_def
 
     ?def: var "(" args ")" DEFEQ pred       -> def_pred
@@ -91,11 +92,17 @@ pecan_grammar = """
 
 @v_args(inline=True)
 class PecanTransformer(Transformer):
+    def prog(self, defs):
+        return Program(defs)
+
     def nil_def(self):
         return []
 
     def multi_def(self, d, newlines, ds):
         return [d] + ds
+
+    def single_def(self, d):
+        return [d]
 
     def def_pred(self, name, args, defeq, body):
         return NamedPred(name, args, body)
