@@ -8,12 +8,12 @@ pecan_grammar = """
     ?start: defs
 
     ?defs:          -> nil_def
-         | def defs -> multi_def
+         | def NEWLINES defs -> multi_def
 
     ?def: var "(" args ")" DEFEQ pred       -> def_pred
         | pred
 
-    ?pred: expr "=" expr                    -> equal
+    ?pred: expr EQ expr                    -> equal
          | expr NE expr                     -> not_equal
          | expr "<" expr                    -> less
          | expr ">" expr                    -> greater
@@ -32,6 +32,7 @@ pecan_grammar = """
          | "(" pred ")"
 
     ?args: -> nil_arg
+         | var -> single_arg
          | var "," args       -> multi_arg
 
     ?expr: arith
@@ -54,6 +55,8 @@ pecan_grammar = """
 
     ?var: LETTER ALPHANUM*
 
+    NEWLINES: NEWLINE+
+
     DEFEQ: ":="
 
     COMP: "~" | "¬" | "not"
@@ -63,6 +66,8 @@ pecan_grammar = """
 
     IMPLIES: "=>" | "⇒" | "⟹ "
     IFF: "<=>" | "⟺" | "⇔"
+
+    EQ: "="
 
     CONJ: "&" | "/\\\\" | "∧" | "and"
     DISJ: "|" | "\\\\/" | "∨" | "or"
@@ -76,6 +81,8 @@ pecan_grammar = """
     UPPER_LETTER: "A" .. "Z"
     LOWER_LETTER: "a" .. "z"
 
+    NEWLINE: /\\n/
+
     %import common.NUMBER
     %import common.WS_INLINE
 
@@ -87,7 +94,7 @@ class PecanTransformer(Transformer):
     def nil_def(self):
         return []
 
-    def multi_def(self, d, ds):
+    def multi_def(self, d, newlines, ds):
         return [d] + ds
 
     def def_pred(self, name, args, defeq, body):
@@ -120,7 +127,7 @@ class PecanTransformer(Transformer):
     def index(self, var_name, index_expr):
         return Index(var_name, index_expr)
 
-    def equal(self, a, b):
+    def equal(self, a, sym, b):
         return Equals(a, b)
 
     def not_equal(self, a, b):
@@ -171,7 +178,10 @@ class PecanTransformer(Transformer):
     def nil_arg(self):
         return []
 
-    def mul_arg(self, arg, args):
+    def single_arg(self, arg):
+        return [arg]
+
+    def multi_arg(self, arg, args):
         return [arg] + args
 
 pecan_parser = Lark(pecan_grammar, parser='lalr', transformer=PecanTransformer(), propagate_positions=True)
