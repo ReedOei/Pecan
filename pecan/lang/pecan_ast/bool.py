@@ -5,14 +5,6 @@ import spot
 
 from pecan.lang.pecan_ast.prog import *
 
-class Neg(Expression):
-    def __init__(self, a):
-        super().__init__()
-        self.a = a
-
-    def __repr__(self):
-        return '(-{})'.format(self.a)
-
 class Equals(Predicate):
     def __init__(self, a, b):
         super().__init__()
