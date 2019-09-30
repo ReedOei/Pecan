@@ -5,13 +5,13 @@ from pecan.lang.pecan_ast import *
 from lark import Lark, Transformer, v_args
 
 pecan_grammar = """
-    ?start: defs pred -> prog
-          | pred      -> query_prog
+    ?start: defs
 
     ?defs:          -> nil_def
          | def defs -> multi_def
 
     ?def: var "(" args ")" DEFEQ pred       -> def_pred
+        | pred
 
     ?pred: expr "=" expr                    -> equal
          | expr NE expr                     -> not_equal
@@ -84,12 +84,6 @@ pecan_grammar = """
 
 @v_args(inline=True)
 class PecanTransformer(Transformer):
-    def prog(self, preds, query):
-        return Program(preds, query)
-
-    def query_prog(self, query):
-        return Program([], query)
-
     def nil_def(self):
         return []
 

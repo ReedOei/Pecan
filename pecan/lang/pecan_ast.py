@@ -250,17 +250,17 @@ class NamedPred(ASTNode):
         return '{}({}) := {}'.format(self.name, ', '.join(self.args), self.body)
 
 class Program(ASTNode):
-    def __init__(self, preds, query):
+    def __init__(self, defs):
         super().__init__()
 
         self.preds = {}
-        for pred in preds:
-            self.preds[pred.name] = pred
-
-        self.query = query
 
     def evaluate(self):
-        return self.query.evaluate(self)
+        for d in defs:
+            if type(d) is NamedPred:
+                self.preds[d.name] = d
+            else:
+                d.evaluate(self)
 
     def __repr__(self):
         if len(self.preds) > 0:
