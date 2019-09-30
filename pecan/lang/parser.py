@@ -13,6 +13,8 @@ pecan_grammar = """
 
     ?def: var "(" args ")" DEFEQ pred       -> def_pred
         | pred
+        | "#" var -> directive
+        | "#" "save" "(" ESCAPED_STRING ")" var -> directive_save
 
     ?pred: expr EQ expr                    -> equal
          | expr NE expr                     -> not_equal
@@ -86,12 +88,19 @@ pecan_grammar = """
 
     %import common.NUMBER
     %import common.WS_INLINE
+    %import common.ESCAPED_STRING
 
     %ignore WS_INLINE
     """
 
 @v_args(inline=True)
 class PecanTransformer(Transformer):
+    def directive(self, name):
+        return Directive(name)
+
+    def directive_save(self, filename, pred_name):
+        return DirectiveSave(filename, pred_name)
+
     def prog(self, defs):
         return Program(defs)
 

@@ -266,6 +266,29 @@ class Program(ASTNode):
             else:
                 d.evaluate(self)
 
+        return self
+
     def __repr__(self):
         return repr(self.defs)
+
+class Directive(ASTNode):
+    def __init__(self, name):
+        super().__init__()
+        self.name = name
+
+    def __repr__(self):
+        return '#{}'.format(self.name)
+
+class DirectiveSave(ASTNode):
+    def __init__(self, filename, pred_name):
+        super().__init__()
+        self.filename = filename[1:-1]
+        self.pred_name = pred_name
+
+    def evaluate(self, prog):
+        prog.preds[self.pred_name].body.evaluate(prog).save(self.filename)
+        return None
+
+    def __repr__(self):
+        return '#save({}) {}'.format(self.filename, self.pred_name)
 

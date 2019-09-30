@@ -1,0 +1,3 @@
+isequal(x,y) := x = y
+is0(x) := x = 0
+
