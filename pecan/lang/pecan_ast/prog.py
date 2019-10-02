@@ -101,3 +101,19 @@ class DirectiveSave(ASTNode):
     def __repr__(self):
         return '#save({}) {}'.format(self.filename, self.pred_name)
 
+class DirectiveSaveImage(ASTNode):
+    def __init__(self, filename, pred_name):
+        super().__init__()
+        self.filename = filename[1:-1]
+        self.pred_name = pred_name
+
+    def evaluate(self, prog):
+        evaluated = prog.preds[self.pred_name].body.evaluate(prog)
+        with open(self.filename, 'w') as f:
+            f.write(evaluated.show().data) # Write the raw svg data into the file
+
+        return None
+
+    def __repr__(self):
+        return '#save({}) {}'.format(self.filename, self.pred_name)
+

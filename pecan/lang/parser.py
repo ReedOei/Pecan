@@ -14,7 +14,8 @@ pecan_grammar = """
     ?def: var "(" args ")" DEFEQ pred       -> def_pred
         | pred
         | "#" var -> directive
-        | "#" "save" "(" ESCAPED_STRING ")" var -> directive_save
+        | "#" "save" "(" ESCAPED_STRING "," var ")" -> directive_save
+        | "#" "save_img" "(" ESCAPED_STRING "," var ")" -> directive_save_img
 
     ?pred: expr EQ expr                    -> equal
          | expr NE expr                     -> not_equal
@@ -100,6 +101,9 @@ class PecanTransformer(Transformer):
 
     def directive_save(self, filename, pred_name):
         return DirectiveSave(filename, pred_name)
+
+    def directive_save_img(self, filename, pred_name):
+        return DirectiveSaveImage(filename, pred_name)
 
     def prog(self, defs):
         return Program(defs)
