@@ -1,5 +1,5 @@
 equal(x, y) := x = y
 
-#save("test.aut", equal)
-#save_img("test.svg", equal)
+#save_aut("test.aut", equal)
+#save_aut_img("test.svg", equal)
 
