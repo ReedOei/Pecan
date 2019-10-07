@@ -14,8 +14,12 @@ pecan_grammar = """
     ?def: var "(" args ")" DEFEQ pred       -> def_pred
         | pred
         | "#" var -> directive
-        | "#" "save_aut" "(" ESCAPED_STRING "," var ")" -> directive_save_aut
-        | "#" "save_aut_img" "(" ESCAPED_STRING "," var ")" -> directive_save_aut_img
+        | "#" "save_aut" "(" string "," var ")" -> directive_save_aut
+        | "#" "save_aut_img" "(" string "," var ")" -> directive_save_aut_img
+        | "#" "save_pred" "(" string "," var ")" -> directive_save_pred
+        | "#" "context" "(" string ")" -> directive_context
+        | "#" "end_context" "(" string ")" -> directive_end_context
+        | "#" "load_preds" "(" string ")" -> directive_load_preds
 
     ?pred: expr EQ expr                    -> equal
          | expr NE expr                     -> not_equal
@@ -59,6 +63,8 @@ pecan_grammar = """
 
     ?var: LETTER ALPHANUM*
 
+    ?string: ESCAPED_STRING -> escaped_str
+
     NEWLINES: NEWLINE+
 
     DEFEQ: ":="
@@ -96,6 +102,9 @@ pecan_grammar = """
 
 @v_args(inline=True)
 class PecanTransformer(Transformer):
+    def escaped_str(self, str_tok):
+        return str(str_tok)
+
     def directive(self, name):
         return Directive(name)
 
@@ -104,6 +113,18 @@ class PecanTransformer(Transformer):
 
     def directive_save_aut_img(self, filename, pred_name):
         return DirectiveSaveAutImage(filename, pred_name)
+
+    def directive_save_pred(self, filename, pred_name):
+        return DirectiveSavePred(filename, pred_name)
+
+    def directive_context(self, context_name):
+        return DirectiveContext(context_name)
+
+    def directive_end_context(self, context_name):
+        return DirectiveEndContext(context_name)
+
+    def directive_load_preds(self, filename):
+        return DirectiveLoadPreds(filename)
 
     def prog(self, defs):
         return Program(defs)

@@ -27,6 +27,7 @@ def main():
     if args.file is not None:
         with open(args.file, 'r') as f:
             prog = pecan_parser.parse(f.read())
+            prog.parser = pecan_parser
 
         if args.debug:
             print(prog)
