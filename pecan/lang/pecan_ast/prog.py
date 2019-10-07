@@ -88,7 +88,7 @@ class Directive(ASTNode):
     def __repr__(self):
         return '#{}'.format(self.name)
 
-class DirectiveSave(ASTNode):
+class DirectiveSaveAut(ASTNode):
     def __init__(self, filename, pred_name):
         super().__init__()
         self.filename = filename[1:-1]
@@ -99,9 +99,9 @@ class DirectiveSave(ASTNode):
         return None
 
     def __repr__(self):
-        return '#save({}) {}'.format(self.filename, self.pred_name)
+        return '#save_aut({}) {}'.format(self.filename, self.pred_name)
 
-class DirectiveSaveImage(ASTNode):
+class DirectiveSaveAutImage(ASTNode):
     def __init__(self, filename, pred_name):
         super().__init__()
         self.filename = filename[1:-1]
@@ -115,5 +115,5 @@ class DirectiveSaveImage(ASTNode):
         return None
 
     def __repr__(self):
-        return '#save({}) {}'.format(self.filename, self.pred_name)
+        return '#save_aut_img({}) {}'.format(self.filename, self.pred_name)
 
