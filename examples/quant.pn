@@ -1,0 +1,4 @@
+test() := forall x. exists y. x = y
+
+#save_aut_img("test.svg", test)
+
