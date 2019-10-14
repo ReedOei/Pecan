@@ -28,7 +28,8 @@ class VarRef(Expression):
         self.var_name = var_name
 
     def evaluate(self, prog):
-        return spot.translate(spot.formula_G(spot.formula(self.var_name))) # Make a simple formula for just this one variable
+        # The automata accepts everything (because this isn't a predicate)
+        return (spot.formula('1').translate(), self.var_name)
 
     def __repr__(self):
         return self.var_name
