@@ -4,6 +4,8 @@
 import buddy
 import spot
 
+from functools import reduce
+
 from pecan.lang.pecan_ast.prog import *
 from pecan.lang.pecan_ast.bool import *
 
@@ -14,6 +16,7 @@ class Forall(Predicate):
         self.pred = pred
 
     def evaluate(self, prog):
+        print(Complement(Exists(self.var_name, Complement(self.pred))))
         return Complement(Exists(self.var_name, Complement(self.pred))).evaluate(prog)
 
     def __repr__(self):
@@ -30,11 +33,9 @@ class Exists(Predicate):
         evaluated = self.pred.evaluate(prog)
         for e in evaluated.edges():
             formula = spot.formula(spot.bdd_format_formula(evaluated.get_dict(), e.cond))
-            print('Formula:', formula)
             new_formula = self.ensure_formula_valid(self.remove_var(formula))
-            print('New formula: ', new_formula)
             e.cond = self.create_edge_condition(evaluated, new_formula)
-        return evaluated
+        return spot.minimize_obligation(evaluated)
 
     def ensure_formula_valid(self, formula):
         if formula is None:

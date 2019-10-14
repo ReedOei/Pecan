@@ -62,10 +62,10 @@ class Complement(Predicate):
         self.a = a
 
     def evaluate(self, prog):
-        return spot.complement(self.a.evaluate(prog))
+        return spot.dualize(self.a.evaluate(prog))
 
     def __repr__(self):
-        return '(¬{})'.format(self.a, self.b)
+        return '(¬{})'.format(self.a)
 
 class Iff(Predicate):
     def __init__(self, a, b):
