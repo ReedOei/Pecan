@@ -12,7 +12,10 @@ class Equals(Predicate):
         self.b = b
 
     def evaluate(self, prog):
-        return Iff(self.a, self.b).evaluate(prog)
+        (aut_a, val_a) = self.a.evaluate(prog)
+        (aut_b, val_b) = self.b.evaluate(prog)
+        eq_aut = spot.formula('G(({0} -> {1}) & ({1} -> {0}))'.format(val_a, val_b)).translate()
+        return spot.product(eq_aut, spot.product(aut_a, aut_b))
 
     def __repr__(self):
         return '({} = {})'.format(self.a, self.b)
