@@ -27,3 +27,5 @@ class ParserTest(unittest.TestCase):
         print(ast)
         self.assertEqual(repr(ast), repr(pecan_parser.parse('A alpha. (x = alpha | z >= k) and ((((x + z) + (x - 1)) <= 7) if and only if (C[i + k] < 1))')))
 
+
+
