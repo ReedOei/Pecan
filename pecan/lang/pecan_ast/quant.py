@@ -16,7 +16,11 @@ class Forall(Predicate):
         self.pred = pred
 
     def evaluate(self, prog):
-        print(Complement(Exists(self.var_name, Complement(self.pred))))
+        # evaluated = self.pred.evaluate(prog)
+        # for e in evaluated.edges():
+        #     v = buddy.bdd_ithvar(evaluated.register_ap(self.var_name))
+        #     e.cond = (buddy.bdd_not(v) | e.cond) & (v | e.cond) # (y & x) & (!x & (x | y))
+        # return spot.minimize_obligation(evaluated)
         return Complement(Exists(self.var_name, Complement(self.pred))).evaluate(prog)
 
     def __repr__(self):
@@ -29,13 +33,40 @@ class Exists(Predicate):
         self.pred = pred
 
     def evaluate(self, prog):
-        # Basically just drop the relevant variable from each transition
         evaluated = self.pred.evaluate(prog)
+
+        # Build a new automata with different edges
+        bdict = spot.make_bdd_dict()
+        new_aut = spot.make_twa_graph(bdict)
+
+        aps = {}
+        for ap in evaluated.ap():
+            aps[ap.ap_name()] = buddy.bdd_ithvar(new_aut.register_ap(ap.ap_name()))
+
+        new_aut.set_buchi() # Set the acceptance condition to the normal Buchi acceptance condition
+        new_aut.new_states(evaluated.num_states())
+        new_aut.set_init_state(0)
+
         for e in evaluated.edges():
             formula = spot.formula(spot.bdd_format_formula(evaluated.get_dict(), e.cond))
-            new_formula = self.ensure_formula_valid(self.remove_var(formula))
-            e.cond = self.create_edge_condition(evaluated, new_formula)
-        return spot.minimize_obligation(evaluated)
+
+            if_0 = self.substitute({self.var_name: spot.formula('0')}, formula)
+            if_1 = self.substitute({self.var_name: spot.formula('1')}, formula)
+
+            cond = self.create_edge_condition(evaluated, if_0) | self.create_edge_condition(evaluated, if_1)
+
+            new_aut.new_edge(e.src, e.dst, cond, e.acc)
+
+        return spot.minimize_obligation(new_aut)
+
+    def substitute(self, subs, formula):
+        if formula._is(spot.op_ap):
+            if formula.ap_name() in subs:
+                return subs[formula.ap_name()]
+            else:
+                return formula
+        else:
+            return formula.map(lambda x: self.substitute(subs, x))
 
     def ensure_formula_valid(self, formula):
         if formula is None:
