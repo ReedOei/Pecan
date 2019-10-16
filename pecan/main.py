@@ -3,6 +3,7 @@
 
 import argparse
 import spot
+import colorama
 
 from pecan.lang.parser import pecan_parser
 
@@ -38,6 +39,7 @@ def main():
             run_repl(args.debug, env)
 
 if __name__ == '__main__':
+    colorama.init()
     spot.setup()
     main()
 

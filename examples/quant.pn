@@ -4,8 +4,7 @@ test_exists_false() := exists x. forall y. x = y
 
 test_pred() := forall x. forall y. forall z. x = y => (x = y | x = z)
 
-#save_aut_img("equals.svg", equals)
-#save_aut_img("exists_true.svg", test_exists_true)
-#save_aut_img("exists_false.svg", test_exists_false)
-#save_aut_img("test_pred.svg", test_pred)
+#assert_prop(true, test_exists_true)
+#assert_prop(false, test_exists_false)
+#assert_prop(true, test_pred)
 

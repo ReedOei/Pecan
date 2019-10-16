@@ -20,6 +20,7 @@ pecan_grammar = """
         | "#" "context" "(" string ")" -> directive_context
         | "#" "end_context" "(" string ")" -> directive_end_context
         | "#" "load_preds" "(" string ")" -> directive_load_preds
+        | "#" "assert_prop" "(" BOOL "," var ")" -> directive_assert_prop
 
     ?pred: expr EQ expr                    -> equal
          | expr NE expr                     -> not_equal
@@ -64,6 +65,8 @@ pecan_grammar = """
     ?var: LETTER ALPHANUM*
 
     ?string: ESCAPED_STRING -> escaped_str
+
+    BOOL: "true"i | "false"i // case insensitive
 
     NEWLINES: NEWLINE+
 
@@ -125,6 +128,9 @@ class PecanTransformer(Transformer):
 
     def directive_load_preds(self, filename):
         return DirectiveLoadPreds(filename)
+
+    def directive_assert_prop(self, bool_val, pred_name):
+        return DirectiveAssertProp(bool_val, pred_name)
 
     def prog(self, defs):
         return Program(defs)
