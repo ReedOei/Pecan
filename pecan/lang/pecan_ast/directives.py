@@ -122,28 +122,35 @@ class DirectiveEndContext(ASTNode):
     def __repr__(self):
         return '#end_context({})'.format(self.context)
 
-# Asserts that pred_name is bool_val: i.e., that pred_name either accepts everything (true) or accepts nothing (false)
+# Asserts that pred_name is truth_val: i.e., that pred_name is 'true' (always), 'false' (always), or 'sometimes' true
 class DirectiveAssertProp(ASTNode):
-    def __init__(self, bool_val, pred_name):
+    def __init__(self, truth_val, pred_name):
         super().__init__()
+        self.truth_val = truth_val
         self.pred_name = pred_name
-        self.bool_val = str(bool_val).lower() == "true"
 
-    def pred_is_true(self, prog):
+    def pred_truth_value(self, prog):
         evaluated = prog.call(self.pred_name)
         if evaluated.is_empty(): # If we accept nothing, we are false
-            return False
+            return 'false'
         elif spot.dualize(evaluated).is_empty(): # If our complement accepts nothing, we accept everything, so we are true
-            return True
+            return 'true'
         else: # Otherwise, we are neither true nor false: i.e., not all variables have been eliminated
-            return None
+            return 'sometimes'
 
     def evaluate(self, prog):
-        self_true = self.pred_is_true(prog)
-        if self_true is None:
-            print(f'{Fore.RED}Cannot assert {self.pred_name} is {self.is_true}: not all variables have been eliminated!{Style.RESET_ALL}')
-        elif self_true == self.bool_val:
-            print(f'{Fore.GREEN}{self.pred_name} is {self.bool_val}.{Style.RESET_ALL}')
+        pred_truth_value = self.pred_truth_value(prog)
+        if pred_truth_value == self.truth_val:
+            print(f'{Fore.GREEN}{self.pred_name} is {self.display_truth_val()}.{Style.RESET_ALL}')
         else:
-            print(f'{Fore.RED}{self.pred_name} is not {self.bool_val}.{Style.RESET_ALL}')
+            print(f'{Fore.RED}{self.pred_name} is not {self.display_truth_val()}.{Style.RESET_ALL}')
+
+    def display_truth_val(self):
+        if self.truth_val == 'sometimes':
+            return 'sometimes true'
+        else:
+            return self.truth_val # 'true' or 'false'
+
+    def __repr__(self):
+        return '#assert_prop({}, {})'.format(self.truth_val, self.pred_name)
 

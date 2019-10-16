@@ -27,7 +27,7 @@ class NotEquals(Predicate):
         self.b = b
 
     def evaluate(self, prog):
-        return Complement(Equals(a, b)).evaluate(prog)
+        return Complement(Equals(self.a, self.b)).evaluate(prog)
 
     def __repr__(self):
         return '({} ≠ {})'.format(self.a, self.b)

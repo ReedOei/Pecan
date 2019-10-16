@@ -20,7 +20,7 @@ pecan_grammar = """
         | "#" "context" "(" string ")" -> directive_context
         | "#" "end_context" "(" string ")" -> directive_end_context
         | "#" "load_preds" "(" string ")" -> directive_load_preds
-        | "#" "assert_prop" "(" BOOL "," var ")" -> directive_assert_prop
+        | "#" "assert_prop" "(" PROP_VAL "," var ")" -> directive_assert_prop
 
     ?pred: expr EQ expr                    -> equal
          | expr NE expr                     -> not_equal
@@ -66,7 +66,7 @@ pecan_grammar = """
 
     ?string: ESCAPED_STRING -> escaped_str
 
-    BOOL: "true"i | "false"i // case insensitive
+    PROP_VAL: "sometimes"i | "true"i | "false"i // case insensitive
 
     NEWLINES: NEWLINE+
 
@@ -177,7 +177,7 @@ class PecanTransformer(Transformer):
     def equal(self, a, sym, b):
         return Equals(a, b)
 
-    def not_equal(self, a, b):
+    def not_equal(self, a, sym, b):
         return NotEquals(a, b)
 
     def less(self, a, b):
