@@ -13,4 +13,6 @@ eq_sym() := forall x. forall y. x = y <=> y = x
 eq_sym_weird() := forall x. forall y. x = y | y = x
 #assert_prop(true, eq_sym)
 #assert_prop(false, eq_sym_weird)
+eq_trans() := forall x. forall y. forall z. (x = y & y = z) => x = z
+#assert_prop(true, eq_trans)
 

@@ -30,9 +30,7 @@ def main():
             prog = pecan_parser.parse(f.read())
             prog.parser = pecan_parser
 
-        if args.debug:
-            print(prog)
-
+        prog.debug = args.debug
         env = prog.evaluate()
 
         if args.interactive:

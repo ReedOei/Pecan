@@ -9,6 +9,12 @@ class ASTNode:
     def __init__(self):
         pass
 
+    # TODO: After things are in a more settled state, we should replace all evaluate so they automatically call this method
+    def show_if_debug(self, prog, result):
+        if prog.debug:
+            print('Evaluated {}, result has {} states and {} edges'.format(self, result.num_states(), result.num_edges()))
+        return result
+
 class Expression(ASTNode):
     def __init__(self):
         super().__init__()
@@ -85,6 +91,7 @@ class Program(ASTNode):
         self.preds = {}
         self.context = []
         self.parser = None # This will be "filled in" in the main.py after we load a program
+        self.debug = False
 
     def evaluate(self, old_env=None):
         if old_env is not None:
