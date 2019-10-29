@@ -8,7 +8,7 @@ import spot
 
 class AutomatonTransformer:
     def __init__(self, original_aut, formula_builder):
-        self.original_aut = original_aut
+        self.original_aut = original_aut.postprocess('BA') # Ensure that the automata we get is a Buchi (possible nondeterministic) automata
         self.formula_builder = formula_builder
 
     def transform(self):
@@ -27,7 +27,9 @@ class AutomatonTransformer:
         for e in self.original_aut.edges():
             # Convert to a formula because formulas are nicer to work with than the bdd's
             formula = spot.formula(spot.bdd_format_formula(self.original_aut.get_dict(), e.cond))
-            cond = self.create_edge_condition(new_aut, self.formula_builder(formula))
+            new_formula = self.formula_builder(formula)
+            cond = self.create_edge_condition(new_aut, new_formula)
+            # print('Adding edge', e.src, e.dst, new_formula, e.acc)
             new_aut.new_edge(e.src, e.dst, cond, e.acc)
 
         return spot.minimize_obligation(new_aut)

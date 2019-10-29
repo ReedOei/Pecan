@@ -133,7 +133,7 @@ class DirectiveAssertProp(ASTNode):
         evaluated = prog.call(self.pred_name)
         if evaluated.is_empty(): # If we accept nothing, we are false
             return 'false'
-        elif spot.dualize(evaluated).is_empty(): # If our complement accepts nothing, we accept everything, so we are true
+        elif spot.complement(evaluated).is_empty(): # If our complement accepts nothing, we accept everything, so we are true
             return 'true'
         else: # Otherwise, we are neither true nor false: i.e., not all variables have been eliminated
             return 'sometimes'

@@ -62,7 +62,7 @@ class Complement(Predicate):
         self.a = a
 
     def evaluate(self, prog):
-        return spot.dualize(self.a.evaluate(prog))
+        return spot.complement(self.a.evaluate(prog))
 
     def __repr__(self):
         return '(¬{})'.format(self.a)
