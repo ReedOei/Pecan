@@ -1,0 +1,8 @@
+eq_irrefl() := forall x. x != x
+excluded_middle() := forall x. forall y. x = y | x != y
+excluded_middle_weird() := forall x. forall y. x = y & x != y
+
+#assert_prop(false, eq_irrefl)
+#assert_prop(true, excluded_middle)
+#assert_prop(false, excluded_middle_weird)
+
