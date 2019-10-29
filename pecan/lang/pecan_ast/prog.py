@@ -2,6 +2,7 @@
 # -*- coding=utf-8 -*-
 
 import spot
+import time
 
 from lark import Lark, Transformer, v_args
 
@@ -11,10 +12,13 @@ class ASTNode:
 
     def evaluate(self, prog):
         prog.eval_level += 1
+        if prog.debug:
+            start_time = time.time()
         result = self.evaluate_node(prog)
         prog.eval_level -= 1
         if prog.debug:
-            print('{}{} has {} states and {} edges'.format('  ' * prog.eval_level, self, result.num_states(), result.num_edges()))
+            end_time = time.time()
+            print('{}{} has {} states and {} edges ({:.2f} seconds)'.format(' ' * prog.eval_level, self, result.num_states(), result.num_edges(), end_time - start_time))
 
         return result
 
