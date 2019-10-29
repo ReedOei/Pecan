@@ -14,8 +14,8 @@ class Forall(Predicate):
         self.var_name = var_name
         self.pred = pred
 
-    def evaluate(self, prog):
-        return self.show_if_debug(prog, Complement(Exists(self.var_name, Complement(self.pred))).evaluate(prog))
+    def evaluate_node(self, prog):
+        return Complement(Exists(self.var_name, Complement(self.pred))).evaluate(prog)
 
     def __repr__(self):
         return '(∀{} ({}))'.format(self.var_name, self.pred)
@@ -26,9 +26,9 @@ class Exists(Predicate):
         self.var_name = var_name
         self.pred = pred
 
-    def evaluate(self, prog):
+    def evaluate_node(self, prog):
         evaluated = self.pred.evaluate(prog)
-        return self.show_if_debug(prog, AutomatonTransformer(evaluated, self.build_exist_formula).transform())
+        return AutomatonTransformer(evaluated, self.build_exist_formula).transform()
 
     def build_exist_formula(self, formula):
         if_0 = Substitution({self.var_name: spot.formula('0')}).substitute(formula)

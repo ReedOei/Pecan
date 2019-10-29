@@ -9,17 +9,20 @@ class ASTNode:
     def __init__(self):
         pass
 
-    # TODO: After things are in a more settled state, we should replace all evaluate so they automatically call this method
-    def show_if_debug(self, prog, result):
+    def evaluate(self, prog):
+        prog.eval_level += 1
+        result = self.evaluate_node(prog)
+        prog.eval_level -= 1
         if prog.debug:
-            print('Evaluated {}, result has {} states and {} edges'.format(self, result.num_states(), result.num_edges()))
+            print('{}{} has {} states and {} edges'.format('  ' * prog.eval_level, self, result.num_states(), result.num_edges()))
+
         return result
 
 class Expression(ASTNode):
     def __init__(self):
         super().__init__()
 
-    def evaluate(self, prog):
+    def evaluate_node(self, prog):
         return None
 
 class BinaryExpression(ASTNode):
@@ -45,7 +48,7 @@ class Predicate(ASTNode):
         super().__init__()
 
     # The evaluate function returns an automaton representing the expression
-    def evaluate(self, prog):
+    def evaluate_node(self, prog):
         return None # Should never be called on the base Predicate class
 
 class Call(Predicate):
@@ -92,6 +95,7 @@ class Program(ASTNode):
         self.context = []
         self.parser = None # This will be "filled in" in the main.py after we load a program
         self.debug = False
+        self.eval_level = 0
 
     def evaluate(self, old_env=None):
         if old_env is not None:
