@@ -29,10 +29,10 @@ class AutomatonTransformer:
             formula = spot.formula(spot.bdd_format_formula(self.original_aut.get_dict(), e.cond))
             new_formula = self.formula_builder(formula)
             cond = self.create_edge_condition(new_aut, new_formula)
-            # print('Adding edge', e.src, e.dst, new_formula, e.acc)
+            # print('Adding edge', e.src, e.dst, '(', new_formula, ')', e.acc)
             new_aut.new_edge(e.src, e.dst, cond, e.acc)
 
-        return spot.minimize_obligation(new_aut)
+        return new_aut
 
     def create_edge_condition(self, aut, new_formula):
         return FormulaToBdd(aut, new_formula).translate()
