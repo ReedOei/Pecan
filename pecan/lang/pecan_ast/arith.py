@@ -8,6 +8,7 @@ from pecan.tools.automaton_tools import Substitution, AutomatonTransformer
 from pecan.lang.pecan_ast.bool import *
 
 #TODO: preassign label to expression
+#TODO: memoize same expressions
 class Add(BinaryExpression):
     def __init__(self, a, b):
         super().__init__(a, b)
@@ -23,10 +24,10 @@ class Add(BinaryExpression):
         aut_add = '' #TODO: get automaton
         # Assuming label "a+b=c"
         def build_add_formula(self, formula): 
-            return Substitution({'a': val_a, 'b': val_b,'c': '{}{}'.format(self.a,self.b)}).substitute(formula)
+            return Substitution({'a': val_a, 'b': val_b,'c': self.label}).substitute(formula)
         aut_add = AutomatonTransformer(aut_add, build_add_formula).transform()
         #TODO: drop val_a, val_b in return
-        return (spot.product(aut_a, spot.product(aut_b, aut_add)), '{}_add_{}'.format(self.a,self.b))
+        return (spot.product(aut_a, spot.product(aut_b, aut_add)), self.label)
 
     
 
@@ -45,11 +46,10 @@ class Sub(BinaryExpression):
         aut_sub = '' #TODO: get automaton
         # Assuming label "a+b=c"
         def build_sub_formula(self, formula): 
-            #TODO: make it one dictionary
-            return Substitution({'c': val_a}).substitute(Substitution({'b': val_b}).substitute(Substitution({'a': '{}{}'.format(self.a,self.b)}).substitute(formula)))
+            return Substitution({'c': val_a, 'b':val_b, 'a': self.label}).substitute(formula)
         aut_sub = AutomatonTransformer(aut_sub, build_sub_formula).transform()
         #TODO: drop val_a, val_b in return
-        return (spot.product(aut_a, spot.product(aut_b, aut_add)), '{}_add_{}'.format(self.a,self.b))
+        return (spot.product(aut_a, spot.product(aut_b, aut_add)), self.label)
 
 
 class Mul(BinaryExpression):
@@ -59,9 +59,9 @@ class Mul(BinaryExpression):
         self.b = b
 
     def evaluate(self, prog):
-        if self.a is not IntConst:
+        if type(self.a) is not IntConst:
             raise AutomatonArithmeticError("First argument of multiplication must be an integer in " + self.__repr__())
-        if self.b is IntConst:
+        if type(self.b) is IntConst:
             return self.a.evaluate_int()*self.b.evaluate_int()
 
         c = self.a.evaluate_int()  # copy of a
@@ -90,9 +90,9 @@ class Div(BinaryExpression):
         return '({} / {})'.format(self.a, self.b)
 
     def evaluate(self, prog):
-        if self.b is not int:
+        if type(self.b) is not int:
             raise AutomatonArithmeticError("Second argument of division must be an integer in " + self.__repr__())
-        if self.a is int:
+        if type(self.a) is int:
             if self.a % self.b != 0:
                 raise AutomatonArithmeticError("Division among integers must output an integer in " + self.__repr__())
             return self.a // self.b
@@ -102,31 +102,30 @@ class Div(BinaryExpression):
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
         #TODO: change label, not finished
-        (aut_div,val_div) = Mul(b,spot.formula('1'.format(val_a,val_b)).translate())
+        (aut_div,val_div) = Mul(b,spot.formula('1').translate())
         def build_div_formula(self, formula): 
             return Substitution({val_div: val_a}).substitute(Substitution({'a': '{}_div_{}'.format(val_a,val_b)}).substitute(formula)))
         #TODO: drop val_a, val_b in return
         return (spot.product(aut_a, spot.product(aut_b, aut_add)), '{}_add_{}'.format(self.a,self.b))
 
-        return 
-
+#TODO: memoize calculated constants
 class IntConst(Expression):
     def __init__(self, val):
         super().__init__()
         self.val = val
+        if type(self.val) is not int:
+            raise AutomatonArithmeticError("Constants need to be integers" + self.__repr__())
+        self.label = "__constant{}".format(self.val)
 
     def __repr__(self):
         return str(self.val)
     def evaluate(self):
-        if self.val is not IntConst:
-            raise AutomatonArithmeticError("Constants need to be integers" + self.__repr__())
         if self.val == 0:
-            return (spot.formula('G(!n0)').translate(),"n0")
-        if self.val == 1:
-            return (spot.formula('one G(!n1)').translate(), "n1")
+            return (spot.formula('G(!{}})', self.label).translate(), self.label)
+        if self.val == 1: # TODO: Should we allow different 1's?
+            return (spot.formula('{} G(!{}})', self.label).translate(), self.label)
 
         c = self.val  # copy of a
-        #TODO: memoize
         power =  IntConst(1)
         sum = IntConst(0)
         while c > 0:
@@ -139,7 +138,7 @@ class IntConst(Expression):
     def evaluate_int(self):
         return self.val
 
-# is this something that we will want? I'm leaving it here for now
+# is this something that we will want? I'm not implementing it for now
 class Index(Expression):
     def __init__(self, var_name, index_expr):
         super().__init__()
@@ -160,7 +159,7 @@ class Less(Predicate):
         aut_less = '' #TODO: get automaton
         # assuming labels are "a<b"
         def build_less_formula(self, formula): 
-            return Substitution({'a': val_a}).substitute(Substitution({'b': val_b}).substitute(formula))
+            return Substitution({'a': val_a,'b':val_b}).substitute(formula)
         aut_less = AutomatonTransformer(aut_less, build_less_formula).transform()
         return spot.product(aut_a, spot.product(aut_b, aut_less))
     
@@ -183,6 +182,8 @@ class Neg(Expression): # Should this be allowed?
 
     def __init__(self, a):
         super().__init__()
+        raise AutomatonArithmeticError('Cannot do negation on automaton. {}'.format(self))
+        # TODO: allow negation on IntConst
         self.a = a
 
     def __repr__(self):

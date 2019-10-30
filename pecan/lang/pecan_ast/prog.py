@@ -10,8 +10,12 @@ class ASTNode:
         pass
 
 class Expression(ASTNode):
+    id = 0
     def __init__(self):
         super().__init__()
+        #TODO: detect used labels and avoid those
+        self.label = "__pecan"+str(Expression.id)
+        Expression.id+=1
 
     def evaluate(self, prog):
         return None
