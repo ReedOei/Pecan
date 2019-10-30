@@ -3,8 +3,6 @@ import math
 # GLOBAL VARIABLES
 state_counter = 0
 states = dict()
-curr_state = -1
-base = 2
 org_states = []
 
 
@@ -24,33 +22,26 @@ def column(l, c):
         return column
 
 def reset_global():
-        global state_counter
+        global state_counter, states, org_states
         state_counter = 0
-        global intermediate_states
-        intermediate_states = []
+        states = dict()
         org_states = []
 
 
 # STATE FUNCTIONS
 def state_line(line):
-        line = line[:len(line) - 1]
-        acc = first_word(line)[1]
-        global state_counter, curr_state
-        curr_state = state_counter + 1
-        new_line = state(acc)
+        acc = line[-2]
         global org_states
-        org_states.append(int(new_line[8:-7]))
-        return new_line
+        org_states.append(state_counter + 1)
+        return state(acc)
         
 def state(acc):
-        global intermediate_states
         line = 'States: '
-        global state_counter
+        global state_counter, states
         state_counter += 1
         line += str(state_counter)
         line += ' { ' + acc + ' }\n'
         state = {'print': line}
-        global states
         states[str(state_counter)] = state
         return line
 
@@ -67,7 +58,7 @@ def intermediate_edge(b_inputs, start_state, end_state, base):
                 s[inp] = 'o' + str(end_state)
             else:
                 new_state = state('0')
-                name = first_word(new_state[8:])[0]
+                name = str(state_counter)
                 s[inp] = name
                 states[name] = {'print': new_state}
                 s = states[name]
@@ -77,25 +68,14 @@ def edge(old_line, base):
         while old_line[0] != '-':
             (inp, old_line) = first_word(old_line)
             inputs.append(('{0:b}'.format(int(inp))).zfill(base))
-        end_state = first_word(old_line[3:-1])[0]
-        global curr_state
-        intermediate_edge(inputs, curr_state, end_state, base)
+        end_state = old_line[3:-1]
+        intermediate_edge(inputs, org_states[-1], end_state, base)
 
 def print_edges(bin_str, state):
         return '[' + '&'.join(bin_str) + '] ' + str(state) + '\n'
 
 
-# BASE FUNCTIONS 
-def get_inputs(edge):
-        counter = 0
-        for l in edge:
-            if l == '-':
-                return counter
-            if l != ' ':
-                counter += 1
-        # code shouldn't ever get here
-        return counter
-
+# BASE FUNCTION 
 def adjust_base(line):
         bases = []
         base = 1
@@ -109,7 +89,7 @@ def adjust_base(line):
         return bases
 
 
-# CONVERT FUNCTIONS
+# CONVERT FUNCTION
 def convert_hoa(txt1, txt2):
         f1 = open(txt1, 'r')
         f2 = open(txt2, 'w')
