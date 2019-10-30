@@ -1,5 +1,4 @@
 argparse
 lark-parser
 colorama
-IPython
 
