@@ -6,16 +6,19 @@ import spot
 from lark import Lark, Transformer, v_args
 
 class ASTNode:
+    id = 0
     def __init__(self):
+        #TODO: detect used labels and avoid those
+        self.label = "__pecan"+str(Expression.id)
+        Expression.id += 1
+        #TODO: remove this after it's done
+        if prog.debug:
+            print(self.label)
         pass
 
 class Expression(ASTNode):
-    id = 0
     def __init__(self):
         super().__init__()
-        #TODO: detect used labels and avoid those
-        self.label = "__pecan"+str(Expression.id)
-        Expression.id+=1
 
     def evaluate(self, prog):
         return None

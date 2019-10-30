@@ -9,6 +9,7 @@ from pecan.lang.pecan_ast.bool import *
 
 #TODO: preassign label to expression
 #TODO: memoize same expressions
+#TODO: detect and separate integer operations and Automaton operations
 class Add(BinaryExpression):
     def __init__(self, a, b):
         super().__init__(a, b)
@@ -102,14 +103,16 @@ class Div(BinaryExpression):
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
         #TODO: change label, not finished
-        (aut_div,val_div) = Mul(b,spot.formula('1').translate())
+        (aut_div,val_div) = Mul(self.b,spot.formula('1').translate()).evaluate(prog)
         def build_div_formula(self, formula): 
-            return Substitution({val_div: val_a}).substitute(Substitution({'a': '{}_div_{}'.format(val_a,val_b)}).substitute(formula)))
+            return Substitution({val_div: val_a, 'a': '{}_div_{}'.format(val_a,val_b)}).substitute(formula)
         #TODO: drop val_a, val_b in return
-        return (spot.product(aut_a, spot.product(aut_b, aut_add)), '{}_add_{}'.format(self.a,self.b))
+        return (spot.product(aut_a, spot.product(aut_b, aut_div)), '{}_add_{}'.format(self.a,self.b))
 
-#TODO: memoize calculated constants
+#TODO: more memoization for calculated constants
 class IntConst(Expression):
+    # Constant 0 is defined as 000000...
+    constants_map = {0:(spot.formula('G(!__constant0)').translate(), "__constant0")}
     def __init__(self, val):
         super().__init__()
         self.val = val
@@ -121,11 +124,13 @@ class IntConst(Expression):
         return str(self.val)
     def evaluate(self):
         if self.val == 0:
-            return (spot.formula('G(!{}})', self.label).translate(), self.label)
-        if self.val == 1: # TODO: Should we allow different 1's?
-            return (spot.formula('{} G(!{}})', self.label).translate(), self.label)
+            return IntConst.constants_map[0]
+        if self.val == 1:
+            # TODO: a = 1 iff (a>0 and (for all b > 0, b>=a))
+            IntConst.constants_map[1] = (spot.formula('{} G(!{}})', self.label).translate(), self.label)
+            return IntConst.constants_map[1]
 
-        c = self.val  # copy of a
+        c = self.val  # copy of val
         power =  IntConst(1)
         sum = IntConst(0)
         while c > 0:
@@ -133,12 +138,14 @@ class IntConst(Expression):
                 sum = Add(sum,power)
             c = c >> 1
             power = Add(power,power)
-        return sum.evaluate()
+
+        IntConst.constants_map[self.val] = sum.evaluate()
+        return IntConst.constants_map[self.val]
 
     def evaluate_int(self):
         return self.val
 
-# is this something that we will want? I'm not implementing it for now
+# is this something that we will want? Probably not, I'm not implementing it for now.
 class Index(Expression):
     def __init__(self, var_name, index_expr):
         super().__init__()
