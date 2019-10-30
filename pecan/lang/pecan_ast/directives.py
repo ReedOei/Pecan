@@ -1,7 +1,6 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from colorama import Fore, Style
 import spot
 
 from pecan.lang.pecan_ast.prog import *
@@ -140,10 +139,16 @@ class DirectiveAssertProp(ASTNode):
 
     def evaluate(self, prog):
         pred_truth_value = self.pred_truth_value(prog)
+
         if pred_truth_value == self.truth_val:
-            print(f'{Fore.GREEN}{self.pred_name} is {self.display_truth_val()}.{Style.RESET_ALL}')
+            result = Result(f'{self.pred_name} is {self.display_truth_val()}.', True)
         else:
-            print(f'{Fore.RED}{self.pred_name} is not {self.display_truth_val()}.{Style.RESET_ALL}')
+            result = Result(f'{self.pred_name} is not {self.display_truth_val()}.', False)
+
+        if not prog.quiet:
+            result.print_result()
+
+        return result
 
     def display_truth_val(self):
         if self.truth_val == 'sometimes':

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
+from colorama import Fore, Style
+
 import spot
 import time
 
@@ -99,7 +101,9 @@ class Program(ASTNode):
         self.context = []
         self.parser = None # This will be "filled in" in the main.py after we load a program
         self.debug = False
+        self.quiet = False
         self.eval_level = 0
+        self.result = None
 
     def evaluate(self, old_env=None):
         if old_env is not None:
@@ -107,11 +111,20 @@ class Program(ASTNode):
             self.context = self.context + old_env.context
             self.parser = old_env.parser
 
+        succeeded = True
+        msgs = []
+
         for d in self.defs:
             if type(d) is NamedPred:
                 self.preds[d.name] = d
             else:
-                d.evaluate(self)
+                result = d.evaluate(self)
+                if result is not None:
+                    if result.failed():
+                        succeeded = False
+                        msgs.append(result.message())
+
+        self.result = Result('\n'.join(msgs), succeeded)
 
         return self
 
@@ -123,6 +136,26 @@ class Program(ASTNode):
 
     def __repr__(self):
         return repr(self.defs)
+
+class Result:
+    def __init__(self, msg, succeeded):
+        self.msg = msg
+        self.__succeeded = succeeded
+
+    def succeeded(self):
+        return self.__succeeded
+
+    def failed(self):
+        return not self.succeeded()
+
+    def message(self):
+        return self.msg
+
+    def print_result(self):
+        if self.succeeded():
+            print(f'{Fore.GREEN}{self.msg}{Style.RESET_ALL}')
+        else:
+            print(f'{Fore.RED}{self.msg}{Style.RESET_ALL}')
 
 class Context:
     def __init__(self, name):
