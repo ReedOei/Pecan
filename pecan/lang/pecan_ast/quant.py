@@ -4,9 +4,9 @@
 import buddy
 import spot
 
-from pecan.lang.pecan_ast.prog import *
-from pecan.lang.pecan_ast.bool import *
-from pecan.tools.automaton_tools import Substitution, AutomatonTransformer
+from lang.pecan_ast.prog import *
+from lang.pecan_ast.bool import *
+from tools.automaton_tools import Substitution, AutomatonTransformer
 
 class Forall(Predicate):
     def __init__(self, var_name, pred):

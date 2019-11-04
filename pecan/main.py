@@ -5,7 +5,11 @@ import argparse
 import spot
 import colorama
 
-from pecan.lang.parser import pecan_parser
+import sys
+
+print(sys.path)
+
+from lang.parser import pecan_parser
 
 def run_repl(debug, env):
     while True:

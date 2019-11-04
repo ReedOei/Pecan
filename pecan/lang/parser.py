@@ -1,6 +1,6 @@
 # -*- coding=utf-8 -*-
 
-from pecan.lang.pecan_ast import *
+from lang.pecan_ast import *
 
 from lark import Lark, Transformer, v_args
 

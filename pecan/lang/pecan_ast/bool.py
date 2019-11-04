@@ -3,7 +3,7 @@
 
 import spot
 
-from pecan.lang.pecan_ast.prog import *
+from lang.pecan_ast.prog import *
 
 class Equals(Predicate):
     def __init__(self, a, b):

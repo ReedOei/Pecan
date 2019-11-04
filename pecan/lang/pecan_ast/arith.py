@@ -3,9 +3,9 @@
 
 import spot
 
-from pecan.lang.pecan_ast.prog import *
-from pecan.tools.automaton_tools import Substitution, AutomatonTransformer
-from pecan.lang.pecan_ast.bool import *
+from lang.pecan_ast.prog import *
+from tools.automaton_tools import Substitution, AutomatonTransformer
+from lang.pecan_ast.bool import *
 
 base_2_addition = spot.automata("""
 HOA: v1

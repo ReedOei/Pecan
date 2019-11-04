@@ -1,2 +1,2 @@
-import pecan.tools.automaton_tools
+import tools.automaton_tools
 

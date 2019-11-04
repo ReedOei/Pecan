@@ -2,8 +2,8 @@ import unittest
 
 import spot
 
-from pecan.lang.parser import pecan_parser
-from pecan.lang.pecan_ast import *
+from lang.parser import pecan_parser
+from lang.pecan_ast import *
 
 class QuantTest(unittest.TestCase):
     def assert_prop_true(self, prop):
