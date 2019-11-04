@@ -7,6 +7,23 @@ from pecan.lang.pecan_ast.prog import *
 from pecan.tools.automaton_tools import Substitution, AutomatonTransformer
 from pecan.lang.pecan_ast.bool import *
 
+base_2_addition = spot.automata("""
+HOA: v1
+States: 2
+Start: 1
+name: "Hello world"
+acc-name: "Buchi"
+AP: 3 "a" "b" "c"
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0 {0}
+[(!a&!b&!c)|(c&(a&!b|!a&b)] 0
+[(!a&!b&c)] 1
+State: 1
+[(a&b&c)|(!c&(a&!b|!a&b)] 1
+[a&b&!c] 0
+--END--
+""")
 #TODO: preassign label to expression
 #TODO: memoize same expressions
 #TODO: detect and separate integer operations and Automaton operations
@@ -19,10 +36,13 @@ class Add(BinaryExpression):
     def __repr__(self):
         return '({} + {})'.format(self.a, self.b)
 
+
+
+    
     def evaluate(self, prog):
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
-        aut_add = '' #TODO: get automaton
+        aut_add = base_2_addition #It is base 2 addition now TODO: get automaton
         # Assuming label "a+b=c"
         def build_add_formula(self, formula): 
             return Substitution({'a': val_a, 'b': val_b,'c': self.label}).substitute(formula)
@@ -50,7 +70,7 @@ class Sub(BinaryExpression):
             return Substitution({'c': val_a, 'b':val_b, 'a': self.label}).substitute(formula)
         aut_sub = AutomatonTransformer(aut_sub, build_sub_formula).transform()
         #TODO: drop val_a, val_b in return
-        return (spot.product(aut_a, spot.product(aut_b, aut_add)), self.label)
+        return (spot.product(aut_a, spot.product(aut_b, aut_sub)), self.label)
 
 
 class Mul(BinaryExpression):
