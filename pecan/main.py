@@ -3,6 +3,7 @@
 
 import argparse
 import spot
+import colorama
 
 from pecan.lang.parser import pecan_parser
 
@@ -21,16 +22,16 @@ def main():
     parser.add_argument('file', help='A Pecan file to execute')
     parser.add_argument('-i', '--interactive', help='Run Pecan in interactive mode (REPL)', required=False, action='store_true')
     parser.add_argument('-d', '--debug', help='Output debugging information', required=False, action='store_true')
+    parser.add_argument('-q', '--quiet', help='Quiet mode', required=False, action='store_true')
 
     args = parser.parse_args()
 
     if args.file is not None:
         with open(args.file, 'r') as f:
             prog = pecan_parser.parse(f.read())
-            prog.parser = pecan_parser
 
-        if args.debug:
-            print(prog)
+        prog.parser = pecan_parser
+        prog.debug = args.debug
 
         env = prog.evaluate()
 
@@ -38,6 +39,7 @@ def main():
             run_repl(args.debug, env)
 
 if __name__ == '__main__':
+    colorama.init()
     spot.setup()
     main()
 
