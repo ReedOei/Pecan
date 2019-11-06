@@ -1,7 +1,7 @@
 import math
 
 # GLOBAL VARIABLES
-state_counter = 0
+state_counter = -1
 states = dict()
 org_states = []
 
@@ -36,7 +36,7 @@ def state_line(line):
         return state(acc)
         
 def state(acc):
-        line = 'States: '
+        line = 'State: '
         global state_counter, states
         state_counter += 1
         line += str(state_counter)
@@ -123,8 +123,8 @@ def convert_hoa(txt1, txt2):
         body.append('--END--')
 
         global state_counter
-        header = ['HOA: v1\n', 'States: ' + str(state_counter) + '\n', 'acc-name: Buchi\n']
-        header.append('Acceptance: 1 Inf(0)\n')
+        header = ['HOA: v1\n', 'States: ' + str(state_counter + 1) + '\n', 'acc-name: Buchi\n']
+        header.append('Acceptance: 2 Inf(1)\n')
         
         aps = ''
         inputs = len(bases)
