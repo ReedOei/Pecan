@@ -14,10 +14,6 @@ class ASTNode:
         #TODO: detect used labels and avoid those
         self.label = "__pecan"+str(Expression.id)
         Expression.id += 1
-        #TODO: remove this after it's done
-        if prog.debug:
-            print(self.label)
-        pass
 
     def evaluate(self, prog):
         prog.eval_level += 1

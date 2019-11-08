@@ -58,8 +58,8 @@ pecan_grammar = """
     MUL: "*" | "⋅"
 
     ?atom: var         -> var_ref
-         | NUMBER      -> const
-         | "-" NUMBER  -> neg
+         | INT      -> const
+         | "-" INT  -> neg
          | "(" arith ")"
 
     ?var: LETTER ALPHANUM*
@@ -96,7 +96,7 @@ pecan_grammar = """
 
     NEWLINE: /\\n/
 
-    %import common.NUMBER
+    %import common.INT
     %import common.WS_INLINE
     %import common.ESCAPED_STRING
 

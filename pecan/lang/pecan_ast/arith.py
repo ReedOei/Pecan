@@ -78,10 +78,11 @@ class Mul(BinaryExpression):
         super().__init__(a, b)
         self.a = a
         self.b = b
-
-    def evaluate(self, prog):
         if type(self.a) is not IntConst:
             raise AutomatonArithmeticError("First argument of multiplication must be an integer in " + self.__repr__())
+
+    def evaluate(self, prog):
+        
         if type(self.b) is IntConst:
             return self.a.evaluate_int()*self.b.evaluate_int()
 
@@ -111,9 +112,9 @@ class Div(BinaryExpression):
         return '({} / {})'.format(self.a, self.b)
 
     def evaluate(self, prog):
-        if type(self.b) is not int:
+        if type(self.b) is not IntConst:
             raise AutomatonArithmeticError("Second argument of division must be an integer in " + self.__repr__())
-        if type(self.a) is int:
+        if type(self.a) is IntConst:
             if self.a % self.b != 0:
                 raise AutomatonArithmeticError("Division among integers must output an integer in " + self.__repr__())
             return self.a // self.b
@@ -132,22 +133,22 @@ class Div(BinaryExpression):
 #TODO: more memoization for calculated constants
 class IntConst(Expression):
     # Constant 0 is defined as 000000...
-    constants_map = {0:(spot.formula('G(!__constant0)').translate(), "__constant0")}
+    constants_map = {0:(spot.formula('G(~__constant0)').translate(), "__constant0")}
     def __init__(self, val):
         super().__init__()
-        self.val = val
-        if type(self.val) is not int:
-            raise AutomatonArithmeticError("Constants need to be integers" + self.__repr__())
+        if val.type != "INT":
+            raise AutomatonArithmeticError("Constants need to be integers: " + val)
+        self.val = int(val.value)
         self.label = "__constant{}".format(self.val)
 
     def __repr__(self):
         return str(self.val)
-    def evaluate(self):
+    def evaluate(self,prog):
         if self.val == 0:
             return IntConst.constants_map[0]
         if self.val == 1:
             # TODO: a = 1 iff (a>0 and (for all b > 0, b>=a))
-            IntConst.constants_map[1] = (spot.formula('{} G(!{}})', self.label).translate(), self.label)
+            IntConst.constants_map[1] = (spot.formula('{} & GX~{}'.format(self.label, self.label)).translate(), self.label)
             return IntConst.constants_map[1]
 
         c = self.val  # copy of val
