@@ -24,12 +24,12 @@ def main():
     parser.add_argument('-i', '--interactive', help='Run Pecan in interactive mode (REPL)', required=False, action='store_true')
     parser.add_argument('-d', '--debug', help='Output debugging information', required=False, action='store_true')
     parser.add_argument('-q', '--quiet', help='Quiet mode', required=False, action='store_true')
-    parser.add_argument('--generate', help='Enumerate true statements', required=False, action='store_true')
+    parser.add_argument('--generate', help='Enumerate true statements, argument is how many variables to use', type=int, required=False)
 
     args = parser.parse_args()
 
-    if args.generate:
-        for pred in theorem_generator.gen_preds(['x', 'y']):
+    if args.generate is not None:
+        for pred in theorem_generator.gen_thms(args.generate):
             print(pred)
     elif args.file is not None:
         with open(args.file, 'r') as f:

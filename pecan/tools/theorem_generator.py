@@ -1,4 +1,5 @@
 import itertools
+import string
 
 import spot
 
@@ -12,6 +13,29 @@ def truth_val(pred):
         return 'true'
     else: # Otherwise, we are neither true nor false: i.e., not all variables have been eliminated
         return 'sometimes'
+
+def gen_vars(c):
+    i = 0
+    n = 0
+    tot = 0
+
+    letters = string.ascii_lowercase
+
+    while tot < c:
+        if i == 0:
+            yield letters[n]
+        else:
+            yield '{}{}'.format(letters[n], i)
+
+        n += 1
+        if n >= 26:
+            n = 0
+            i += 1
+        tot += 1
+
+def gen_thms(var_count):
+    print(list(gen_vars(var_count)))
+    return gen_preds(list(gen_vars(var_count)))
 
 def gen_preds(var_list):
     depth = 0
