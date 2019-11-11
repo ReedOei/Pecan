@@ -14,8 +14,7 @@ gunzip "spot-$SPOT_VERSION.tar.gz"
 tar xvf "spot-$SPOT_VERSION.tar"
 cd "spot-$SPOT_VERSION"
 
-./configure --prefix ~/usr
+./configure --prefix ~/.local
 make
 sudo make install
-# echo "export PYTHONPATH=/usr/lib/python$PYTHON_VERSION/site-packages:$PYTHONPATH" >> "$HOME/.bashrc"
 
