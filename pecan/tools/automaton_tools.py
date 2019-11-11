@@ -2,23 +2,30 @@
 # -*- coding=utf-8 -*-
 
 from functools import reduce
+from itertools import chain # line 26
 
 import buddy
 import spot
 
 class AutomatonTransformer:
-    def __init__(self, original_aut, formula_builder):
+    def __init__(self, original_aut, formula_builder, bdict = None, aps = None):
         self.original_aut = original_aut.postprocess('BA') # Ensure that the automata we get is a Buchi (possible nondeterministic) automata
         self.formula_builder = formula_builder
+        self.bdict = bdict             # transform to use the given bdict
+        self.aps = aps                 # tranform into exactly the given aps. Unrestrict aps if unspecified. TODO: Maybe check formula_builder that it shouldn't use other aps. 
 
     def transform(self):
         # Build a new automata with different edges
-        bdict = spot.make_bdd_dict()
+        bdict = spot.make_bdd_dict() if self.bdict is None else self.bdict
         new_aut = spot.make_twa_graph(bdict)
 
         aps = {}
-        for ap in self.original_aut.ap():
+        for ap in self.original_aut.ap() if self.aps is None else self.aps:
             aps[ap.ap_name()] = buddy.bdd_ithvar(new_aut.register_ap(ap.ap_name()))
+        
+        # old_aps_gen = (ap for ap in self.original_aut.ap() if ap not in self.delete_aps) 
+        # new_aps_gen = (ap for ap in self.new_aps if ap not in self.delete_aps)
+        
 
         new_aut.set_buchi() # Set the acceptance condition to the normal Buchi acceptance condition
         new_aut.new_states(self.original_aut.num_states())

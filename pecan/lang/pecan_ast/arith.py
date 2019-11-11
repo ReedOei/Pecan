@@ -7,23 +7,22 @@ from lang.pecan_ast.prog import *
 from tools.automaton_tools import Substitution, AutomatonTransformer
 from lang.pecan_ast.bool import *
 
-base_2_addition = spot.automata("""
+base_2_addition = next(spot.automata("""
 HOA: v1
 States: 2
 Start: 1
-name: "Hello world"
-acc-name: "Buchi"
+name: "Base2 Addition"
 AP: 3 "a" "b" "c"
 Acceptance: 1 Inf(0)
 --BODY--
 State: 0 {0}
-[(!a&!b&!c)|(c&(a&!b|!a&b)] 0
-[(!a&!b&c)] 1
+[(!0&!1&!2)|(2&(0&!1|!0&1))] 0
+[(!0&!1&2)] 1
 State: 1
-[(a&b&c)|(!c&(a&!b|!a&b)] 1
-[a&b&!c] 0
+[(0&1&2)|(!2&(0&!1|!0&1))] 1
+[0&1&!2] 0
 --END--
-""")
+"""))
 #TODO: preassign label to expression
 #TODO: memoize same expressions
 #TODO: detect and separate integer operations and Automaton operations
@@ -42,13 +41,28 @@ class Add(BinaryExpression):
     def evaluate(self, prog):
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
+        bdict = spot.make_bdd_dict()
         aut_add = base_2_addition #It is base 2 addition now TODO: get automaton
+        bdict.register_all_variables_of(aut_a, aut_add)
+        bdict.register_all_variables_of(aut_b, aut_add)
         # Assuming label "a+b=c"
-        def build_add_formula(self, formula): 
-            return Substitution({'a': val_a, 'b': val_b,'c': self.label}).substitute(formula)
-        aut_add = AutomatonTransformer(aut_add, build_add_formula).transform()
+        def build_add_formula(formula): 
+            return Substitution({'a': spot.formula(val_a), 'b': spot.formula(val_b),'c': spot.formula(self.label)}).substitute(formula)
+        def identity_function(formula):
+            return formula
+        aut_add = AutomatonTransformer(aut_add, build_add_formula, bdict=bdict).transform()
+        print(aut_b)
+        aut_b = AutomatonTransformer(aut_b, identity_function, bdict=aut_add.get_dict())
+        aut_a = AutomatonTransformer(aut_b, identity_function, bdict=aut_add.get_dict())
+        result = spot.product(aut_a, spot.product(aut_b, aut_add))
+        def remove_internal_aps(formula):   # remove val_a, val_b
+            return formula
+        
+        0/0
+        new_aut_aps = result.ap().remove(spot.formula(val_a)).remove(spot.formula(val_b))
+        result = AutomatonTransformer(result, remove_internal_aps, aps=[])
         #TODO: drop val_a, val_b in return
-        return (spot.product(aut_a, spot.product(aut_b, aut_add)), self.label)
+        return (result, self.label)
 
     
 
@@ -66,8 +80,8 @@ class Sub(BinaryExpression):
         (aut_b, val_b) = self.b.evaluate(prog)
         aut_sub = '' #TODO: get automaton
         # Assuming label "a+b=c"
-        def build_sub_formula(self, formula): 
-            return Substitution({'c': val_a, 'b':val_b, 'a': self.label}).substitute(formula)
+        def build_sub_formula(formula): 
+            return Substitution({'c': spot.formula(val_a), 'b':spot.formula(val_b), 'a': spot.formula(self.label)}).substitute(formula)
         aut_sub = AutomatonTransformer(aut_sub, build_sub_formula).transform()
         #TODO: drop val_a, val_b in return
         return (spot.product(aut_a, spot.product(aut_b, aut_sub)), self.label)
@@ -125,8 +139,8 @@ class Div(BinaryExpression):
         (aut_b, val_b) = self.b.evaluate(prog)
         #TODO: change label, not finished
         (aut_div,val_div) = Mul(self.b,spot.formula('1').translate()).evaluate(prog)
-        def build_div_formula(self, formula): 
-            return Substitution({val_div: val_a, 'a': '{}_div_{}'.format(val_a,val_b)}).substitute(formula)
+        def build_div_formula(formula): 
+            return Substitution({val_div: spot.formula(val_a), 'a': spot.formula('{}_div_{}'.format(val_a,val_b))}).substitute(formula)
         #TODO: drop val_a, val_b in return
         return (spot.product(aut_a, spot.product(aut_b, aut_div)), '{}_add_{}'.format(self.a,self.b))
 
@@ -186,8 +200,8 @@ class Less(Predicate):
         (aut_b, val_b) = self.b.evaluate(prog)
         aut_less = '' #TODO: get automaton
         # assuming labels are "a<b"
-        def build_less_formula(self, formula): 
-            return Substitution({'a': val_a,'b':val_b}).substitute(formula)
+        def build_less_formula(formula): 
+            return Substitution({'a': spot.formula(val_a),'b':spot.formula(val_b)}).substitute(formula)
         aut_less = AutomatonTransformer(aut_less, build_less_formula).transform()
         return spot.product(aut_a, spot.product(aut_b, aut_less))
     
