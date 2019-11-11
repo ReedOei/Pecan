@@ -40,7 +40,9 @@ def state(acc):
         global state_counter, states
         state_counter += 1
         line += str(state_counter)
-        line += ' { ' + acc + ' }\n'
+        if int(acc):
+            line += ' {0}'
+        line += '\n'
         state = {'print': line}
         states[str(state_counter)] = state
         return line
@@ -124,7 +126,7 @@ def convert_hoa(txt1, txt2):
 
         global state_counter
         header = ['HOA: v1\n', 'States: ' + str(state_counter + 1) + '\n', 'acc-name: Buchi\n']
-        header.append('Acceptance: 2 Inf(1)\n')
+        header.append('Acceptance: 1 Inf(0)\n')
         
         aps = ''
         inputs = len(bases)
