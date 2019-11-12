@@ -5,9 +5,6 @@ import argparse
 import spot
 import colorama
 
-import sys
-
-print(sys.path)
 
 from lang.parser import pecan_parser
 

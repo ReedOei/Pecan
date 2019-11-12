@@ -51,16 +51,15 @@ class Add(BinaryExpression):
         def identity_function(formula):
             return formula
         aut_add = AutomatonTransformer(aut_add, build_add_formula, bdict=bdict).transform()
-        print(aut_b)
-        aut_b = AutomatonTransformer(aut_b, identity_function, bdict=aut_add.get_dict())
-        aut_a = AutomatonTransformer(aut_b, identity_function, bdict=aut_add.get_dict())
+        aut_b = AutomatonTransformer(aut_b, identity_function, bdict=aut_add.get_dict()).transform()
+        aut_a = AutomatonTransformer(aut_a, identity_function, bdict=aut_add.get_dict()).transform()
         result = spot.product(aut_a, spot.product(aut_b, aut_add))
         def remove_internal_aps(formula):   # remove val_a, val_b
             return formula
         
-        0/0
-        new_aut_aps = result.ap().remove(spot.formula(val_a)).remove(spot.formula(val_b))
-        result = AutomatonTransformer(result, remove_internal_aps, aps=[])
+        # new_aut_aps = result.ap().remove(spot.formula(val_a)).remove(spot.formula(val_b))
+        # result = AutomatonTransformer(result, remove_internal_aps, aps=[])
+        result = Projection(result, [val_a, val_b]).project()
         #TODO: drop val_a, val_b in return
         return (result, self.label)
 
@@ -145,25 +144,23 @@ class Div(BinaryExpression):
         return (spot.product(aut_a, spot.product(aut_b, aut_div)), '{}_add_{}'.format(self.a,self.b))
 
 #TODO: more memoization for calculated constants
+constants_map = {0:(spot.formula('G(~__constant0)').translate(), "__constant0")}
 class IntConst(Expression):
     # Constant 0 is defined as 000000...
-    constants_map = {0:(spot.formula('G(~__constant0)').translate(), "__constant0")}
     def __init__(self, val):
         super().__init__()
-        if val.type != "INT":
-            raise AutomatonArithmeticError("Constants need to be integers: " + val)
-        self.val = int(val.value)
+        self.val = val
         self.label = "__constant{}".format(self.val)
 
     def __repr__(self):
         return str(self.val)
     def evaluate(self,prog):
         if self.val == 0:
-            return IntConst.constants_map[0]
+            return constants_map[0]
         if self.val == 1:
             # TODO: a = 1 iff (a>0 and (for all b > 0, b>=a))
-            IntConst.constants_map[1] = (spot.formula('{} & GX~{}'.format(self.label, self.label)).translate(), self.label)
-            return IntConst.constants_map[1]
+            constants_map[1] = (spot.formula('{} & GX~{}'.format(self.label, self.label)).translate(), self.label)
+            return constants_map[1]
 
         c = self.val  # copy of val
         power =  IntConst(1)
@@ -174,8 +171,11 @@ class IntConst(Expression):
             c = c >> 1
             power = Add(power,power)
 
-        IntConst.constants_map[self.val] = sum.evaluate()
-        return IntConst.constants_map[self.val]
+        constants_map[self.val] = sum.evaluate(prog)
+        print(self.val)
+        print(constants_map[self.val][0].to_str('hoa'))
+        print()
+        return constants_map[self.val]
 
     def evaluate_int(self):
         return self.val
@@ -261,3 +261,23 @@ class GreaterEquals(Predicate):
 
 class AutomatonArithmeticError(Exception):
     pass
+
+
+class Projection:
+    def __init__(self, aut, varis):
+        super().__init__()
+        self.aut = aut
+        self.varis = varis
+
+    def project(self):
+        for var in self.varis:
+            def build_projection_formula(self, formula):    # the same as build_exists_formula
+                if_0 = Substitution({var: spot.formula('0')}).substitute(formula)
+                if_1 = Substitution({var: spot.formula('1')}).substitute(formula)
+
+                # The new edge condition should be:
+                # [0/y]cond | [1/y]cond
+                # where cond is the original condition. That is, the edge is taken if it holds with y being false or y being true.
+                return spot.formula_Or([if_0, if_1])
+            self.aut = AutomatonTransformer(self.aut, build_projection_formula).transform()
+        return self.aut 

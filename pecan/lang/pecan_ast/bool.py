@@ -14,6 +14,9 @@ class Equals(Predicate):
     def evaluate_node(self, prog):
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
+        # print(self.a)
+        # print(aut_a.to_str('hoa'))
+        # print(aut_b)
         eq_aut = spot.formula('G(({0} -> {1}) & ({1} -> {0}))'.format(val_a, val_b)).translate()
         return spot.product(eq_aut, spot.product(aut_a, aut_b))
 

@@ -169,6 +169,9 @@ class PecanTransformer(Transformer):
         return VarRef(var_name)
 
     def const(self, const):
+        if const.type != "INT":
+            raise AutomatonArithmeticError("Constants need to be integers: " + const)
+        const = int(const.value)
         return IntConst(const)
 
     def index(self, var_name, index_expr):
