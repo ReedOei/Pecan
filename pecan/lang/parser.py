@@ -40,6 +40,7 @@ pecan_grammar = """
          | EXISTS var "." pred                  -> exists
          | var "(" args ")"                 -> call
          | "(" pred ")"
+         | string                           -> spot_formula
 
     ?args: -> nil_arg
          | var -> single_arg
@@ -228,6 +229,9 @@ class PecanTransformer(Transformer):
 
     def nil_arg(self):
         return []
+
+    def spot_formula(self, formula_str):
+        return SpotFormula(formula_str[1:-1])
 
     def single_arg(self, arg):
         return [arg]

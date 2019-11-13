@@ -71,6 +71,17 @@ class AutLiteral(Predicate):
     def __repr__(self):
         return 'AUTOMATON LITERAL' # TODO: Maybe improve this?
 
+class SpotFormula(Predicate):
+    def __init__(self, formula_str):
+        super().__init__()
+        self.formula_str = formula_str
+
+    def evaluate(self, prog):
+        return spot.translate(self.formula_str)
+
+    def __repr__(self):
+        return self.formula_str
+
 class Call(Predicate):
     def __init__(self, name, args):
         super().__init__()
