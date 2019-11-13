@@ -20,6 +20,7 @@ pecan_grammar = """
         | "#" "context" "(" string ")" -> directive_context
         | "#" "end_context" "(" string ")" -> directive_end_context
         | "#" "load_preds" "(" string ")" -> directive_load_preds
+        | "#" "assert_prop" "(" PROP_VAL "," var ")" -> directive_assert_prop
 
     ?pred: expr EQ expr                    -> equal
          | expr NE expr                     -> not_equal
@@ -65,6 +66,8 @@ pecan_grammar = """
 
     ?string: ESCAPED_STRING -> escaped_str
 
+    PROP_VAL: "sometimes"i | "true"i | "false"i // case insensitive
+
     NEWLINES: NEWLINE+
 
     DEFEQ: ":="
@@ -74,7 +77,7 @@ pecan_grammar = """
     GE: ">=" | "≥"
     LE: "<=" | "≤"
 
-    IMPLIES: "=>" | "⇒" | "⟹ "
+    IMPLIES: "=>" | "⇒" | "⟹ " | "->"
     IFF: "<=>" | "⟺" | "⇔"
 
     EQ: "="
@@ -126,6 +129,9 @@ class PecanTransformer(Transformer):
     def directive_load_preds(self, filename):
         return DirectiveLoadPreds(filename)
 
+    def directive_assert_prop(self, bool_val, pred_name):
+        return DirectiveAssertProp(bool_val, pred_name)
+
     def prog(self, defs):
         return Program(defs)
 
@@ -171,7 +177,7 @@ class PecanTransformer(Transformer):
     def equal(self, a, sym, b):
         return Equals(a, b)
 
-    def not_equal(self, a, b):
+    def not_equal(self, a, sym, b):
         return NotEquals(a, b)
 
     def less(self, a, b):
