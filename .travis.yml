@@ -1,18 +1,14 @@
 # Set the build language to Python
 language: python
 
-# Set the python version to 2.7
+# Set the python version to 3.6
 python: 3.6
 
-cache:
-    directories:
-        - /home/travis/spot-2.8.1
-
 before_install:
-  - bash install-spot.sh
-  - source /home/travis/.bashrc
+    - bash install-spot.sh
+    - export PYTHONPATH="$HOME/.local/lib/python3.6/site-packages":"$PYTHONPATH"
 
 # Run the unit test
 script:
-  - python3 -m unittest discover
+    - python3 -m unittest discover
 
