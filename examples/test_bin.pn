@@ -1,0 +1,23 @@
+#load("bin_add.aut", "hoa", bin_add(a, b, c))
+
+double(x, y) := bin_add(x, x, y)
+
+#save_aut_img("bin_add.svg", bin_add)
+#save_aut_img("double.svg", double)
+
+is_even(x) := exists y. double(x, y)
+
+#save_aut_img("is_even.svg", is_even)
+
+test() := forall x. is_even(x) => (exists y. exists z. bin_add(y, z, x) & x = z)
+
+#assert_prop(true, test)
+
+zero(x) := "G(!x)"
+
+finite_num(x) := "F(!x)"
+
+test2(x) := exists z. zero(z) & bin_add(z, x, x)
+
+#assert_prop(true, test2)
+
