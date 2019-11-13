@@ -1,0 +1,9 @@
+#load("examples/all_ones.aut", "hoa", all_ones(a))
+#load("examples/has_zeros.aut", "hoa", has_zeros(a))
+
+#assert_prop(sometimes, all_ones)
+
+test() := forall x. has_zeros(x) => (not all_ones(x))
+
+#assert_prop(true, test)
+
