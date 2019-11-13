@@ -80,7 +80,7 @@ class SpotFormula(Predicate):
         return spot.translate(self.formula_str)
 
     def __repr__(self):
-        return self.formula_str
+        return 'LTL({})'.format(self.formula_str)
 
 class Call(Predicate):
     def __init__(self, name, args):
