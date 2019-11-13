@@ -3,10 +3,11 @@
 
 from colorama import Fore, Style
 
-import spot
 import time
+import os
 
 from lark import Lark, Transformer, v_args
+import spot
 
 from pecan.tools.automaton_tools import AutomatonTransformer, Substitution
 
@@ -118,6 +119,7 @@ class Program(ASTNode):
         self.quiet = False
         self.eval_level = 0
         self.result = None
+        self.search_paths = []
 
     def evaluate(self, old_env=None):
         if old_env is not None:
@@ -147,6 +149,14 @@ class Program(ASTNode):
             return self.preds[pred_name].call(self, args)
         else:
             raise Exception(f'Predicate {pred_name} not found!')
+
+    def locate_file(self, filename):
+        for path in self.search_paths:
+            try_path = os.path.join(path, filename)
+            if os.path.exists(try_path):
+                return try_path
+
+        raise FileNotFoundError(filename)
 
     def __repr__(self):
         return repr(self.defs)

@@ -22,6 +22,17 @@ pip install -r requirements.txt
 pip3 install -r requirements.txt
 ```
 
+## Examples
+
+```
+
+```
+
+## Configuration
+
+The `PECAN_PATH` environment variable controls which paths are searched for files when importing/loading automata.
+It should be a colon-separated or semicolon-separated list of paths, depending on your operating system (Linux/MacOs uses `:`, Windows uses `;`).
+
 ## Todo
 
 - Plotting?

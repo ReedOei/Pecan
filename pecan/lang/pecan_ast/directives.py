@@ -83,7 +83,8 @@ class DirectiveLoadPreds(ASTNode):
         self.filename = filename[1:-1]
 
     def evaluate(self, prog):
-        with open(self.filename, 'r') as f:
+        realpath = prog.locate_file(self.filename)
+        with open(realpath, 'r') as f:
             prog.parser.parse(f.read()).evaluate(prog)
 
         return None
@@ -169,7 +170,8 @@ class DirectiveLoadAut(ASTNode):
 
     def evaluate(self, prog):
         if self.aut_format == 'hoa':
-            aut = spot.automaton(self.filename)
+            realpath = prog.locate_file(self.filename)
+            aut = spot.automaton(realpath)
             prog.preds[self.pred_name] = NamedPred(self.pred_name, self.pred_args, AutLiteral(aut))
         else:
             raise Exception('Unknown format: {}'.format(self.aut_format))
