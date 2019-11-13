@@ -74,7 +74,13 @@ def edge(old_line, base):
         intermediate_edge(inputs, org_states[-1], end_state, base)
 
 def print_edges(bin_str, state):
-        return '[' + '&'.join(bin_str) + '] ' + str(state) + '\n'
+        l = []
+        for i in range(len(bin_str)):
+            if bin_str[i] == '1':
+                l.append(str(i))
+            else:
+                l.append('!' + str(i))
+        return '[' + '&'.join(l) + '] ' + str(state) + '\n'
 
 
 # BASE FUNCTION 
@@ -126,6 +132,7 @@ def convert_hoa(txt1, txt2):
 
         global state_counter
         header = ['HOA: v1\n', 'States: ' + str(state_counter + 1) + '\n', 'acc-name: Buchi\n']
+        header.append('Start: 0\n')
         header.append('Acceptance: 1 Inf(0)\n')
         
         aps = ''
