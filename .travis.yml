@@ -7,7 +7,6 @@ python: 3.6
 before_install:
     - bash install-spot.sh
     - export PYTHONPATH="$HOME/.local/lib/python3.6/site-packages":"$PYTHONPATH"
-    - ls "$HOME/.local/lib/python3.6/site-packages"
 
 # Run the unit test
 script:
