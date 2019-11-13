@@ -8,6 +8,8 @@ import time
 
 from lark import Lark, Transformer, v_args
 
+from pecan.tools.automaton_tools import AutomatonTransformer, Substitution
+
 class ASTNode:
     def __init__(self):
         pass
@@ -57,6 +59,17 @@ class Predicate(ASTNode):
     def evaluate_node(self, prog):
         return None # Should never be called on the base Predicate class
 
+class AutLiteral(Predicate):
+    def __init__(self, aut):
+        super().__init__()
+        self.aut = aut
+
+    def evaluate(self, prog):
+        return self.aut
+
+    def __repr__(self):
+        return 'AUTOMATON LITERAL' # TODO: Maybe improve this?
+
 class Call(Predicate):
     def __init__(self, name, args):
         super().__init__()
@@ -73,7 +86,7 @@ class NamedPred(ASTNode):
     def __init__(self, name, args, body):
         super().__init__()
         self.name = name
-        self.args = args
+        self.args = list(map(str, args))
         self.body = body
 
         self.body_evaluated = None
@@ -85,7 +98,8 @@ class NamedPred(ASTNode):
         if arg_names is None:
             return self.body_evaluated
         else:
-            arg_vars = map(lambda name: spot.formula_ap(name), arg_names)
+            arg_names = list(map(str, arg_names))
+            arg_vars = list(map(lambda name: spot.formula_ap(name), arg_names))
             substitution = Substitution(dict(zip(self.args, arg_vars)))
             return AutomatonTransformer(self.body_evaluated, substitution.substitute).transform()
 

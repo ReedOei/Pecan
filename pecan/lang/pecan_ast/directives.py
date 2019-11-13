@@ -159,3 +159,23 @@ class DirectiveAssertProp(ASTNode):
     def __repr__(self):
         return '#assert_prop({}, {})'.format(self.truth_val, self.pred_name)
 
+class DirectiveLoadAut(ASTNode):
+    def __init__(self, filename, aut_format, pred_name, pred_args):
+        super().__init__()
+        self.filename = filename[1:-1]
+        self.aut_format = aut_format[1:-1] # Remove the quotes at the beginning and end # TODO: Do this better
+        self.pred_name = pred_name
+        self.pred_args = pred_args
+
+    def evaluate(self, prog):
+        if self.aut_format == 'hoa':
+            aut = spot.automaton(self.filename)
+            prog.preds[self.pred_name] = NamedPred(self.pred_name, self.pred_args, AutLiteral(aut))
+        else:
+            raise Exception('Unknown format: {}'.format(self.aut_format))
+
+        return None
+
+    def __repr__(self):
+        return '#load({}, {}, {})'.format(self.filename, self.aut_format, self.pred_name)
+
