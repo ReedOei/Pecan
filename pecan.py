@@ -42,6 +42,8 @@ def main():
 
         if args.interactive:
             run_repl(args.debug, env)
+    else:
+        parser.print_help()
 
 if __name__ == '__main__':
     colorama.init()
