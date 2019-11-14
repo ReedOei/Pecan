@@ -24,22 +24,17 @@ pip3 install -r requirements.txt
 
 ## Examples
 
+Below `has_zeros` and `all_ones` are expressed as [LTL formula](https://en.wikipedia.org/wiki/Linear_temporal_logic).
+
 ```
 has_zeros(a) := "!(Ga)"
 all_ones(a) := "Ga"
 
-test() := forall x. has_zeros(x) => (not all_ones(x))
-#assert_prop(true, test)
+prop_true() := forall x. has_zeros(x) => (not all_ones(x))
+#assert_prop(true, prop_true)
 
-test2() := forall x. all_ones(x) => (not has_zeros(x))
-#assert_prop(true, test2)
-
-test3() := exists x. has_zeros(x) & all_ones(x)
-#assert_prop(false, test3)
-
-test4() := forall x. all_ones(x) | not has_zeros(x)
-#assert_prop(false, test4)
-
+prop_false() := exists x. has_zeros(x) & all_ones(x)
+#assert_prop(false, prop_false)
 ```
 
 ## Configuration
