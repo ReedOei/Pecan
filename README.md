@@ -25,6 +25,20 @@ pip3 install -r requirements.txt
 ## Examples
 
 ```
+has_zeros(a) := "!(Ga)"
+all_ones(a) := "Ga"
+
+test() := forall x. has_zeros(x) => (not all_ones(x))
+#assert_prop(true, test)
+
+test2() := forall x. all_ones(x) => (not has_zeros(x))
+#assert_prop(true, test2)
+
+test3() := exists x. has_zeros(x) & all_ones(x)
+#assert_prop(false, test3)
+
+test4() := forall x. all_ones(x) | not has_zeros(x)
+#assert_prop(false, test4)
 
 ```
 
@@ -36,7 +50,5 @@ It should be a colon-separated or semicolon-separated list of paths, depending o
 ## Todo
 
 - Plotting?
-- Debug mode
-- Verbose output (timing/state/transition counts on intermediate steps à la Walnut)
 - Documentation
 

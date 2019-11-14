@@ -57,6 +57,9 @@ def main():
         prog.quiet = args.quiet
         prog.search_paths = make_search_paths()
 
+        if args.debug:
+            print('Path: {}'.format(prog.search_paths))
+
         env = prog.evaluate()
 
         if args.interactive:

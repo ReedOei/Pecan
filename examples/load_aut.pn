@@ -1,5 +1,5 @@
-has_zeros(a) := "!(Ga)"
-all_ones(a) := "Ga"
+#load("has_zeros.aut", "hoa", has_zeros(a))
+#load("all_ones.aut", "hoa", all_ones(a))
 
 test() := forall x. has_zeros(x) => (not all_ones(x))
 #assert_prop(true, test)
