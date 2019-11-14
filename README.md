@@ -1,6 +1,8 @@
 # Pecan
 
-[![Build Status](https://travis-ci.org/ReedOei/Pecan.svg?branch=master)](https://travis-ci.org/ReedOei/Pecan)
+[![Build Status](https://travis-ci.org/ReedOei/Pecan.svg?branch=master)](https://travis-ci.org/ReedOei/Pecan
+
+Pecan is an automated theorem prover for Büchi automata, with additional features for making it easier to deal with expressing numbers in various numeration systems and working with automatic words.
 
 ## Installation
 
