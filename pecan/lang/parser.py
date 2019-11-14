@@ -74,8 +74,8 @@ pecan_grammar = """
 
     DEFEQ: ":="
 
-    COMP: "~" | "¬" | "not"
     NE: "!=" | "/=" | "≠"
+    COMP: "!" | "~" | "¬" | "not"
     GE: ">=" | "≥"
     LE: "<=" | "≤"
 
