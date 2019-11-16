@@ -9,15 +9,18 @@ is_even(x) := exists y. double(y, x)
 
 #save_aut_img("is_even.svg", is_even)
 
-finite_num(x) := "F(!x)"
+finite_num(x) := "F(G(!x))"
 test() := forall x. (finite_num(x) & is_even(x)) => (exists y. exists z. bin_add(y, y, x) & y = z)
 #assert_prop(true, test)
 
 zero(x) := "G(!x)"
 
-test2() := forall x. exists z. zero(z) & bin_add(z, x, x)
+test2() := forall x. finite_num(x) => (exists z. zero(z) & bin_add(z, x, x))
 #assert_prop(true, test2)
 
 test3() := forall z. zero(z) => bin_add(z, z, z)
 #assert_prop(true, test3)
+
+test4() := forall x. forall y. (finite_num(x) & finite_num(y)) => exists z. bin_add(x, y, z)
+#assert_prop(true, test4)
 

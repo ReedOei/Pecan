@@ -20,7 +20,7 @@ class DirectiveSaveAut(ASTNode):
         self.pred_name = pred_name
 
     def evaluate(self, prog):
-        prog.call(self.pred_name).save(self.filename)
+        prog.call(self.pred_name).postprocess('BA').save(self.filename)
         return None
 
     def __repr__(self):
