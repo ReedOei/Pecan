@@ -33,7 +33,7 @@ State: 2 {0}
 """))
 #TODO: memoize same expressions
 #TODO: detect and separate integer operations and Automaton operations
-#TODO: do integer arithmetic before automaton arithmetic 
+#TODO: do integer arithmetic before automaton arithmetic
 #TODO: add a flag for Buche automaton representing finite strings, so assert everything to be 0 eventually.
 class Add(BinaryExpression):
     def __init__(self, a, b):
@@ -54,7 +54,7 @@ class Add(BinaryExpression):
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
         aut_add = base_2_addition #It is base 2 addition now TODO: get automaton
-        def build_add_formula(formula): 
+        def build_add_formula(formula):
             return Substitution({'a': spot.formula(val_a), 'b': spot.formula(val_b),'c': spot.formula(self.label)}).substitute(formula)
         aut_add = AutomatonTransformer(aut_add, build_add_formula).transform()
         result = spot.product(aut_b, aut_a)
@@ -73,7 +73,7 @@ class Add(BinaryExpression):
         # print()
         return (result, self.label)
 
-    
+
 
 class Sub(BinaryExpression):
     def __init__(self, a, b):
@@ -90,10 +90,10 @@ class Sub(BinaryExpression):
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
         aut_add = base_2_addition #It is base 2 addition now TODO: get automaton
-        def build_sub_formula(formula): 
+        def build_sub_formula(formula):
             return Substitution({'c': spot.formula(val_a), 'b':spot.formula(val_b), 'a': spot.formula(self.label)}).substitute(formula)
         aut_sub = AutomatonTransformer(aut_add, build_sub_formula).transform()
-        
+
         result = spot.product(aut_b, aut_a)
         result = spot.product(aut_add, result)
         print(self, "result before projection:")
@@ -121,7 +121,7 @@ class Mul(BinaryExpression):
             raise AutomatonArithmeticError("First argument of multiplication must be an integer in {}".format(self))
 
     def evaluate(self, prog):
-        
+
         if type(self.b) is IntConst:
             return self.a.evaluate_int()*self.b.evaluate_int()
 
@@ -160,12 +160,12 @@ class Div(BinaryExpression):
             return self.a // self.b
         if self.b == 1:
             return self.a.evaluate(prog)
-       
+
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
         #TODO: change label, not finished
         (aut_div,val_div) = Mul(self.b,spot.formula('1').translate()).evaluate(prog)
-        def build_div_formula(formula): 
+        def build_div_formula(formula):
             return Substitution({val_div: spot.formula(val_a), 'a': spot.formula('{}_div_{}'.format(val_a,val_b))}).substitute(formula)
         #TODO: drop val_a, val_b in return
         return (spot.product(aut_a, spot.product(aut_b, aut_div)), '{}_add_{}'.format(self.a,self.b))
@@ -230,16 +230,16 @@ class Less(Predicate):
         self.b = b
     def evaluate(self, prog):
         # if type(self.a) is IntConst and type(self.b) is IntConst:
-        #     return (spot.formula('1').translate(), self.__repr__) if self.a.evaluate() < self.b.evaluate() else (spot.formula('0').translate(), self.__repr__) 
+        #     return (spot.formula('1').translate(), self.__repr__) if self.a.evaluate() < self.b.evaluate() else (spot.formula('0').translate(), self.__repr__)
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
         aut_less = '' #TODO: get automaton
         # assuming labels are "a<b"
-        def build_less_formula(formula): 
+        def build_less_formula(formula):
             return Substitution({'a': spot.formula(val_a),'b':spot.formula(val_b)}).substitute(formula)
         aut_less = AutomatonTransformer(aut_less, build_less_formula).transform()
         return spot.product(aut_a, spot.product(aut_b, aut_less))
-    
+
     def __repr__(self):
         return '({} < {})'.format(self.a, self.b)
 
@@ -278,7 +278,7 @@ class LessEquals(Predicate):
 
     def __repr__(self):
         return '({} ≤ {})'.format(self.a, self.b)
-    
+
     def evaluate(self, prog):
         return Disjunction(Less(self.a,self.b),Equals(self.a,self.b)).evaluate(prog)
 

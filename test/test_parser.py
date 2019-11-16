@@ -13,8 +13,8 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(repr(ast), repr(pecan_parser.parse('forall x.x + y = C[i] => C[i] = 2')))
 
     def test_exists(self):
-        ast = [Exists('y', Exists('z', Equals(Sub(VarRef('y'), IntConst(1)), Mul(VarRef('z'), IntConst(2)))))]
-        self.assertEqual(repr(ast), repr(pecan_parser.parse('exists y. exists z. y - 1 = z * 2')))
+        ast = [Exists('y', Exists('z', Equals(Sub(VarRef('y'), IntConst(1)), Sub(VarRef('z'), IntConst(2)))))]
+        self.assertEqual(repr(ast), repr(pecan_parser.parse('exists y. exists z. y - 1 = z - 2')))
 
     def test_complicated(self):
         ast = [Forall('alpha', Conjunction(Disjunction(Equals(VarRef('x'), VarRef('alpha')), GreaterEquals(VarRef('z'), VarRef('k'))),

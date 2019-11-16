@@ -35,3 +35,6 @@ class QuantTest(unittest.TestCase):
     def test_load_pred(self):
         self.run_file('examples/load_aut.pn')
 
+    def test_arith_basic(self):
+        self.run_file('examples/test_arith.pn')
+
