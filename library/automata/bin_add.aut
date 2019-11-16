@@ -1,0 +1,18 @@
+HOA: v1
+States: 2
+Start: 0
+name: "Base2 Addition"
+AP: 3 "a" "b" "c"
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0 {0}
+[!0&!1&!2] 0
+[0&!1&2] 0
+[!0&1&2] 0
+[0&1&!2] 1
+State: 1
+[!0&!1&2] 0
+[0&!1&!2] 1
+[!0&1&!2] 1
+[0&1&2] 1
+--END--

@@ -3,10 +3,13 @@
 
 from colorama import Fore, Style
 
-import spot
 import time
+import os
 
 from lark import Lark, Transformer, v_args
+import spot
+
+from pecan.tools.automaton_tools import AutomatonTransformer, Substitution
 
 class ASTNode:
     id = 0
@@ -14,6 +17,18 @@ class ASTNode:
         #TODO: detect used labels and avoid those
         self.label = "__pecan"+str(Expression.id)
         Expression.id += 1
+
+    def evaluate(self, prog):
+        prog.eval_level += 1
+        if prog.debug:
+            start_time = time.time()
+        result = self.evaluate_node(prog)
+        prog.eval_level -= 1
+        if prog.debug:
+            end_time = time.time()
+            print('{}{} has {} states and {} edges ({:.2f} seconds)'.format(' ' * prog.eval_level, self, result.num_states(), result.num_edges(), end_time - start_time))
+
+        return result
 
     def evaluate(self, prog):
         prog.eval_level += 1
@@ -60,6 +75,28 @@ class Predicate(ASTNode):
     def evaluate_node(self, prog):
         return None # Should never be called on the base Predicate class
 
+class AutLiteral(Predicate):
+    def __init__(self, aut):
+        super().__init__()
+        self.aut = aut
+
+    def evaluate(self, prog):
+        return self.aut
+
+    def __repr__(self):
+        return 'AUTOMATON LITERAL' # TODO: Maybe improve this?
+
+class SpotFormula(Predicate):
+    def __init__(self, formula_str):
+        super().__init__()
+        self.formula_str = formula_str
+
+    def evaluate(self, prog):
+        return spot.translate(self.formula_str)
+
+    def __repr__(self):
+        return 'LTL({})'.format(self.formula_str)
+
 class Call(Predicate):
     def __init__(self, name, args):
         super().__init__()
@@ -76,7 +113,7 @@ class NamedPred(ASTNode):
     def __init__(self, name, args, body):
         super().__init__()
         self.name = name
-        self.args = args
+        self.args = list(map(str, args))
         self.body = body
 
         self.body_evaluated = None
@@ -88,7 +125,8 @@ class NamedPred(ASTNode):
         if arg_names is None:
             return self.body_evaluated
         else:
-            arg_vars = map(lambda name: spot.formula_ap(name), arg_names)
+            arg_names = list(map(str, arg_names))
+            arg_vars = list(map(lambda name: spot.formula_ap(name), arg_names))
             substitution = Substitution(dict(zip(self.args, arg_vars)))
             return AutomatonTransformer(self.body_evaluated, substitution.substitute).transform()
 
@@ -107,6 +145,7 @@ class Program(ASTNode):
         self.quiet = False
         self.eval_level = 0
         self.result = None
+        self.search_paths = []
 
     def evaluate(self, old_env=None):
         if old_env is not None:
@@ -136,6 +175,14 @@ class Program(ASTNode):
             return self.preds[pred_name].call(self, args)
         else:
             raise Exception(f'Predicate {pred_name} not found!')
+
+    def locate_file(self, filename):
+        for path in self.search_paths:
+            try_path = os.path.join(path, filename)
+            if os.path.exists(try_path):
+                return try_path
+
+        raise FileNotFoundError(filename)
 
     def __repr__(self):
         return repr(self.defs)

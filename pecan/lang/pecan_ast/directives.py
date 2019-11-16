@@ -3,7 +3,7 @@
 
 import spot
 
-from lang.pecan_ast.prog import *
+from pecan.lang.pecan_ast.prog import *
 
 class Directive(ASTNode):
     def __init__(self, name):
@@ -83,7 +83,8 @@ class DirectiveLoadPreds(ASTNode):
         self.filename = filename[1:-1]
 
     def evaluate(self, prog):
-        with open(self.filename, 'r') as f:
+        realpath = prog.locate_file(self.filename)
+        with open(realpath, 'r') as f:
             prog.parser.parse(f.read()).evaluate(prog)
 
         return None
@@ -158,4 +159,25 @@ class DirectiveAssertProp(ASTNode):
 
     def __repr__(self):
         return '#assert_prop({}, {})'.format(self.truth_val, self.pred_name)
+
+class DirectiveLoadAut(ASTNode):
+    def __init__(self, filename, aut_format, pred_name, pred_args):
+        super().__init__()
+        self.filename = filename[1:-1]
+        self.aut_format = aut_format[1:-1] # Remove the quotes at the beginning and end # TODO: Do this better
+        self.pred_name = pred_name
+        self.pred_args = pred_args
+
+    def evaluate(self, prog):
+        if self.aut_format == 'hoa':
+            realpath = prog.locate_file(self.filename)
+            aut = spot.automaton(realpath)
+            prog.preds[self.pred_name] = NamedPred(self.pred_name, self.pred_args, AutLiteral(aut))
+        else:
+            raise Exception('Unknown format: {}'.format(self.aut_format))
+
+        return None
+
+    def __repr__(self):
+        return '#load({}, {}, {})'.format(self.filename, self.aut_format, self.pred_name)
 
