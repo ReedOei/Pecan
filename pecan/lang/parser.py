@@ -98,6 +98,10 @@ pecan_grammar = """
 
     NEWLINE: /\\n/
 
+    COMMENT: "//" /(.)+/ NEWLINE
+
+    %ignore COMMENT
+
     %import common.INT
     %import common.WS_INLINE
     %import common.ESCAPED_STRING
