@@ -41,3 +41,6 @@ class QuantTest(unittest.TestCase):
     def test_sturmian_basic(self):
         self.run_file('examples/test_sturmian.pn')
 
+    def test_quant_file(self):
+        self.run_file('examples/test_quant.pn')
+

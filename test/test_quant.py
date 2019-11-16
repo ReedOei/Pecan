@@ -23,15 +23,3 @@ class QuantTest(unittest.TestCase):
     def test_forall_many(self):
         self.assert_prop_true('forall x. forall y. forall z. (x = y) => (x = y | x = z)')
 
-    def run_file(self, filename):
-        with open(filename, 'r') as f:
-            prog = pecan_parser.parse(f.read())
-
-        prog.parser = pecan_parser
-        prog.quiet = True
-
-        self.assertTrue(prog.evaluate().result.succeeded())
-
-    def test_quant_file(self):
-        self.run_file('examples/quant-tests.pn')
-
