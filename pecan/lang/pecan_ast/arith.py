@@ -10,18 +10,25 @@ from pecan.lang.pecan_ast.bool import *
 
 base_2_addition = next(spot.automata("""
 HOA: v1
-States: 2
+States: 3
 Start: 0
 name: "Base2 Addition"
 AP: 3 "a" "b" "c"
 Acceptance: 1 Inf(0)
 --BODY--
-State: 0 {0}
-[(!0&!1&!2)|(2&(0&!1|!0&1))] 0
-[(0&1&!2)] 1
+State: 0
+[!0&!1&!2] 0
+[0&!1&2] 0
+[!0&1&2] 0
+[0&1&!2] 1
+[!0&!1&!2] 2
 State: 1
-[(0&1&2)|(!2&(0&!1|!0&1))] 1
 [!0&!1&2] 0
+[0&!1&!2] 1
+[!0&1&!2] 1
+[0&1&2] 1
+State: 2 {0}
+[!0&!1&!2] 2
 --END--
 """))
 #TODO: memoize same expressions
