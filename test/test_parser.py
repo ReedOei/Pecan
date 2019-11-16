@@ -1,7 +1,7 @@
 import unittest
 
-from lang.parser import pecan_parser
-from lang.pecan_ast import *
+from pecan.lang.parser import pecan_parser
+from pecan.lang.pecan_ast import *
 
 class ParserTest(unittest.TestCase):
     def test_pred(self):

@@ -2,8 +2,8 @@ import unittest
 
 import spot
 
-from lang.parser import pecan_parser
-from lang.pecan_ast import *
+from pecan.lang.parser import pecan_parser
+from pecan.lang.pecan_ast import *
 
 class ArithTest(unittest.TestCase):
     def print_addition(self):
@@ -16,8 +16,8 @@ class ArithTest(unittest.TestCase):
 
 # import spot
 
-# from lang.parser import pecan_parser
-# from lang.pecan_ast import *
+# from pecan.lang.parser import pecan_parser
+# from pecan.lang.pecan_ast import *
 
 # class QuantTest(unittest.TestCase):
 #     def assert_prop_true(self, prop):

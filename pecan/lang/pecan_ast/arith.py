@@ -3,9 +3,9 @@
 
 import spot
 
-from lang.pecan_ast.prog import *
-from tools.automaton_tools import Substitution, AutomatonTransformer, AutomatonTransformer2
-from lang.pecan_ast.bool import *
+from pecan.lang.pecan_ast.prog import *
+from pecan.tools.automaton_tools import Substitution, AutomatonTransformer
+from pecan.lang.pecan_ast.bool import *
 
 
 base_2_addition = next(spot.automata("""
@@ -47,16 +47,16 @@ class Add(BinaryExpression):
             return Substitution({'a': spot.formula(val_a), 'b': spot.formula(val_b),'c': spot.formula(self.label)}).substitute(formula)
         def identity_function(formula):
             return formula
-        aut_add = AutomatonTransformer2(aut_add, build_add_formula).transform()
+        aut_add = AutomatonTransformer(aut_add, build_add_formula).transform()
         bdict = aut_add.get_dict()
         bdict.register_all_variables_of(aut_a, self)
         bdict.register_all_variables_of(aut_b, self)
         # print(self, "aut_add:")
         # print(aut_add.to_str('hoa'))
-        aut_b = AutomatonTransformer2(aut_b, identity_function).transform()
+        aut_b = AutomatonTransformer(aut_b, identity_function).transform()
         # print(self, "aut_b:")
         # print(aut_b.to_str('hoa'))
-        aut_a = AutomatonTransformer2(aut_a, identity_function).transform()
+        aut_a = AutomatonTransformer(aut_a, identity_function).transform()
         # print(self, "aut_a:")
         # print(aut_a.to_str('hoa'))
         result = spot.product(aut_b, aut_a)
