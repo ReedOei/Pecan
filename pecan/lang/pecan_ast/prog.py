@@ -45,7 +45,7 @@ class ASTNode:
 class Expression(ASTNode):
     def __init__(self):
         super().__init__()
-
+        self.is_int = True
     def evaluate_node(self, prog):
         return None
 
@@ -54,11 +54,13 @@ class BinaryExpression(ASTNode):
         super().__init__()
         self.a = a
         self.b = b
+        self.is_int = a.is_int and b.is_int
 
 class VarRef(Expression):
     def __init__(self, var_name):
         super().__init__()
         self.var_name = var_name
+        self.is_int = False
 
     def evaluate(self, prog):
         # The automata accepts everything (because this isn't a predicate)
