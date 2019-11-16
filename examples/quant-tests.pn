@@ -1,0 +1,21 @@
+eq_irrefl() := forall x. x != x
+#assert_prop(false, eq_irrefl)
+
+excluded_middle() := forall x. forall y. x = y | x != y
+#assert_prop(true, excluded_middle)
+
+excluded_middle_weird() := forall x. forall y. x = y & x != y
+#assert_prop(false, excluded_middle_weird)
+
+eq_refl() := forall x. x = x
+#assert_prop(true, eq_refl)
+eq_sym() := forall x. forall y. x = y <=> y = x
+eq_sym_weird() := forall x. forall y. x = y | y = x
+#assert_prop(true, eq_sym)
+#assert_prop(false, eq_sym_weird)
+eq_trans() := forall x. forall y. forall z. (x = y & y = z) => x = z
+#assert_prop(true, eq_trans)
+
+many_quant() := forall k. exists x. forall y. exists z. forall k1. forall k2. forall k3. forall k4. forall k5. forall k6. x = k => (((x = y) & (y = z)) => ((k1 = k2) | (k2 = k3) | (k3 = k4) | (k4 = k5) | (k5 = k6)))
+#assert_prop(true, many_quant)
+

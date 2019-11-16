@@ -17,9 +17,11 @@ pecan_grammar = """
         | "#" "save_aut" "(" string "," var ")" -> directive_save_aut
         | "#" "save_aut_img" "(" string "," var ")" -> directive_save_aut_img
         | "#" "save_pred" "(" string "," var ")" -> directive_save_pred
-        | "#" "context" "(" string ")" -> directive_context
+        | "#" "context" "(" string "," string ")" -> directive_context
         | "#" "end_context" "(" string ")" -> directive_end_context
         | "#" "load_preds" "(" string ")" -> directive_load_preds
+        | "#" "load" "(" string "," string "," var "(" args ")" ")" -> directive_load
+        | "#" "assert_prop" "(" PROP_VAL "," var ")" -> directive_assert_prop
 
     ?pred: expr EQ expr                    -> equal
          | expr NE expr                     -> not_equal
@@ -38,6 +40,7 @@ pecan_grammar = """
          | EXISTS var "." pred                  -> exists
          | var "(" args ")"                 -> call
          | "(" pred ")"
+         | string                           -> spot_formula
 
     ?args: -> nil_arg
          | var -> single_arg
@@ -57,24 +60,26 @@ pecan_grammar = """
     MUL: "*" | "⋅"
 
     ?atom: var         -> var_ref
-         | NUMBER      -> const
-         | "-" NUMBER  -> neg
+         | INT      -> const
+         | "-" INT  -> neg
          | "(" arith ")"
 
     ?var: LETTER ALPHANUM*
 
     ?string: ESCAPED_STRING -> escaped_str
 
+    PROP_VAL: "sometimes"i | "true"i | "false"i // case insensitive
+
     NEWLINES: NEWLINE+
 
     DEFEQ: ":="
 
-    COMP: "~" | "¬" | "not"
     NE: "!=" | "/=" | "≠"
+    COMP: "!" | "~" | "¬" | "not"
     GE: ">=" | "≥"
     LE: "<=" | "≤"
 
-    IMPLIES: "=>" | "⇒" | "⟹ "
+    IMPLIES: "=>" | "⇒" | "⟹ " | "->"
     IFF: "<=>" | "⟺" | "⇔"
 
     EQ: "="
@@ -93,7 +98,7 @@ pecan_grammar = """
 
     NEWLINE: /\\n/
 
-    %import common.NUMBER
+    %import common.INT
     %import common.WS_INLINE
     %import common.ESCAPED_STRING
 
@@ -117,14 +122,20 @@ class PecanTransformer(Transformer):
     def directive_save_pred(self, filename, pred_name):
         return DirectiveSavePred(filename, pred_name)
 
-    def directive_context(self, context_name):
-        return DirectiveContext(context_name)
+    def directive_context(self, key, val):
+        return DirectiveContext(key, val)
 
     def directive_end_context(self, context_name):
         return DirectiveEndContext(context_name)
 
     def directive_load_preds(self, filename):
         return DirectiveLoadPreds(filename)
+
+    def directive_load(self, filename, aut_format, pred_name, pred_args):
+        return DirectiveLoadAut(filename, aut_format, pred_name, pred_args)
+
+    def directive_assert_prop(self, bool_val, pred_name):
+        return DirectiveAssertProp(bool_val, pred_name)
 
     def prog(self, defs):
         return Program(defs)
@@ -163,6 +174,9 @@ class PecanTransformer(Transformer):
         return VarRef(var_name)
 
     def const(self, const):
+        if const.type != "INT":
+            raise AutomatonArithmeticError("Constants need to be integers: " + const)
+        const = int(const.value)
         return IntConst(const)
 
     def index(self, var_name, index_expr):
@@ -171,7 +185,7 @@ class PecanTransformer(Transformer):
     def equal(self, a, sym, b):
         return Equals(a, b)
 
-    def not_equal(self, a, b):
+    def not_equal(self, a, sym, b):
         return NotEquals(a, b)
 
     def less(self, a, b):
@@ -218,6 +232,9 @@ class PecanTransformer(Transformer):
 
     def nil_arg(self):
         return []
+
+    def spot_formula(self, formula_str):
+        return SpotFormula(formula_str[1:-1])
 
     def single_arg(self, arg):
         return [arg]

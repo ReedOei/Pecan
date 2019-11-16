@@ -1,0 +1,18 @@
+double(x, y) := x+x=y
+
+is_even(x) := exists y. double(y, x)
+
+finite_num(x) := "F(G(!x))"
+
+test() := forall x. (finite_num(x) & is_even(x)) => (exists y. exists z. y + y = x & y = z)
+#assert_prop(true, test)
+
+test2() := forall x. finite_num(x) =>  0 + x = x
+#assert_prop(true, test2)
+
+test3() := 0+0=0
+#assert_prop(true, test3)
+
+test4() := forall x. forall y. (finite_num(x) & finite_num(y)) => (x + y = y + x)
+#assert_prop(true, test4)
+
