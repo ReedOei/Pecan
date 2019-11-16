@@ -85,3 +85,22 @@ class FormulaToBdd:
 
             return self.build_bdd(formula.kind(), new_children)
 
+class Projection:
+    def __init__(self, aut, varis):
+        super().__init__()
+        self.aut = aut
+        self.varis = varis
+
+    def project(self):
+        for var in self.varis:
+            # print("projecting {}".format(var))
+            def build_projection_formula(formula):    # the same as build_exists_formula
+                if_0 = Substitution({var: spot.formula('0')}).substitute(formula)
+                if_1 = Substitution({var: spot.formula('1')}).substitute(formula)
+
+                # The new edge condition should be:
+                # [0/y]cond | [1/y]cond
+                # where cond is the original condition. That is, the edge is taken if it holds with y being false or y being true.
+                return spot.formula_Or([if_0, if_1])
+            self.aut = AutomatonTransformer(self.aut, build_projection_formula).transform()
+        return self.aut 

@@ -4,14 +4,14 @@
 import spot
 
 from pecan.lang.pecan_ast.prog import *
-from pecan.tools.automaton_tools import Substitution, AutomatonTransformer
+from pecan.tools.automaton_tools import Substitution, AutomatonTransformer, Projection
 from pecan.lang.pecan_ast.bool import *
 
 
 base_2_addition = next(spot.automata("""
 HOA: v1
 States: 2
-Start: 1
+Start: 0
 name: "Base2 Addition"
 AP: 3 "a" "b" "c"
 Acceptance: 1 Inf(0)
@@ -24,10 +24,10 @@ State: 1
 [!0&!1&2] 0
 --END--
 """))
-#TODO: preassign label to expression
 #TODO: memoize same expressions
 #TODO: detect and separate integer operations and Automaton operations
 #TODO: do integer arithmetic before automaton arithmetic 
+#TODO: add a flag for Buche automaton representing finite strings, so assert everything to be 0 eventually.
 class Add(BinaryExpression):
     def __init__(self, a, b):
         super().__init__(a, b)
@@ -50,29 +50,20 @@ class Add(BinaryExpression):
         def build_add_formula(formula): 
             return Substitution({'a': spot.formula(val_a), 'b': spot.formula(val_b),'c': spot.formula(self.label)}).substitute(formula)
         aut_add = AutomatonTransformer(aut_add, build_add_formula).transform()
-
-        # bdict = aut_add.get_dict()
-        # bdict.register_all_variables_of(aut_a, self)
-        # bdict.register_all_variables_of(aut_b, self)
-        # def identity_function(formula):
-        #     return formula
-        # aut_b = AutomatonTransformer(aut_b, identity_function).transform()
-        # aut_a = AutomatonTransformer(aut_a, identity_function).transform()
-
         result = spot.product(aut_b, aut_a)
         result = spot.product(aut_add, result)
-        print(self, "result before projection:")
-        print(result.to_str('hoa'))
-        print()
+        # print(self, "result before projection:")
+        # print(result.to_str('hoa'))
+        # print()
         proj_vars = set()
         if type(self.a) is not VarRef:
-            proj_vars.add('val_a')
+            proj_vars.add(val_a)
         if type(self.b) is not VarRef:
-            proj_vars.add('val_b')
+            proj_vars.add(val_b)
         result = Projection(result, proj_vars).project()
-        print(self, "result after projection:")
-        print(result.to_str('hoa'))
-        print()
+        # print(self, "result")
+        # print(result.to_str('hoa'))
+        # print()
         return (result, self.label)
 
     
@@ -301,22 +292,3 @@ class AutomatonArithmeticError(Exception):
 class NotImplementedError(Exception):
     pass
 
-class Projection:
-    def __init__(self, aut, varis):
-        super().__init__()
-        self.aut = aut
-        self.varis = varis
-
-    def project(self):
-        for var in self.varis:
-            print("projecting {}".format(var))
-            def build_projection_formula(formula):    # the same as build_exists_formula
-                if_0 = Substitution({var: spot.formula('0')}).substitute(formula)
-                if_1 = Substitution({var: spot.formula('1')}).substitute(formula)
-
-                # The new edge condition should be:
-                # [0/y]cond | [1/y]cond
-                # where cond is the original condition. That is, the edge is taken if it holds with y being false or y being true.
-                return spot.formula_Or([if_0, if_1])
-            self.aut = AutomatonTransformer(self.aut, build_projection_formula).transform()
-        return self.aut 
