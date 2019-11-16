@@ -115,7 +115,7 @@ def convert_hoa(txt1, txt2):
                 base = max(bases)
             elif '->' in line:
                 edge(line, base)
-            elif len(line) > 0:
+            elif len(line) > 1:
                 state_line(line)
 
         for i in states.keys():
