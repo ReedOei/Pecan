@@ -16,3 +16,14 @@ test3() := 0+0=0
 test4() := forall x. forall y. (finite_num(x) & finite_num(y)) => (x + y = y + x)
 #assert_prop(true, test4)
 
+test5() := forall x. finite_num(x) =>  x - 0 = x
+#assert_prop(true, test5)
+
+test6() := forall x. forall y. (finite_num(x) & finite_num(y)) => (y + x - y = x)
+#assert_prop(true, test6)
+
+test7() := 3 + 4 = 7
+#assert_prop(true, test7)
+
+test8() := 255 - 128 = 127
+#assert_prop(true, test8)
