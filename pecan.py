@@ -8,6 +8,7 @@ import colorama
 import os
 
 from pecan.lang.parser import pecan_parser
+from pecan.lang.pecan_ast import Program
 import pecan.tools.theorem_generator as theorem_generator
 
 PECAN_PATH_VAR = 'PECAN_PATH'
@@ -45,6 +46,7 @@ def main():
 
     args = parser.parse_args()
 
+    env = None
     if args.generate is not None:
         for pred in theorem_generator.gen_thms(args.generate):
             print(pred)
@@ -62,8 +64,18 @@ def main():
 
         env = prog.evaluate()
 
-        if args.interactive:
-            run_repl(args.debug, env)
+    if args.interactive:
+        if env is None:
+            prog = Program([])
+
+            prog.parser = pecan_parser
+            prog.debug = args.debug
+            prog.quiet = args.quiet
+            prog.search_paths = make_search_paths()
+
+            env = prog.evaluate()
+
+        run_repl(args.debug, env)
     else:
         parser.print_help()
 

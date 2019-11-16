@@ -139,7 +139,7 @@ class Program(ASTNode):
 
         self.defs = defs
         self.preds = {}
-        self.context = []
+        self.context = {}
         self.parser = None # This will be "filled in" in the main.py after we load a program
         self.debug = False
         self.quiet = False
@@ -150,7 +150,7 @@ class Program(ASTNode):
     def evaluate(self, old_env=None):
         if old_env is not None:
             self.preds.update(old_env.preds)
-            self.context = self.context + old_env.context
+            self.context.update(old_env.context)
             self.parser = old_env.parser
 
         succeeded = True
@@ -206,17 +206,4 @@ class Result:
             print(f'{Fore.GREEN}{self.msg}{Style.RESET_ALL}')
         else:
             print(f'{Fore.RED}{self.msg}{Style.RESET_ALL}')
-
-class Context:
-    def __init__(self, name):
-        self.name = name
-
-    def __eq__(self, other):
-        return self.name == other.name
-
-    def __hash__(self):
-        return hash(self.name)
-
-    def __repr__(self):
-        return '{}'.format(self.name)
 

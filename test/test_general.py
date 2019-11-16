@@ -38,3 +38,6 @@ class QuantTest(unittest.TestCase):
     def test_arith_basic(self):
         self.run_file('examples/test_arith.pn')
 
+    def test_sturmian_basic(self):
+        self.run_file('examples/test_sturmian.pn')
+

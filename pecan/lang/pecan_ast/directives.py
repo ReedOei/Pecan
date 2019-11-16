@@ -65,13 +65,13 @@ class DirectiveSavePred(ASTNode):
                 self.write_pred(f, prog)
 
     def write_pred(self, f, prog):
-        for ctx in prog.context:
-            f.write(repr(DirectiveContext(ctx.name)))
+        for k, v in prog.context.items():
+            f.write(repr(DirectiveContext(k, v)))
             f.write('\n')
         f.write(repr(prog.preds[self.pred_name])) # Write the predicate definition itself into the file
         f.write('\n')
         for ctx in prog.context[::-1]:
-            f.write(repr(DirectiveEndContext(ctx.name)))
+            f.write(repr(DirectiveEndContext(k)))
             f.write('\n')
 
     def __repr__(self):
@@ -93,30 +93,25 @@ class DirectiveLoadPreds(ASTNode):
         return '#load_preds({})'.format(repr(self.filename))
 
 class DirectiveContext(ASTNode):
-    def __init__(self, context_name):
+    def __init__(self, context_key, context_val):
         super().__init__()
-        self.context = Context(context_name)
+        self.context_key = context_key
+        self.context_val = context_val
 
     def evaluate(self, prog):
-        prog.context.append(self.context)
+        prog.context[self.context_key] = self.context_val
         return None
 
     def __repr__(self):
         return '#context({})'.format(self.context)
 
 class DirectiveEndContext(ASTNode):
-    def __init__(self, context_name):
+    def __init__(self, context_key):
         super().__init__()
-        self.context = Context(context_name)
+        self.context_key = context_key
 
     def evaluate(self, prog):
-        # Pop just the last context with this name
-        rev_idx = prog.context[::-1].index(self.context)
-
-        # TODO: Should we throw an error here if we don't find the context? Or just have a quick static checking phase at the beginning
-        if rev_idx >= 0:
-            prog.context.pop(len(prog.context) - rev_idx - 1) # Convert the index from an index in the reversed list to an index in the original list
-
+        prog.context.pop(self.context_key)
         return None
 
     def __repr__(self):
