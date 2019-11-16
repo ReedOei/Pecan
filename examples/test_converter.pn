@@ -1,0 +1,11 @@
+#load("has_zeros.txt", "pecan", has_zeros(v0))
+
+test() := exists x. has_zeros(x)
+#save_aut("2temp.aut", test)
+#assert_prop(true, test)
+
+#load("has_zeros.aut", "hoa", has_zeros2(a))
+
+test2() := exists x. has_zeros2(x)
+#assert_prop(true, test2)
+
