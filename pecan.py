@@ -63,6 +63,8 @@ def main():
             print('Path: {}'.format(prog.search_paths))
 
         env = prog.evaluate()
+    elif not args.interactive:
+        parser.print_help()
 
     if args.interactive:
         if env is None:
@@ -76,8 +78,6 @@ def main():
             env = prog.evaluate()
 
         run_repl(args.debug, env)
-    else:
-        parser.print_help()
 
 if __name__ == '__main__':
     colorama.init()
