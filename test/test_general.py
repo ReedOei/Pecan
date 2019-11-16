@@ -33,7 +33,7 @@ class QuantTest(unittest.TestCase):
         self.assertTrue(prog.evaluate().result.succeeded())
 
     def test_load_pred(self):
-        self.run_file('examples/load_aut.pn')
+        self.run_file('examples/test_load_aut.pn')
 
     def test_arith_basic(self):
         self.run_file('examples/test_arith.pn')

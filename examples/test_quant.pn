@@ -20,3 +20,18 @@ eq_trans() := forall x. forall y. forall z. (x = y & y = z) => x = z
 many_quant() := forall k. exists x. forall y. exists z. forall k1. forall k2. forall k3. forall k4. forall k5. forall k6. x = k => (((x = y) & (y = z)) => ((k1 = k2) | (k2 = k3) | (k3 = k4) | (k4 = k5) | (k5 = k6)))
 #assert_prop(true, many_quant)
 
+test_exists_true() := forall x. exists y. x = y
+#assert_prop(true, test_exists_true)
+
+test_exists_false() := exists x. forall y. x = y
+#assert_prop(false, test_exists_false)
+
+test_pred() := forall x. forall y. forall z. x = y => (x = y | x = z)
+#assert_prop(true, test_pred)
+
+never_true(x, y) := x = y & x != y
+#assert_prop(false, never_true)
+
+equals(x, y) := x = y
+#assert_prop(sometimes, equals)
+
