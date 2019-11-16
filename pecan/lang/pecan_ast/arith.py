@@ -4,8 +4,9 @@
 import spot
 
 from lang.pecan_ast.prog import *
-from tools.automaton_tools import Substitution, AutomatonTransformer
+from tools.automaton_tools import Substitution, AutomatonTransformer, AutomatonTransformer2
 from lang.pecan_ast.bool import *
+
 
 base_2_addition = next(spot.automata("""
 HOA: v1
@@ -17,10 +18,10 @@ Acceptance: 1 Inf(0)
 --BODY--
 State: 0 {0}
 [(!0&!1&!2)|(2&(0&!1|!0&1))] 0
-[(!0&!1&2)] 1
+[(0&1&!2)] 1
 State: 1
 [(0&1&2)|(!2&(0&!1|!0&1))] 1
-[0&1&!2] 0
+[!0&!1&2] 0
 --END--
 """))
 #TODO: preassign label to expression
@@ -32,36 +33,82 @@ class Add(BinaryExpression):
         self.a = a
         self.b = b
 
+    def change_label(self, label): # for changing label to __constant#
+        self.label = label
+
     def __repr__(self):
         return '({} + {})'.format(self.a, self.b)
 
-
-
-    
     def evaluate(self, prog):
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
-        bdict = spot.make_bdd_dict()
         aut_add = base_2_addition #It is base 2 addition now TODO: get automaton
-        bdict.register_all_variables_of(aut_a, aut_add)
-        bdict.register_all_variables_of(aut_b, aut_add)
-        # Assuming label "a+b=c"
         def build_add_formula(formula): 
             return Substitution({'a': spot.formula(val_a), 'b': spot.formula(val_b),'c': spot.formula(self.label)}).substitute(formula)
         def identity_function(formula):
             return formula
-        aut_add = AutomatonTransformer(aut_add, build_add_formula, bdict=bdict).transform()
-        aut_b = AutomatonTransformer(aut_b, identity_function, bdict=aut_add.get_dict()).transform()
-        aut_a = AutomatonTransformer(aut_a, identity_function, bdict=aut_add.get_dict()).transform()
-        result = spot.product(aut_a, spot.product(aut_b, aut_add))
-        def remove_internal_aps(formula):   # remove val_a, val_b
-            return formula
-        
-        # new_aut_aps = result.ap().remove(spot.formula(val_a)).remove(spot.formula(val_b))
-        # result = AutomatonTransformer(result, remove_internal_aps, aps=[])
+        aut_add = AutomatonTransformer2(aut_add, build_add_formula).transform()
+        bdict = aut_add.get_dict()
+        bdict.register_all_variables_of(aut_a, self)
+        bdict.register_all_variables_of(aut_b, self)
+        # print(self, "aut_add:")
+        # print(aut_add.to_str('hoa'))
+        aut_b = AutomatonTransformer2(aut_b, identity_function).transform()
+        # print(self, "aut_b:")
+        # print(aut_b.to_str('hoa'))
+        aut_a = AutomatonTransformer2(aut_a, identity_function).transform()
+        # print(self, "aut_a:")
+        # print(aut_a.to_str('hoa'))
+        result = spot.product(aut_b, aut_a)
+        # print(self, "aut_b times aut_a:")
+        # print(result.to_str("hoa"))
+        result = spot.product(aut_add, result)
         result = Projection(result, [val_a, val_b]).project()
-        #TODO: drop val_a, val_b in return
+        print(self, "result:")
+        print(result.to_str('hoa'))
+        print()
         return (result, self.label)
+
+    
+    # def evaluate(self, prog):
+    #     (aut_a, val_a) = self.a.evaluate(prog)
+    #     (aut_b, val_b) = self.b.evaluate(prog)
+    #     bdict = spot.make_bdd_dict()
+    #     aut_add = base_2_addition #It is base 2 addition now TODO: get automaton
+    #     bdict.register_all_variables_of(aut_a, aut_add)
+    #     bdict.register_all_variables_of(aut_b, aut_add)
+    #     print(bdict.dump())
+    #     # Assuming label "a+b=c"
+    #     def build_add_formula(formula): 
+    #         return Substitution({'a': spot.formula(val_a), 'b': spot.formula(val_b),'c': spot.formula(self.label)}).substitute(formula)
+    #     def identity_function(formula):
+    #         return formula
+    #     aut_add = AutomatonTransformer(aut_add, build_add_formula, bdict=bdict).transform()
+    #     # print(self, "aut_add:")
+    #     # print(aut_add.to_str('hoa'))
+    #     aut_b = AutomatonTransformer(aut_b, identity_function, bdict=aut_add.get_dict()).transform()
+    #     # print(self, "aut_b:")
+    #     # print(aut_b.to_str('hoa'))
+    #     aut_a = AutomatonTransformer(aut_a, identity_function, bdict=aut_add.get_dict()).transform()
+    #     # print(self, "aut_a:")
+    #     # print(aut_a.to_str('hoa'))
+    #     result = spot.product(aut_b, aut_a)
+    #     # print(self, "aut_b times aut_a:")
+    #     # print(result.to_str("hoa"))
+    #     result = spot.product(aut_add, result)
+
+    #     def remove_internal_aps(formula):   # remove val_a, val_b
+    #         return formula
+    #     print(self, "result before projection:")
+    #     print(result.to_str('hoa'))
+    #     print()
+    #     # new_aut_aps = result.ap().remove(spot.formula(val_a)).remove(spot.formula(val_b))
+    #     # result = AutomatonTransformer(result, remove_internal_aps, aps=[])
+    #     result = Projection(result, [val_a, val_b]).project()
+    #     print(self, "result:")
+    #     print(result.to_str('hoa'))
+    #     print()
+    #     return (result, self.label)
 
     
 
@@ -82,6 +129,7 @@ class Sub(BinaryExpression):
         def build_sub_formula(formula): 
             return Substitution({'c': spot.formula(val_a), 'b':spot.formula(val_b), 'a': spot.formula(self.label)}).substitute(formula)
         aut_sub = AutomatonTransformer(aut_sub, build_sub_formula).transform()
+
         #TODO: drop val_a, val_b in return
         return (spot.product(aut_a, spot.product(aut_b, aut_sub)), self.label)
 
@@ -92,7 +140,7 @@ class Mul(BinaryExpression):
         self.a = a
         self.b = b
         if type(self.a) is not IntConst:
-            raise AutomatonArithmeticError("First argument of multiplication must be an integer in " + self.__repr__())
+            raise AutomatonArithmeticError("First argument of multiplication must be an integer in {}".format(self))
 
     def evaluate(self, prog):
         
@@ -120,16 +168,17 @@ class Div(BinaryExpression):
         super().__init__(a, b)
         self.a = a
         self.b = b
+        raise NotImplementedError("Division hasn't been implemented, sorry. {}".format(self))
 
     def __repr__(self):
         return '({} / {})'.format(self.a, self.b)
 
     def evaluate(self, prog):
         if type(self.b) is not IntConst:
-            raise AutomatonArithmeticError("Second argument of division must be an integer in " + self.__repr__())
+            raise AutomatonArithmeticError("Second argument of division must be an integer in {}".format(self))
         if type(self.a) is IntConst:
             if self.a % self.b != 0:
-                raise AutomatonArithmeticError("Division among integers must output an integer in " + self.__repr__())
+                raise AutomatonArithmeticError("Division among integers must output an integer in {}".format(self))
             return self.a // self.b
         if self.b == 1:
             return self.a.evaluate(prog)
@@ -145,6 +194,7 @@ class Div(BinaryExpression):
 
 #TODO: more memoization for calculated constants
 constants_map = {0:(spot.formula('G(~__constant0)').translate(), "__constant0")}
+
 class IntConst(Expression):
     # Constant 0 is defined as 000000...
     def __init__(self, val):
@@ -155,23 +205,28 @@ class IntConst(Expression):
     def __repr__(self):
         return str(self.val)
     def evaluate(self,prog):
-        if self.val == 0:
-            return constants_map[0]
+        if self.val in constants_map:
+            return constants_map[self.val]
         if self.val == 1:
             # TODO: a = 1 iff (a>0 and (for all b > 0, b>=a))
             constants_map[1] = (spot.formula('{} & GX~{}'.format(self.label, self.label)).translate(), self.label)
             return constants_map[1]
+        assert self.val >= 2, "constant here should be greater than or equal to 2, while it is {}".format(self.val)
+        if (self.val & (self.val-1) == 0):
+            result = Add(IntConst(self.val // 2), IntConst(self.val // 2))
+        else:
+            c = self.val   # copy of val
+            power = 1
+            while c != 1:
+                power  = power << 1
+                c = c // 2
+            result = Add(IntConst(2 ** power), IntConst(self.val - 2 ** power))
+        result.change_label(self.label)
 
-        c = self.val  # copy of val
-        power =  IntConst(1)
-        sum = IntConst(0)
-        while c > 0:
-            if c & 1 == 1:
-                sum = Add(sum,power)
-            c = c >> 1
-            power = Add(power,power)
-
-        constants_map[self.val] = sum.evaluate(prog)
+        (result,val) = result.evaluate(prog)
+        # TODO: Do I need to project here?
+        # result = Projection(result, [self.label]).project()
+        constants_map[self.val] = (result,val)
         print(self.val)
         print(constants_map[self.val][0].to_str('hoa'))
         print()
@@ -261,7 +316,8 @@ class GreaterEquals(Predicate):
 
 class AutomatonArithmeticError(Exception):
     pass
-
+class NotImplementedError(Exception):
+    pass
 
 class Projection:
     def __init__(self, aut, varis):
@@ -271,7 +327,8 @@ class Projection:
 
     def project(self):
         for var in self.varis:
-            def build_projection_formula(self, formula):    # the same as build_exists_formula
+            # print("projecting {}".format(var))
+            def build_projection_formula(formula):    # the same as build_exists_formula
                 if_0 = Substitution({var: spot.formula('0')}).substitute(formula)
                 if_1 = Substitution({var: spot.formula('1')}).substitute(formula)
 
