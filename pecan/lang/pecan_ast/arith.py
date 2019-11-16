@@ -95,19 +95,19 @@ class Sub(BinaryExpression):
         aut_sub = AutomatonTransformer(aut_add, build_sub_formula).transform()
 
         result = spot.product(aut_b, aut_a)
-        result = spot.product(aut_add, result)
-        print(self, "result before projection:")
-        print(result.to_str('hoa'))
-        print()
+        result = spot.product(aut_sub, result)
+        # print(self, "result before projection:")
+        # print(result.to_str('hoa'))
+        # print()
         proj_vars = set()
         if type(self.a) is not VarRef:
-            proj_vars.add('val_a')
+            proj_vars.add(val_a)
         if type(self.b) is not VarRef:
-            proj_vars.add('val_b')
+            proj_vars.add(val_b)
         result = Projection(result, proj_vars).project()
-        print(self, "result after projection:")
-        print(result.to_str('hoa'))
-        print()
+        # print(self, "result after projection:")
+        # print(result.to_str('hoa'))
+        # print()
         return (result, self.label)
 
 #TODO:
@@ -197,17 +197,16 @@ class IntConst(Expression):
             power = 1
             while c != 1:
                 power  = power << 1
-                c = c // 2
-            result = Add(IntConst(2 ** power), IntConst(self.val - 2 ** power))
+                c = c >> 1
+            # print(power, self.val - power, self.val)
+            result = Add(IntConst(power), IntConst(self.val - power))
         result.change_label(self.label)
 
         (result,val) = result.evaluate(prog)
-        # TODO: Do I need to project here?
-        # result = Projection(result, [self.label]).project()
         constants_map[self.val] = (result,val)
-        print(self.val)
-        print(constants_map[self.val][0].to_str('hoa'))
-        print()
+        # print(self.val)
+        # print(constants_map[self.val][0].to_str('hoa'))
+        # print()
         return constants_map[self.val]
 
     def evaluate_int(self):

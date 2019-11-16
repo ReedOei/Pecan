@@ -93,7 +93,7 @@ class Projection:
 
     def project(self):
         for var in self.varis:
-            # print("projecting {}".format(var))
+            print("projecting {}".format(var))
             def build_projection_formula(formula):    # the same as build_exists_formula
                 if_0 = Substitution({var: spot.formula('0')}).substitute(formula)
                 if_1 = Substitution({var: spot.formula('1')}).substitute(formula)
