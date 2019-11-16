@@ -1,3 +1,4 @@
 argparse
 lark-parser
+colorama
 

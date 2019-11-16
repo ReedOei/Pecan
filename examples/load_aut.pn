@@ -1,0 +1,15 @@
+#load("has_zeros.aut", "hoa", has_zeros(a))
+#load("all_ones.aut", "hoa", all_ones(a))
+
+test() := forall x. has_zeros(x) => !all_ones(x)
+#assert_prop(true, test)
+
+test2() := forall x. all_ones(x) => ~has_zeros(x)
+#assert_prop(true, test2)
+
+test3() := exists x. has_zeros(x) & all_ones(x)
+#assert_prop(false, test3)
+
+test4() := forall x. all_ones(x) | ¬has_zeros(x)
+#assert_prop(false, test4)
+
