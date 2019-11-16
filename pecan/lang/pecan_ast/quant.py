@@ -41,4 +41,3 @@ class Exists(Predicate):
 
     def __repr__(self):
         return '(∃{} ({}))'.format(self.var_name, self.pred)
-

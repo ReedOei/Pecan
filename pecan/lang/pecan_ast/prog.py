@@ -12,8 +12,23 @@ import spot
 from pecan.tools.automaton_tools import AutomatonTransformer, Substitution
 
 class ASTNode:
+    id = 0
     def __init__(self):
-        pass
+        #TODO: detect used labels and avoid those
+        self.label = "__pecan"+str(Expression.id)
+        Expression.id += 1
+
+    def evaluate(self, prog):
+        prog.eval_level += 1
+        if prog.debug:
+            start_time = time.time()
+        result = self.evaluate_node(prog)
+        prog.eval_level -= 1
+        if prog.debug:
+            end_time = time.time()
+            print('{}{} has {} states and {} edges ({:.2f} seconds)'.format(' ' * prog.eval_level, self, result.num_states(), result.num_edges(), end_time - start_time))
+
+        return result
 
     def evaluate(self, prog):
         prog.eval_level += 1

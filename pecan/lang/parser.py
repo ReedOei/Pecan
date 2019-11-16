@@ -60,8 +60,8 @@ pecan_grammar = """
     MUL: "*" | "⋅"
 
     ?atom: var         -> var_ref
-         | NUMBER      -> const
-         | "-" NUMBER  -> neg
+         | INT      -> const
+         | "-" INT  -> neg
          | "(" arith ")"
 
     ?var: LETTER ALPHANUM*
@@ -98,7 +98,7 @@ pecan_grammar = """
 
     NEWLINE: /\\n/
 
-    %import common.NUMBER
+    %import common.INT
     %import common.WS_INLINE
     %import common.ESCAPED_STRING
 
@@ -174,6 +174,9 @@ class PecanTransformer(Transformer):
         return VarRef(var_name)
 
     def const(self, const):
+        if const.type != "INT":
+            raise AutomatonArithmeticError("Constants need to be integers: " + const)
+        const = int(const.value)
         return IntConst(const)
 
     def index(self, var_name, index_expr):
