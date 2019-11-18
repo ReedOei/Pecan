@@ -27,3 +27,6 @@ class QuantTest(unittest.TestCase):
     def test_stdlib_imported(self):
         self.run_file('examples/test_stdlib_imported.pn')
 
+    def test_import_works(self):
+        self.run_file('examples/test_import.pn')
+

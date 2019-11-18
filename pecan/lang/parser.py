@@ -19,9 +19,9 @@ pecan_grammar = """
         | "#" "save_pred" "(" string "," var ")" -> directive_save_pred
         | "#" "context" "(" string "," string ")" -> directive_context
         | "#" "end_context" "(" string ")" -> directive_end_context
-        | "#" "load_preds" "(" string ")" -> directive_load_preds
         | "#" "load" "(" string "," string "," var "(" args ")" ")" -> directive_load
         | "#" "assert_prop" "(" PROP_VAL "," var ")" -> directive_assert_prop
+        | "#" "import" "(" string ")" -> directive_import
 
     ?pred: expr EQ expr                    -> equal
          | expr NE expr                     -> not_equal
@@ -140,6 +140,9 @@ class PecanTransformer(Transformer):
 
     def directive_assert_prop(self, bool_val, pred_name):
         return DirectiveAssertProp(bool_val, pred_name)
+
+    def directive_import(self, filename):
+        return DirectiveImport(filename)
 
     def prog(self, defs):
         return Program(defs)

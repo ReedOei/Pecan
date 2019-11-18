@@ -78,21 +78,6 @@ class DirectiveSavePred(ASTNode):
     def __repr__(self):
         return '#save_pred({}, {})'.format(repr(self.filename), self.pred_name)
 
-class DirectiveLoadPreds(ASTNode):
-    def __init__(self, filename):
-        super().__init__()
-        self.filename = filename[1:-1]
-
-    def evaluate(self, prog):
-        realpath = prog.locate_file(self.filename)
-        with open(realpath, 'r') as f:
-            prog.parser.parse(f.read()).evaluate(prog)
-
-        return None
-
-    def __repr__(self):
-        return '#load_preds({})'.format(repr(self.filename))
-
 class DirectiveContext(ASTNode):
     def __init__(self, context_key, context_val):
         super().__init__()
@@ -181,4 +166,19 @@ class DirectiveLoadAut(ASTNode):
 
     def __repr__(self):
         return '#load({}, {}, {})'.format(self.filename, self.aut_format, self.pred_name)
+
+class DirectiveImport(ASTNode):
+    def __init__(self, filename):
+        super().__init__()
+        self.filename = filename[1:-1]
+
+    def evaluate(self, prog):
+        realpath = prog.locate_file(self.filename)
+        new_prog = prog.loader(realpath, debug=prog.debug, quiet=prog.quiet)
+        new_prog.evaluate()
+        prog.include(new_prog)
+        return None
+
+    def __repr__(self):
+        return '#import({})'.format(repr(self.filename))
 

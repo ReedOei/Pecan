@@ -1,0 +1,6 @@
+#import("test_imported.pn")
+
+// This will only be true if the import worked
+test() := exists x. has_zeros(x)
+#assert_prop(true, test)
+

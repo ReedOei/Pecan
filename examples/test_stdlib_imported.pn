@@ -1,3 +1,4 @@
+// Note: this test requires that std.pn be automatically laoded, as finite_num, zero, and bin_add are all defined there
 zero_is_id() := forall x. finite_num(x) => exists z. zero(z) & bin_add(x, z, x)
 #assert_prop(true, zero_is_id)
 

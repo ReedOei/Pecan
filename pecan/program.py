@@ -8,13 +8,17 @@ from pecan.lang.pecan_ast import Program
 
 PECAN_PATH_VAR = 'PECAN_PATH'
 
-def make_search_paths():
+def make_search_paths(filepath=None):
     own_path = os.path.dirname(os.path.realpath(__file__))
     std_library_path = os.path.join(own_path, '..', 'library')
     automata_library_path = os.path.join(own_path, '..', 'library', 'automata')
 
     # Always include the current directory and the standard library folder
     search_paths = ['.', std_library_path, automata_library_path]
+
+    # If we're creating a search path for some file (which is almost always the case), then include the base directory of that file as well
+    if filepath is not None:
+        search_paths.append(os.path.dirname(filepath))
 
     if PECAN_PATH_VAR in os.environ:
         search_paths.extend(os.getenv(PECAN_PATH_VAR).split(os.pathsep))
@@ -28,7 +32,8 @@ def load(filename, *args, **kwargs):
     prog.parser = pecan_parser
     prog.debug = kwargs.get('debug', False)
     prog.quiet = kwargs.get('quiet', False)
-    prog.search_paths = make_search_paths()
+    prog.search_paths = make_search_paths(filename)
+    prog.loader = load
 
     # Load the standard library
     if kwargs.get('load_stdlib', True):
