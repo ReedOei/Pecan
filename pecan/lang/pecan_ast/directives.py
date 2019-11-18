@@ -81,8 +81,8 @@ class DirectiveSavePred(ASTNode):
 class DirectiveContext(ASTNode):
     def __init__(self, context_key, context_val):
         super().__init__()
-        self.context_key = context_key
-        self.context_val = context_val
+        self.context_key = context_key[1:-1]
+        self.context_val = context_val[1:-1]
 
     def evaluate(self, prog):
         prog.context[self.context_key] = self.context_val
@@ -94,7 +94,7 @@ class DirectiveContext(ASTNode):
 class DirectiveEndContext(ASTNode):
     def __init__(self, context_key):
         super().__init__()
-        self.context_key = context_key
+        self.context_key = context_key[1:-1]
 
     def evaluate(self, prog):
         prog.context.pop(self.context_key)
