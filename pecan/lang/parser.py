@@ -11,7 +11,7 @@ pecan_grammar = """
          | def -> single_def
          | def NEWLINES defs -> multi_def
 
-    ?def: var "(" args ")" DEFEQ pred       -> def_pred
+    ?def: call DEFEQ pred       -> def_pred
         | pred
         | "#" var -> directive
         | "#" "save_aut" "(" string "," var ")" -> directive_save_aut
@@ -19,28 +19,34 @@ pecan_grammar = """
         | "#" "save_pred" "(" string "," var ")" -> directive_save_pred
         | "#" "context" "(" string "," string ")" -> directive_context
         | "#" "end_context" "(" string ")" -> directive_end_context
-        | "#" "load" "(" string "," string "," var "(" args ")" ")" -> directive_load
+        | "#" "load" "(" string "," string "," pred_ref ")" -> directive_load
         | "#" "assert_prop" "(" PROP_VAL "," var ")" -> directive_assert_prop
         | "#" "import" "(" string ")" -> directive_import
 
-    ?pred: expr EQ expr                    -> equal
+    ?pred_ref: var -> var_ref
+             | call
+
+    ?call: var "(" args ")" -> call_args
+         | var "is" pred_ref     -> call_is
+
+    ?pred: expr EQ expr                     -> equal
          | expr NE expr                     -> not_equal
          | expr "<" expr                    -> less
          | expr ">" expr                    -> greater
          | expr LE expr                     -> less_equal
          | expr GE expr                     -> greater_equal
          | pred IFF pred                    -> iff
-         | pred "if" "and" "only" "if" pred -> iff_words
          | pred IMPLIES pred                -> implies
-         | "if" pred "then" pred            -> implies_words
          | pred CONJ pred                   -> conj
          | pred DISJ pred                   -> disj
          | COMP pred                        -> comp
-         | FORALL var "." pred                  -> forall
-         | EXISTS var "." pred                  -> exists
-         | var "(" args ")"                 -> call
+         | forall_sym var "." pred              -> forall
+         | exists_sym var "." pred              -> exists
+         | call
          | "(" pred ")"
          | string                           -> spot_formula
+         | "true"  -> formula_true
+         | "false" -> formal_false
 
     ?args: -> nil_arg
          | var -> single_arg
@@ -57,16 +63,18 @@ pecan_grammar = """
             | product MUL atom -> mul
             | product "/" atom -> div
 
-    MUL: "*" | "⋅"
-
-    ?atom: var         -> var_ref
+    ?atom: var -> var_ref
          | INT      -> const
          | "-" INT  -> neg
          | "(" arith ")"
 
-    ?var: LETTER ALPHANUM*
+    ?var: VAR
 
     ?string: ESCAPED_STRING -> escaped_str
+
+    %import common.CNAME -> VAR
+
+    MUL: "*" | "⋅"
 
     PROP_VAL: "sometimes"i | "true"i | "false"i // case insensitive
 
@@ -87,14 +95,8 @@ pecan_grammar = """
     CONJ: "&" | "/\\\\" | "∧" | "and"
     DISJ: "|" | "\\\\/" | "∨" | "or"
 
-    FORALL: "A" | "forall" | "∀"
-    EXISTS: "E" | "exists" | "∃"
-
-    ALPHANUM: LETTER | "_" | DIGIT
-    DIGIT: "0" .. "9"
-    LETTER: UPPER_LETTER | LOWER_LETTER
-    UPPER_LETTER: "A" .. "Z"
-    LOWER_LETTER: "a" .. "z"
+    ?forall_sym: "A" | "forall" | "∀"
+    ?exists_sym: "E" | "exists" | "∃"
 
     NEWLINE: /\\n/
 
@@ -132,11 +134,8 @@ class PecanTransformer(Transformer):
     def directive_end_context(self, context_name):
         return DirectiveEndContext(context_name)
 
-    def directive_load_preds(self, filename):
-        return DirectiveLoadPreds(filename)
-
-    def directive_load(self, filename, aut_format, pred_name, pred_args):
-        return DirectiveLoadAut(filename, aut_format, pred_name, pred_args)
+    def directive_load(self, filename, aut_format, pred):
+        return DirectiveLoadAut(filename, aut_format, pred)
 
     def directive_assert_prop(self, bool_val, pred_name):
         return DirectiveAssertProp(bool_val, pred_name)
@@ -156,8 +155,13 @@ class PecanTransformer(Transformer):
     def single_def(self, d):
         return [d]
 
-    def def_pred(self, name, args, defeq, body):
-        return NamedPred(name, args, body)
+    def def_pred(self, pred, defeq, body):
+        if type(pred) is Call:
+            return NamedPred(pred.name, pred.args, body)
+        elif type(pred) is VarRef:
+            return NamedPred(pred.name, [], body)
+        else:
+            raise Exception('Invalid syntax in definition: {} := {}'.format(pred, body))
 
     def var(self, letter, *args):
         return letter + ''.join(args)
@@ -176,9 +180,6 @@ class PecanTransformer(Transformer):
 
     def neg(self, a):
         return Neg(a)
-
-    def var_ref(self, var_name):
-        return VarRef(var_name)
 
     def const(self, const):
         if const.type != "INT":
@@ -234,8 +235,25 @@ class PecanTransformer(Transformer):
     def exists(self, quant, var_name, pred):
         return Exists(var_name, pred)
 
-    def call(self, name, args):
+    def call_args(self, name, args):
         return Call(name, args)
+
+    def var_ref(self, name):
+        return VarRef(str(name))
+
+    def call_is(self, name, pred_other):
+        if type(pred_other) is Call:
+            return Call(pred_other.name, [name] + pred_other.args)
+        elif type(pred_other) is VarRef:
+            return Call(pred_other.name, [name])
+        else:
+            raise Exception('Unexpected value after `is`: {}'.format(pred_other))
+
+    def formula_true(self):
+        return FormulaTrue()
+
+    def formula_false(self):
+        return FormulaFalse()
 
     def nil_arg(self):
         return []

@@ -7,7 +7,7 @@ from pecan.lang.pecan_ast import *
 
 from pecan import program
 
-class QuantTest(unittest.TestCase):
+class GeneralTest(unittest.TestCase):
     def run_file(self, filename):
         prog = program.load(filename, quiet=True)
         self.assertTrue(prog.evaluate().result.succeeded())

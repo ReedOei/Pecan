@@ -9,26 +9,26 @@ from pecan.lang.pecan_ast.bool import *
 from pecan.tools.automaton_tools import Projection
 
 class Forall(Predicate):
-    def __init__(self, var_name, pred):
+    def __init__(self, var, pred):
         super().__init__()
-        self.var_name = var_name
+        self.var = var
         self.pred = pred
 
     def evaluate_node(self, prog):
-        return Complement(Exists(self.var_name, Complement(self.pred))).evaluate(prog)
+        return Complement(Exists(self.var, Complement(self.pred))).evaluate(prog)
 
     def __repr__(self):
-        return '(∀{} ({}))'.format(self.var_name, self.pred)
+        return '(∀{} ({}))'.format(self.var, self.pred)
 
 class Exists(Predicate):
-    def __init__(self, var_name, pred):
+    def __init__(self, var, pred):
         super().__init__()
-        self.var_name = var_name
+        self.var = var
         self.pred = pred
 
     def evaluate_node(self, prog):
-        return Projection(self.pred.evaluate(prog), [self.var_name]).project()
+        return Projection(self.pred.evaluate(prog), [self.var]).project()
 
     def __repr__(self):
-        return '(∃{} ({}))'.format(self.var_name, self.pred)
+        return '(∃{} ({}))'.format(self.var, self.pred)
 

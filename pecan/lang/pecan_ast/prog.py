@@ -177,6 +177,7 @@ class Program(ASTNode):
         if pred_name in self.preds:
             return self.preds[pred_name].call(self, args)
         else:
+            print(self.preds)
             raise Exception(f'Predicate {pred_name} not found!')
 
     def locate_file(self, filename):
