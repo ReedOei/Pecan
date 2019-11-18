@@ -30,6 +30,17 @@ def load(filename, *args, **kwargs):
     prog.quiet = kwargs.get('quiet', False)
     prog.search_paths = make_search_paths()
 
+    # Load the standard library
+    if kwargs.get('load_stdlib', True):
+        kwargs_copy = dict(kwargs)
+        # Don't load stdlib again (prevent infinite loop)
+        kwargs_copy['load_stdlib'] = False
+        kwargs_copy['quiet'] = kwargs.get('quiet_stdlib', kwargs.get('quiet', False))
+
+        stdlib_prog = load(prog.locate_file('std.pn'), **kwargs_copy)
+        stdlib_prog.evaluate()
+        prog.include(stdlib_prog)
+
     if prog.debug:
         print('Path: {}'.format(prog.search_paths))
 

@@ -147,11 +147,14 @@ class Program(ASTNode):
         self.result = None
         self.search_paths = []
 
+    def include(self, other_prog):
+        self.preds.update(other_prog.preds)
+        self.context.update(other_prog.context)
+        self.parser = other_prog.parser
+
     def evaluate(self, old_env=None):
         if old_env is not None:
-            self.preds.update(old_env.preds)
-            self.context.update(old_env.context)
-            self.parser = old_env.parser
+            self.include(old_env)
 
         succeeded = True
         msgs = []

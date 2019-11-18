@@ -1,0 +1,3 @@
+zero_is_id() := forall x. finite_num(x) => exists z. zero(z) & bin_add(x, z, x)
+#assert_prop(true, zero_is_id)
+
