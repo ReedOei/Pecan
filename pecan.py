@@ -10,8 +10,7 @@ import os
 from pecan.lang.parser import pecan_parser
 from pecan.lang.pecan_ast import Program
 import pecan.tools.theorem_generator as theorem_generator
-
-PECAN_PATH_VAR = 'PECAN_PATH'
+from pecan import program
 
 def run_repl(debug, env):
     while True:
@@ -22,19 +21,6 @@ def run_repl(debug, env):
             print(prog)
 
         env = prog.evaluate(env)
-
-def make_search_paths():
-    own_path = os.path.dirname(os.path.realpath(__file__))
-    std_library_path = os.path.join(own_path, 'library')
-    automata_library_path = os.path.join(own_path, 'library', 'automata')
-
-    # Always include the current directory and the standard library folder
-    search_paths = ['.', std_library_path, automata_library_path]
-
-    if PECAN_PATH_VAR in os.environ:
-        search_paths.extend(os.getenv(PECAN_PATH_VAR).split(os.pathsep))
-
-    return search_paths
 
 def main():
     parser = argparse.ArgumentParser(description='An automated theorem prover for Büchi Automata')
@@ -51,17 +37,7 @@ def main():
         for pred in theorem_generator.gen_thms(args.generate):
             print(pred)
     elif args.file is not None:
-        with open(args.file, 'r') as f:
-            prog = pecan_parser.parse(f.read())
-
-        prog.parser = pecan_parser
-        prog.debug = args.debug
-        prog.quiet = args.quiet
-        prog.search_paths = make_search_paths()
-
-        if args.debug:
-            print('Path: {}'.format(prog.search_paths))
-
+        prog = program.load(args.file, quiet=args.quiet, debug=args.debug)
         env = prog.evaluate()
     elif not args.interactive:
         parser.print_help()
