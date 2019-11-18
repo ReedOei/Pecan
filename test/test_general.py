@@ -30,3 +30,6 @@ class GeneralTest(unittest.TestCase):
     def test_import_works(self):
         self.run_file('examples/test_import.pn')
 
+    def test_quant_restricted(self):
+        self.run_file('examples/test_quant_restricted.pn')
+

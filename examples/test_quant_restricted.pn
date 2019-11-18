@@ -1,0 +1,9 @@
+test() := forall x is finite_num. 0 + x = x
+#assert_prop(true, test)
+
+test2() := exists x is finite_num. x + x = x
+#assert_prop(true, test2)
+
+test3() := exists x is finite_num. !finite_num(x)
+#assert_prop(false, test3)
+

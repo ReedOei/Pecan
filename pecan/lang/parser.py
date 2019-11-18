@@ -19,7 +19,7 @@ pecan_grammar = """
         | "#" "save_pred" "(" string "," var ")" -> directive_save_pred
         | "#" "context" "(" string "," string ")" -> directive_context
         | "#" "end_context" "(" string ")" -> directive_end_context
-        | "#" "load" "(" string "," string "," pred_ref ")" -> directive_load
+        | "#" "load" "(" string "," string "," call ")" -> directive_load
         | "#" "assert_prop" "(" PROP_VAL "," var ")" -> directive_assert_prop
         | "#" "import" "(" string ")" -> directive_import
 
@@ -40,8 +40,8 @@ pecan_grammar = """
          | pred CONJ pred                   -> conj
          | pred DISJ pred                   -> disj
          | COMP pred                        -> comp
-         | forall_sym var "." pred              -> forall
-         | exists_sym var "." pred              -> exists
+         | forall_sym pred_ref "." pred              -> forall
+         | exists_sym pred_ref "." pred              -> exists
          | call
          | "(" pred ")"
          | string                           -> spot_formula
@@ -245,7 +245,7 @@ class PecanTransformer(Transformer):
         if type(pred_other) is Call:
             return Call(pred_other.name, [name] + pred_other.args)
         elif type(pred_other) is VarRef:
-            return Call(pred_other.name, [name])
+            return Call(pred_other.var_name, [name])
         else:
             raise Exception('Unexpected value after `is`: {}'.format(pred_other))
 
