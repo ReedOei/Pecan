@@ -135,7 +135,7 @@ class Div(BinaryExpression):
         def build_div_formula(formula):
             return Substitution({val_div: spot.formula(val_a), 'a': spot.formula('{}_div_{}'.format(val_a,val_a))}).substitute(formula)
         #TODO: drop val_a, val_b in return
-        return (spot.product(aut_a, spot.product(aut_a, aut_div)), '{}_add_{}'.format(self.a,self.b))
+        return (spot.product(aut_b, spot.product(aut_a, aut_div)), '{}_add_{}'.format(self.a,self.b))
 
     def evaluate_int(self, prog):
         assert self.is_int
@@ -228,7 +228,7 @@ class Less(Predicate):
             return spot.formula('1').translate() if self.a.evaluate_int(prog) < self.b.evaluate_int(prog) else spot.formula('0').translate()
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
-        aut_less = prog.call(prog.context['compare'], [val_a, val_b])
+        aut_less = prog.call(prog.context['less'], [val_a, val_b])
         result = spot.product(aut_a, aut_b)
         result = spot.product(aut_less, result)
 
@@ -316,7 +316,7 @@ class Index(Expression):
         self.var_name = var_name
         self.index_expr = index_expr
         self.is_int = False
-        raise NotImplementedError("Division hasn't been implemented, sorry. {}".format(self))
+        raise NotImplementedError("Indexing hasn't been implemented, sorry. {}".format(self))
 
     def __repr__(self):
         return '({}[{}])'.format(self.var_name, self.index_expr)

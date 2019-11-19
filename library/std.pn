@@ -1,8 +1,9 @@
 #load("bin_add.aut", "hoa", bin_add(a, b, c))
+#load("bin_less.aut", "hoa", bin_less(a, b))
 
 finite_num(x) := "F(G(!x))"
 zero(x) := "G(!x)"
 
 #context("adder", "bin_add")
-#context("compare", "bin_less")
+#context("less", "bin_less")
 
