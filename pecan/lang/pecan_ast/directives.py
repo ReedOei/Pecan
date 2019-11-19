@@ -14,9 +14,9 @@ class Directive(ASTNode):
     def __repr__(self):
         return '#{}'.format(self.name)
 
-class DirectiveSaveAut(ASTNode):
+class DirectiveSaveAut(Directive):
     def __init__(self, filename, pred_name):
-        super().__init__()
+        super().__init__('save_aut')
         self.filename = filename[1:-1]
         self.pred_name = pred_name
 
@@ -27,9 +27,9 @@ class DirectiveSaveAut(ASTNode):
     def __repr__(self):
         return '#save_aut({}, {})'.format(str(self.filename), self.pred_name)
 
-class DirectiveSaveAutImage(ASTNode):
+class DirectiveSaveAutImage(Directive):
     def __init__(self, filename, pred_name):
-        super().__init__()
+        super().__init__('save_aut_img')
         self.filename = filename[1:-1]
         self.pred_name = pred_name
 
@@ -43,9 +43,9 @@ class DirectiveSaveAutImage(ASTNode):
     def __repr__(self):
         return '#save_aut_img({}, {})'.format(repr(self.filename), self.pred_name)
 
-class DirectiveSavePred(ASTNode):
+class DirectiveSavePred(Directive):
     def __init__(self, filename, pred_name):
-        super().__init__()
+        super().__init__('save_pred')
         self.filename = filename[1:-1]
         self.pred_name = pred_name
 
@@ -78,9 +78,9 @@ class DirectiveSavePred(ASTNode):
     def __repr__(self):
         return '#save_pred({}, {})'.format(repr(self.filename), self.pred_name)
 
-class DirectiveContext(ASTNode):
+class DirectiveContext(Directive):
     def __init__(self, context_key, context_val):
-        super().__init__()
+        super().__init__('context')
         self.context_key = context_key[1:-1]
         self.context_val = context_val[1:-1]
 
@@ -91,9 +91,9 @@ class DirectiveContext(ASTNode):
     def __repr__(self):
         return '#context({})'.format(self.context)
 
-class DirectiveEndContext(ASTNode):
+class DirectiveEndContext(Directive):
     def __init__(self, context_key):
-        super().__init__()
+        super().__init__('end_context')
         self.context_key = context_key[1:-1]
 
     def evaluate(self, prog):
@@ -104,9 +104,9 @@ class DirectiveEndContext(ASTNode):
         return '#end_context({})'.format(self.context)
 
 # Asserts that pred_name is truth_val: i.e., that pred_name is 'true' (always), 'false' (always), or 'sometimes' true
-class DirectiveAssertProp(ASTNode):
+class DirectiveAssertProp(Directive):
     def __init__(self, truth_val, pred_name):
-        super().__init__()
+        super().__init__('assert_prop')
         self.truth_val = truth_val
         self.pred_name = pred_name
 
@@ -141,9 +141,9 @@ class DirectiveAssertProp(ASTNode):
     def __repr__(self):
         return '#assert_prop({}, {})'.format(self.truth_val, self.pred_name)
 
-class DirectiveLoadAut(ASTNode):
+class DirectiveLoadAut(Directive):
     def __init__(self, filename, aut_format, pred):
-        super().__init__()
+        super().__init__('load')
         self.filename = filename[1:-1]
         self.aut_format = aut_format[1:-1] # Remove the quotes at the beginning and end # TODO: Do this better
         self.pred = pred
@@ -166,9 +166,9 @@ class DirectiveLoadAut(ASTNode):
     def __repr__(self):
         return '#load({}, {}, {})'.format(self.filename, self.aut_format, self.pred_name)
 
-class DirectiveImport(ASTNode):
+class DirectiveImport(Directive):
     def __init__(self, filename):
-        super().__init__()
+        super().__init__('import')
         self.filename = filename[1:-1]
 
     def evaluate(self, prog):
@@ -180,4 +180,16 @@ class DirectiveImport(ASTNode):
 
     def __repr__(self):
         return '#import({})'.format(repr(self.filename))
+
+class DirectiveForget(Directive):
+    def __init__(self, var_name):
+        super().__init__('forget')
+        self.var_name = var_name
+
+    def evaluate(self, prog):
+        prog.forget(self.var_name)
+        return None
+
+    def __repr__(self):
+        return '#forget({})'.format(repr(self.var_name))
 

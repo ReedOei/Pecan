@@ -12,7 +12,7 @@ pecan_grammar = """
          | def NEWLINES defs -> multi_def
 
     ?def: call DEFEQ pred       -> def_pred
-        | pred
+        | restriction
         | "#" var -> directive
         | "#" "save_aut" "(" string "," var ")" -> directive_save_aut
         | "#" "save_aut_img" "(" string "," var ")" -> directive_save_aut_img
@@ -22,6 +22,10 @@ pecan_grammar = """
         | "#" "load" "(" string "," string "," call ")" -> directive_load
         | "#" "assert_prop" "(" PROP_VAL "," var ")" -> directive_assert_prop
         | "#" "import" "(" string ")" -> directive_import
+        | "#" "forget" "(" var ")" -> directive_forget
+
+    ?restriction: call  -> restrict_call
+                | args_nonempty "are" pred_ref -> restrict_many
 
     ?pred_ref: var -> var_ref
              | call
@@ -48,9 +52,11 @@ pecan_grammar = """
          | "true"  -> formula_true
          | "false" -> formal_false
 
+    ?args_nonempty: var -> single_arg
+                  | var "," args       -> multi_arg
+
     ?args: -> nil_arg
-         | var -> single_arg
-         | var "," args       -> multi_arg
+         | args_nonempty
 
     ?expr: arith
          | var "[" arith "]"  -> index
@@ -68,11 +74,9 @@ pecan_grammar = """
          | "-" INT  -> neg
          | "(" arith ")"
 
-    ?var: VAR
+    ?var: VAR -> var_tok
 
     ?string: ESCAPED_STRING -> escaped_str
-
-    %import common.CNAME -> VAR
 
     MUL: "*" | "⋅"
 
@@ -100,6 +104,8 @@ pecan_grammar = """
 
     NEWLINE: /\\n/
 
+    VAR: /(?!(forall|exists|not|or|and|sometimes|true|false)\\b)[a-zA-Z_][a-zA-Z_0-9]*/i
+
     COMMENT: "//" /(.)+/ NEWLINE
 
     %ignore COMMENT
@@ -113,6 +119,21 @@ pecan_grammar = """
 
 @v_args(inline=True)
 class PecanTransformer(Transformer):
+    def var_tok(self, tok):
+        return str(tok)
+
+    def restrict_call(self, call):
+        if len(call.args) <= 0:
+            raise Exception("Cannot restrict a call with no arguments: {}".format(call))
+
+        return Restriction(call.args[0], call.replace_first)
+
+    def restrict_many(self, args, pred):
+        if type(pred) is VarRef:
+            return Restriction(args, Call(pred.var_name, ['']).replace_first) # '' is a dummy value because it'll get replaced
+        else:
+            return Restriction(args, pred.replace_first)
+
     def escaped_str(self, str_tok):
         return str(str_tok)
 
@@ -142,6 +163,9 @@ class PecanTransformer(Transformer):
 
     def directive_import(self, filename):
         return DirectiveImport(filename)
+
+    def directive_forget(self, var_name):
+        return DirectiveForget(var_name)
 
     def prog(self, defs):
         return Program(defs)
