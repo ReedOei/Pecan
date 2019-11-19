@@ -63,22 +63,25 @@ pecan_grammar = """
 
     ?arith: product
           | arith "+" product -> add
+          | arith "+_" var product -> add_with_param
           | arith "-" product -> sub
+          | arith "-_" product -> sub_with_param
 
     ?product: atom
-            | product MUL atom -> mul
+            | product "*" atom -> mul
+            | product "*_" atom -> mul_with_param
             | product "/" atom -> div
+            | product "/_" atom -> div_with_param
 
     ?atom: var -> var_ref
-         | INT      -> const
+         | INT -> const
+         | INT "_" var -> const_with_param
          | "-" INT  -> neg
          | "(" arith ")"
 
     ?var: VAR -> var_tok
 
     ?string: ESCAPED_STRING -> escaped_str
-
-    MUL: "*" | "⋅"
 
     PROP_VAL: "sometimes"i | "true"i | "false"i // case insensitive
 
@@ -196,11 +199,23 @@ class PecanTransformer(Transformer):
     def sub(self, a, b):
         return Sub(a, b)
 
-    def mul(self, a, sym, b):
+    def mul(self, a, b):
         return Mul(a, b)
 
     def div(self, a, b):
         return Div(a, b)
+
+    def add_with_param(self, a, var, b):
+        return Add(a, b, param=var)
+
+    def sub_with_param(self, a, var, b):
+        return Sub(a, b, param=var)
+
+    def mul_with_param(self, a, var, b):
+        return Mul(a, b, param=var)
+
+    def div_with_param(self, a, var, b):
+        return Div(a, b, param=var)
 
     def neg(self, a):
         return Neg(a)
@@ -210,6 +225,12 @@ class PecanTransformer(Transformer):
             raise AutomatonArithmeticError("Constants need to be integers: " + const)
         const = int(const.value)
         return IntConst(const)
+
+    def const_with_param(self, const, var):
+        if const.type != "INT":
+            raise AutomatonArithmeticError("Constants need to be integers: " + const)
+        const = int(const.value)
+        return IntConst(const, param=var)
 
     def index(self, var_name, index_expr):
         return Index(var_name, index_expr)

@@ -7,7 +7,7 @@ test2() := exists x is nat. x + x = x
 test3() := exists x is nat. !finite_num(x)
 #assert_prop(false, test3)
 
-a, b,c are nat
+a, b, c are nat
 
 test4() := forall a. 0 + a = a
 #assert_prop(true, test4)
