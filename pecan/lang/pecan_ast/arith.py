@@ -7,60 +7,7 @@ from pecan.lang.pecan_ast.prog import *
 from pecan.tools.automaton_tools import Substitution, AutomatonTransformer, Projection
 from pecan.lang.pecan_ast.bool import *
 
-
-base_2_addition = next(spot.automata("""
-HOA: v1
-States: 3
-Start: 0
-name: "Base2 Addition"
-AP: 3 "a" "b" "c"
-Acceptance: 1 Inf(0)
---BODY--
-State: 0
-[!0&!1&!2] 0
-[0&!1&2] 0
-[!0&1&2] 0
-[0&1&!2] 1
-[!0&!1&!2] 2
-State: 1
-[!0&!1&2] 0
-[0&!1&!2] 1
-[!0&1&!2] 1
-[0&1&2] 1
-State: 2 {0}
-[!0&!1&!2] 2
---END--
-"""))
-
-base_2_less_than = next(spot.automata("""
-HOA: v1
-States: 3
-Start: 0
-name: "Base2 Less Than"
-AP: 2 "a" "b"
-Acceptance: 1 Inf(0)
---BODY--
-State: 0
-[!0&!1] 0
-[0&!1] 0
-[!0&1] 1
-[0&1] 0
-
-State: 1
-[!0&!1] 1
-[0&!1] 0
-[!0&1] 1
-[0&1] 1
-[!0&!1] 2
-
-State: 2 {0}
-[!0&!1] 2
---END--
-"""))
 #TODO: memoize same expressions
-#TODO: detect and separate integer operations and Automaton operations
-#TODO: do integer arithmetic before automaton arithmetic
-#TODO: add a flag for Buche automaton representing finite strings, so assert everything to be 0 eventually.
 class Add(BinaryExpression):
     def __init__(self, a, b):
         super().__init__(a, b)
@@ -74,31 +21,20 @@ class Add(BinaryExpression):
         return '({} + {})'.format(self.a, self.b)
 
     def evaluate(self, prog):
-        # if type(self.a) is IntConst and type(self.b) is IntConst:
-        #     return IntConst(self.a.evaluate_int(prog) + self.b.evaluate_int(prog))
         if self.is_int:
             return IntConst(self.evaluate_int(prog))
 
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
-        aut_add = base_2_addition #It is base 2 addition now TODO: get automaton
-        def build_add_formula(formula):
-            return Substitution({'a': spot.formula(val_a), 'b': spot.formula(val_b),'c': spot.formula(self.label)}).substitute(formula)
-        aut_add = AutomatonTransformer(aut_add, build_add_formula).transform()
+        aut_add = prog.call(prog.context['adder'], [val_a, val_b, self.label])
         result = spot.product(aut_b, aut_a)
         result = spot.product(aut_add, result)
-        # print(self, "result before projection:")
-        # print(result.to_str('hoa'))
-        # print()
         proj_vars = set()
         if type(self.a) is not VarRef:
             proj_vars.add(val_a)
         if type(self.b) is not VarRef:
             proj_vars.add(val_b)
         result = Projection(result, proj_vars).project()
-        # print(self, "result")
-        # print(result.to_str('hoa'))
-        # print()
         return (result, self.label)
 
     def evaluate_int(self, prog):
@@ -116,37 +52,27 @@ class Sub(BinaryExpression):
         return '({} - {})'.format(self.a, self.b)
 
     def evaluate(self, prog):
-        # if type(self.a) is IntConst and type(self.b) is IntConst:
-        #     return IntConst(self.a.evaluate_int(prog) - self.b.evaluate_int(prog)).evaluate(prog)
         if self.is_int:
             return IntConst(self.evaluate_int(prog))
 
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
-        aut_add = base_2_addition #It is base 2 addition now TODO: get automaton
-        def build_sub_formula(formula):
-            return Substitution({'c': spot.formula(val_a), 'b':spot.formula(val_b), 'a': spot.formula(self.label)}).substitute(formula)
-        aut_sub = AutomatonTransformer(aut_add, build_sub_formula).transform()
-
+        aut_sub = prog.call(prog.context['adder'], [self.label, val_b, val_a])
         result = spot.product(aut_b, aut_a)
         result = spot.product(aut_sub, result)
-        # print(self, "result before projection:")
-        # print(result.to_str('hoa'))
-        # print()
+
         proj_vars = set()
         if type(self.a) is not VarRef:
             proj_vars.add(val_a)
         if type(self.b) is not VarRef:
             proj_vars.add(val_b)
         result = Projection(result, proj_vars).project()
-        # print(self, "result after projection:")
-        # print(result.to_str('hoa'))
-        # print()
         return (result, self.label)
 
     def evaluate_int(self, prog):
         assert self.is_int
         return self.a.evaluate_int(prog) - self.b.evaluate_int(prog)
+
 #TODO:
 class Mul(BinaryExpression):
     def __init__(self, a, b):
@@ -217,8 +143,8 @@ class Div(BinaryExpression):
                 raise AutomatonArithmeticError("Division among integers must output an integer in {}".format(self))
         return self.a.evaluate_int(prog) // self.b.evaluate_int(prog)
 
-constants_map = {0:(spot.formula('G(~__constant0)').translate(), "__constant0")}
 
+constants_map = {0:(spot.formula('G(~__constant0)').translate(), "__constant0")}
 class IntConst(Expression):
     # Constant 0 is defined as 000000...
     def __init__(self, val):
@@ -239,20 +165,15 @@ class IntConst(Expression):
         if (self.val & (self.val-1) == 0):
             result = Add(IntConst(self.val // 2), IntConst(self.val // 2))
         else:
-            c = self.val   # copy of val
+            c = self.val 
             power = 1
             while c != 1:
                 power  = power << 1
                 c = c >> 1
-            # print(power, self.val - power, self.val)
             result = Add(IntConst(power), IntConst(self.val - power))
         result.change_label(self.label)
-
         (result,val) = result.evaluate(prog)
         constants_map[self.val] = (result,val)
-        # print(self.val)
-        # print(constants_map[self.val][0].to_str('hoa'))
-        # print()
         return constants_map[self.val]
 
     def evaluate_int(self, prog):
@@ -305,27 +226,18 @@ class Less(Predicate):
     def evaluate(self, prog):
         if self.a.is_int and self.b.is_int:
             return spot.formula('1').translate() if self.a.evaluate_int(prog) < self.b.evaluate_int(prog) else spot.formula('0').translate()
-
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
-        aut_less = base_2_less_than #It's binary less than for now. TODO: get automaton
-        def build_less_formula(formula):
-            return Substitution({'a': spot.formula(val_a),'b':spot.formula(val_b)}).substitute(formula)
-        aut_less = AutomatonTransformer(aut_less, build_less_formula).transform()
-        result = spot.product(aut_b, aut_a)
+        aut_less = prog.call(prog.context['compare'], [val_a, val_b])
+        result = spot.product(aut_a, aut_b)
         result = spot.product(aut_less, result)
-        # print(self, "result before projection:")
-        # print(result.to_str('hoa'))
-        # print()
+
         proj_vars = set()
         if type(self.a) is not VarRef:
             proj_vars.add(val_a)
         if type(self.b) is not VarRef:
             proj_vars.add(val_b)
         result = Projection(result, proj_vars).project()
-        # print(self, "result")
-        # print(result.to_str('hoa'))
-        # print()
         return result
 
     def __repr__(self):

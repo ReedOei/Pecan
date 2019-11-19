@@ -4,4 +4,5 @@ finite_num(x) := "F(G(!x))"
 zero(x) := "G(!x)"
 
 #context("adder", "bin_add")
+#context("compare", "bin_less")
 
