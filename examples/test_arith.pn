@@ -60,3 +60,20 @@ test18() := forall x. forall y.  ((x >= y) <=> (x > y | x = y))
 
 test19() := forall x. finite_num(x) => (1+2) + x = 1 + (x + 2)
 #assert_prop(true, test19)
+
+//Multiplication tests
+//definition
+test20() := forall x. finite_num(x) => 3*x = x+x+x+x-x
+#assert_prop(true, test20)
+//associativity
+test21() := forall x. finite_num(x) => 2*(2*x) = 4*x
+#assert_prop(true, test21)
+//distributive on variables
+test22() := forall x. forall y. (finite_num(x) & finite_num(y)) => 2*x + 2*y = 2*(x+y)
+#assert_prop(true, test22)
+//distributive on constants
+test23() := forall x.(finite_num(x)) => 2*x + 3*x = (3+2)*x
+#assert_prop(true, test23)
+//distributive on both
+test24() := forall x. forall y. (finite_num(x) & finite_num(y)) => (2+3)*(x+y) = 2*x+2*y +3*x+3*y
+#assert_prop(true, test24)

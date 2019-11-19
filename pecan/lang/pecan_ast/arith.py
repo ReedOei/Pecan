@@ -9,6 +9,7 @@ from pecan.lang.pecan_ast.bool import *
 from pecan.lang.pecan_ast.quant import Forall
 
 #TODO: memoize same expressions
+#TODO: Problem: can't change automaton for constants if definition of less_than or addition is changed in one run of Pecan. 
 class Add(BinaryExpression):
     def __init__(self, a, b):
         super().__init__(a, b)
@@ -74,14 +75,11 @@ class Sub(BinaryExpression):
         assert self.is_int
         return self.a.evaluate_int(prog) - self.b.evaluate_int(prog)
 
-#TODO:
 class Mul(BinaryExpression):
     def __init__(self, a, b):
         super().__init__(a, b)
         self.a = a
         self.b = b
-        if not self.is_int:
-            raise NotImplementedError("Multiplication with automaton hasn't been implemented, sorry. {}".format(self))
         if not self.a.is_int:
             raise AutomatonArithmeticError("First argument of multiplication must be an integer in {}".format(self))
 
@@ -90,15 +88,19 @@ class Mul(BinaryExpression):
             return IntConst(self.evaluate_int(prog)).evaluate(prog)
 
         c = self.a.evaluate_int(prog)  # copy of a
-        # TODO: memoize
-        power =  self.b
+        if c == 0: 
+            return IntConst(0).evaluate(prog)
+
+        power = self.b
         sum = IntConst(0)
-        while c > 0:
+        while True:
             if c & 1 == 1:
-                sum = Add(sum,power)
+                sum = EvaluatedExpression(Add(power,sum).evaluate(prog))
             c = c >> 1
-            power = Add(power,power)
-        # TODO: substitute label
+            if c <= 0:
+                break
+            power = EvaluatedExpression(Add(power, power).evaluate(prog))
+        # I think there are no unwanted APs that we need to project. TODO: remove this comment.
         return sum.evaluate(prog)
 
     def __repr__(self):
@@ -107,6 +109,8 @@ class Mul(BinaryExpression):
     def evaluate_int(self, prog):
         assert self.is_int
         return self.a.evaluate_int(prog) * self.b.evaluate_int(prog)
+
+
 #TODO:
 class Div(BinaryExpression):
     def __init__(self, a, b):
@@ -304,6 +308,17 @@ class Neg(Expression): # Should this be allowed?
     def evaluate_int(self, prog):
         assert self.is_int
         return -self.a.evaluate_int(prog)
+
+# For memoization in Mul.evaluate(), is there a better way to do this?
+class EvaluatedExpression(ASTNode):
+    def __init__(self, result):
+        self.result = result
+        # self.result should be (aut,val) form
+        self.is_int = False
+
+    def evaluate(self, prog):
+        return self.result
+
 
 class AutomatonArithmeticError(Exception):
     pass
