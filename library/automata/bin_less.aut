@@ -1,0 +1,23 @@
+HOA: v1
+States: 3
+Start: 0
+name: "Base2 Less Than"
+AP: 2 "a" "b"
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0
+[!0&!1] 0
+[0&!1] 0
+[!0&1] 1
+[0&1] 0
+
+State: 1
+[!0&!1] 1
+[0&!1] 0
+[!0&1] 1
+[0&1] 1
+[!0&!1] 2
+
+State: 2 {0}
+[!0&!1] 2
+--END--

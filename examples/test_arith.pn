@@ -27,3 +27,36 @@ test7() := 3 + 4 = 7
 
 test8() := 255 - 128 = 127
 #assert_prop(true, test8)
+
+test9() := 2 > 1
+#assert_prop(true, test9)
+
+test10() := forall x. forall y. (finite_num(x) & finite_num(y)) => ((x + y) >= x)
+#assert_prop(true, test10)
+
+test11() := forall x. forall y. (finite_num(x) & finite_num(y)) => ((x > y) <=> !(x <= y))
+#assert_prop(true, test11)
+
+test12() := forall x. forall y. (finite_num(x) & finite_num(y)) => ((x > y) <=> (y < x))
+#assert_prop(true, test12)
+
+test13() := (2 / 1) = 2
+#assert_prop(true, test13)
+
+test14() := 1024 * 2048 / 2 + 512 - 512 * (2 * 2048 / 2 + 1) = 0
+#assert_prop(true, test14)
+
+test15() := 1024 * 2048 / 2 + 512 = 512 * (2 * 2048 / 2 + 1)
+#assert_prop(true, test15)
+
+test16() := forall x. forall y.  ((finite_num(x) & finite_num(y)) => ((x + y) >= x))
+#assert_prop(true, test16)
+
+test17() := forall x. forall y.  ((x <= y) <=> (x < y | x = y))
+#assert_prop(true, test17)
+
+test18() := forall x. forall y.  ((x >= y) <=> (x > y | x = y))
+#assert_prop(true, test18)
+
+test19() := forall x. finite_num(x) => (1+2) + x = 1 + (x + 2)
+#assert_prop(true, test19)

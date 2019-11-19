@@ -199,7 +199,7 @@ class PecanTransformer(Transformer):
     def less(self, a, b):
         return Less(a, b)
 
-    def greater(self, a, sym, b):
+    def greater(self, a, b):
         return Greater(a, b)
 
     def less_equal(self, a, sym, b):
