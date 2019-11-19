@@ -22,7 +22,7 @@ class Add(BinaryExpression):
 
     def evaluate(self, prog):
         if self.is_int:
-            return IntConst(self.evaluate_int(prog))
+            return IntConst(self.evaluate_int(prog)).evaluate(prog)
 
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
@@ -53,7 +53,7 @@ class Sub(BinaryExpression):
 
     def evaluate(self, prog):
         if self.is_int:
-            return IntConst(self.evaluate_int(prog))
+            return IntConst(self.evaluate_int(prog)).evaluate(prog)
 
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
@@ -86,7 +86,7 @@ class Mul(BinaryExpression):
 
     def evaluate(self, prog):
         if self.is_int:
-            return IntConst(self.evaluate_int(prog))
+            return IntConst(self.evaluate_int(prog)).evaluate(prog)
 
         c = self.a.evaluate_int(prog)  # copy of a
         # TODO: memoize
@@ -98,7 +98,7 @@ class Mul(BinaryExpression):
             c = c >> 1
             power = Add(power,power)
         # TODO: substitute label
-        return sum.evaluate()
+        return sum.evaluate(prog)
 
     def __repr__(self):
         return '({} * {})'.format(self.a, self.b)
@@ -122,7 +122,7 @@ class Div(BinaryExpression):
 
     def evaluate(self, prog):
         if self.is_int:
-            return IntConst(self.evaluate_int(prog))
+            return IntConst(self.evaluate_int(prog)).evaluate(prog)
         assert False 
         b = self.b.evaluate_int(prog)
         if b == 1:
@@ -172,6 +172,7 @@ class IntConst(Expression):
                 c = c >> 1
             result = Add(IntConst(power), IntConst(self.val - power))
         result.change_label(self.label)
+        result.is_int = False
         (result,val) = result.evaluate(prog)
         constants_map[self.val] = (result,val)
         return constants_map[self.val]
@@ -294,7 +295,7 @@ class Neg(Expression): # Should this be allowed?
 
     def evaluate(self, prog):
         if self.a.is_int:
-            return IntConst(self.evaluate_int(prog))
+            return IntConst(self.evaluate_int(prog)).evaluate(prog)
         raise AutomatonArithmeticError("Should not negate automaton in {}".format(self))
         return Sub(IntConst(0),self.a).evaluate(prog)
 

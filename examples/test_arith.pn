@@ -58,3 +58,5 @@ test17() := forall x. forall y.  ((x <= y) <=> (x < y | x = y))
 test18() := forall x. forall y.  ((x >= y) <=> (x > y | x = y))
 #assert_prop(true, test18)
 
+test19() := forall x. finite_num(x) => (1+2) + x = 1 + (x + 2)
+#assert_prop(true, test19)
