@@ -7,3 +7,5 @@ zero(x) := "G(!x)"
 #context("adder", "bin_add")
 #context("less", "bin_less")
 
+x is nat := finite_num(x)
+

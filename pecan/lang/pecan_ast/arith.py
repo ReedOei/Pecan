@@ -11,7 +11,7 @@ from pecan.lang.pecan_ast.quant import Forall
 #TODO: memoize same expressions
 #TODO: Problem: can't change automaton for constants if definition of less_than or addition is changed in one run of Pecan. 
 class Add(BinaryExpression):
-    def __init__(self, a, b):
+    def __init__(self, a, b, param=None):
         super().__init__(a, b)
         self.a = a
         self.b = b
@@ -45,7 +45,7 @@ class Add(BinaryExpression):
 
 
 class Sub(BinaryExpression):
-    def __init__(self, a, b):
+    def __init__(self, a, b, param=None):
         super().__init__(a, b)
         self.a = a
         self.b = b
@@ -76,7 +76,7 @@ class Sub(BinaryExpression):
         return self.a.evaluate_int(prog) - self.b.evaluate_int(prog)
 
 class Mul(BinaryExpression):
-    def __init__(self, a, b):
+    def __init__(self, a, b, param=None):
         super().__init__(a, b)
         self.a = a
         self.b = b
@@ -113,7 +113,7 @@ class Mul(BinaryExpression):
 
 #TODO:
 class Div(BinaryExpression):
-    def __init__(self, a, b):
+    def __init__(self, a, b, param=None):
         super().__init__(a, b)
         self.a = a
         self.b = b
@@ -152,7 +152,7 @@ class Div(BinaryExpression):
 constants_map = {0:(spot.formula('G(~__constant0)').translate(), "__constant0")}
 class IntConst(Expression):
     # Constant 0 is defined as 000000...
-    def __init__(self, val):
+    def __init__(self, val, param=None):
         super().__init__()
         self.val = val
         self.label = "__constant{}".format(self.val)

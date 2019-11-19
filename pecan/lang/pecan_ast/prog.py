@@ -30,18 +30,6 @@ class ASTNode:
 
         return result
 
-    def evaluate(self, prog):
-        prog.eval_level += 1
-        if prog.debug:
-            start_time = time.time()
-        result = self.evaluate_node(prog)
-        prog.eval_level -= 1
-        if prog.debug:
-            end_time = time.time()
-            print('{}{} has {} states and {} edges ({:.2f} seconds)'.format(' ' * prog.eval_level, self, result.num_states(), result.num_edges(), end_time - start_time))
-
-        return result
-
 class Expression(ASTNode):
     def __init__(self):
         super().__init__()
@@ -105,6 +93,9 @@ class Call(Predicate):
         self.name = name
         self.args = args
 
+    def replace_first(self, name):
+        return Call(self.name, [name] + self.args[1:])
+
     def evaluate(self, prog):
         return prog.call(self.name, self.args)
 
@@ -142,6 +133,7 @@ class Program(ASTNode):
         self.defs = defs
         self.preds = {}
         self.context = {}
+        self.restrictions = {}
         self.parser = None # This will be "filled in" in the main.py after we load a program
         self.debug = False
         self.quiet = False
@@ -150,6 +142,7 @@ class Program(ASTNode):
         self.search_paths = []
 
     def include(self, other_prog):
+        # Note: Intentionally do NOT merge restrictions, because it would be super confusing if variable restrictions "leaked" from imports
         self.preds.update(other_prog.preds)
         self.context.update(other_prog.context)
         self.parser = other_prog.parser
@@ -166,7 +159,7 @@ class Program(ASTNode):
                 self.preds[d.name] = d
             else:
                 result = d.evaluate(self)
-                if result is not None:
+                if result is not None and type(result) is Result:
                     if result.failed():
                         succeeded = False
                         msgs.append(result.message())
@@ -174,6 +167,19 @@ class Program(ASTNode):
         self.result = Result('\n'.join(msgs), succeeded)
 
         return self
+
+    def forget(self, var_name):
+        self.restrictions.pop(var_name)
+
+    def restrict(self, var_name, pred):
+        # Add this restriction to the global variable restriction
+        if var_name in self.restrictions:
+            self.restrictions[var_name].append(pred)
+        else:
+            self.restrictions[var_name] = [pred]
+
+    def get_restrictions(self, var_name):
+        return self.restrictions.get(var_name, [])
 
     def call(self, pred_name, args=None):
         if pred_name in self.preds:
@@ -212,4 +218,18 @@ class Result:
             print(f'{Fore.GREEN}{self.msg}{Style.RESET_ALL}')
         else:
             print(f'{Fore.RED}{self.msg}{Style.RESET_ALL}')
+
+
+class Restriction(ASTNode):
+    def __init__(self, var_names, pred):
+        super().__init__()
+        self.var_names = var_names
+        self.pred = pred
+
+    def evaluate(self, prog):
+        for var_name in self.var_names:
+            prog.restrict(var_name, self.pred(var_name))
+
+    def __repr__(self):
+        return '{} are {}'.format(var_names.join(','), pred('')) # TODO: Improve this
 

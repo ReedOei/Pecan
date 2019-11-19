@@ -12,7 +12,7 @@ pecan_grammar = """
          | def NEWLINES defs -> multi_def
 
     ?def: call DEFEQ pred       -> def_pred
-        | pred
+        | restriction
         | "#" var -> directive
         | "#" "save_aut" "(" string "," var ")" -> directive_save_aut
         | "#" "save_aut_img" "(" string "," var ")" -> directive_save_aut_img
@@ -22,6 +22,10 @@ pecan_grammar = """
         | "#" "load" "(" string "," string "," call ")" -> directive_load
         | "#" "assert_prop" "(" PROP_VAL "," var ")" -> directive_assert_prop
         | "#" "import" "(" string ")" -> directive_import
+        | "#" "forget" "(" var ")" -> directive_forget
+
+    ?restriction: call  -> restrict_call
+                | args_nonempty "are" pred_ref -> restrict_many
 
     ?pred_ref: var -> var_ref
              | call
@@ -48,33 +52,36 @@ pecan_grammar = """
          | "true"  -> formula_true
          | "false" -> formal_false
 
+    ?args_nonempty: var -> single_arg
+                  | var "," args       -> multi_arg
+
     ?args: -> nil_arg
-         | var -> single_arg
-         | var "," args       -> multi_arg
+         | args_nonempty
 
     ?expr: arith
          | var "[" arith "]"  -> index
 
     ?arith: product
           | arith "+" product -> add
+          | arith "+_" var product -> add_with_param
           | arith "-" product -> sub
+          | arith "-_" product -> sub_with_param
 
     ?product: atom
-            | product MUL atom -> mul
+            | product "*" atom -> mul
+            | product "*_" atom -> mul_with_param
             | product "/" atom -> div
+            | product "/_" atom -> div_with_param
 
     ?atom: var -> var_ref
-         | INT      -> const
+         | INT -> const
+         | INT "_" var -> const_with_param
          | "-" INT  -> neg
          | "(" arith ")"
 
-    ?var: VAR
+    ?var: VAR -> var_tok
 
     ?string: ESCAPED_STRING -> escaped_str
-
-    %import common.CNAME -> VAR
-
-    MUL: "*" | "⋅"
 
     PROP_VAL: "sometimes"i | "true"i | "false"i // case insensitive
 
@@ -100,6 +107,8 @@ pecan_grammar = """
 
     NEWLINE: /\\n/
 
+    VAR: /(?!(forall|exists|not|or|and|sometimes|true|false)\\b)[a-zA-Z_][a-zA-Z_0-9]*/i
+
     COMMENT: "//" /(.)+/ NEWLINE
 
     %ignore COMMENT
@@ -113,6 +122,21 @@ pecan_grammar = """
 
 @v_args(inline=True)
 class PecanTransformer(Transformer):
+    def var_tok(self, tok):
+        return str(tok)
+
+    def restrict_call(self, call):
+        if len(call.args) <= 0:
+            raise Exception("Cannot restrict a call with no arguments: {}".format(call))
+
+        return Restriction(call.args[0], call.replace_first)
+
+    def restrict_many(self, args, pred):
+        if type(pred) is VarRef:
+            return Restriction(args, Call(pred.var_name, ['']).replace_first) # '' is a dummy value because it'll get replaced
+        else:
+            return Restriction(args, pred.replace_first)
+
     def escaped_str(self, str_tok):
         return str(str_tok)
 
@@ -143,6 +167,9 @@ class PecanTransformer(Transformer):
     def directive_import(self, filename):
         return DirectiveImport(filename)
 
+    def directive_forget(self, var_name):
+        return DirectiveForget(var_name)
+
     def prog(self, defs):
         return Program(defs)
 
@@ -172,11 +199,23 @@ class PecanTransformer(Transformer):
     def sub(self, a, b):
         return Sub(a, b)
 
-    def mul(self, a, sym, b):
+    def mul(self, a, b):
         return Mul(a, b)
 
     def div(self, a, b):
         return Div(a, b)
+
+    def add_with_param(self, a, var, b):
+        return Add(a, b, param=var)
+
+    def sub_with_param(self, a, var, b):
+        return Sub(a, b, param=var)
+
+    def mul_with_param(self, a, var, b):
+        return Mul(a, b, param=var)
+
+    def div_with_param(self, a, var, b):
+        return Div(a, b, param=var)
 
     def neg(self, a):
         return Neg(a)
@@ -186,6 +225,12 @@ class PecanTransformer(Transformer):
             raise AutomatonArithmeticError("Constants need to be integers: " + const)
         const = int(const.value)
         return IntConst(const)
+
+    def const_with_param(self, const, var):
+        if const.type != "INT":
+            raise AutomatonArithmeticError("Constants need to be integers: " + const)
+        const = int(const.value)
+        return IntConst(const, param=var)
 
     def index(self, var_name, index_expr):
         return Index(var_name, index_expr)

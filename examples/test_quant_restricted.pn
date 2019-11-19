@@ -1,9 +1,25 @@
-test() := forall x is finite_num. 0 + x = x
+test() := forall x is nat. 0 + x = x
 #assert_prop(true, test)
 
-test2() := exists x is finite_num. x + x = x
+test2() := exists x is nat. x + x = x
 #assert_prop(true, test2)
 
-test3() := exists x is finite_num. !finite_num(x)
+test3() := exists x is nat. !finite_num(x)
 #assert_prop(false, test3)
+
+a, b, c are nat
+
+test4() := forall a. 0 + a = a
+#assert_prop(true, test4)
+
+test5() := exists b. b + b = b
+#assert_prop(true, test5)
+
+test6() := exists c. !finite_num(c)
+#assert_prop(false, test6)
+
+// This will work if we don't know that b is a natural number
+#forget(c)
+test7() := exists c. !finite_num(c)
+#assert_prop(true, test7)
 
