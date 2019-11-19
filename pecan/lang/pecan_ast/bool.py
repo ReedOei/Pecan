@@ -65,3 +65,23 @@ class Implies(Predicate):
     def __repr__(self):
         return '({} ⟹  {})'.format(self.a, self.b)
 
+class FormulaTrue(Predicate):
+    def __init__(self):
+        super().__init__()
+
+    def evaluate_node(self, prog):
+        return spot.translate("1")
+
+    def __repr__(self):
+        return '⊤'
+
+class FormulaFalse(Predicate):
+    def __init__(self):
+        super().__init__()
+
+    def evaluate_node(self, prog):
+        return spot.translate("0")
+
+    def __repr__(self):
+        return '⊥'
+

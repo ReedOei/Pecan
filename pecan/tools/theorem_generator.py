@@ -34,18 +34,24 @@ def gen_vars(c):
         tot += 1
 
 def gen_thms(var_count):
-    print(list(gen_vars(var_count)))
     return gen_preds(list(gen_vars(var_count)))
 
-def gen_preds(var_list):
-    depth = 0
+def gen_pairs():
+    lim = 0
+    yield (0,0)
     while True:
-        for pred in gen_depth(var_list, depth):
-            for quantified in quantify(var_list, pred):
-                if truth_val(quantified) == 'true':
-                    yield quantified
+        for i in range(lim):
+            yield (lim, i)
+            yield (i, lim)
+        lim += 1
 
-        depth += 1
+def gen_preds(var_list):
+    while True:
+        for depth, expr_depth in gen_pairs():
+            for pred in gen_depth(var_list, depth, expr_depth):
+                for quantified in quantify(var_list, pred):
+                    if truth_val(quantified) == 'true':
+                        yield quantified
 
 def quantify(var_list, pred):
     if len(var_list) == 0:
@@ -57,20 +63,32 @@ def quantify(var_list, pred):
             for quantified in quantify(var_list[1:], quant(var_list[0], pred)):
                 yield quantified
 
-def gen_depth(var_list, depth):
+def gen_depth(var_list, depth, expr_depth):
     if depth == 0:
-        for x, y in itertools.combinations(var_list, 2):
-            yield Equals(VarRef(x), VarRef(y))
+        for expr1 in gen_expr(var_list, expr_depth):
+            for expr2 in gen_expr(var_list, expr_depth):
+                yield Equals(expr1, expr2)
     else:
         bin_ops = [Conjunction, Disjunction]
         un_ops = [Complement]
 
         for unary in un_ops:
-            for pred in gen_depth(var_list, depth - 1):
+            for pred in gen_depth(var_list, depth - 1, expr_depth):
                 yield unary(pred)
 
         for op in bin_ops:
-            for pred1 in gen_depth(var_list, depth - 1):
-                for pred2 in gen_depth(var_list, depth - 1):
+            for pred1 in gen_depth(var_list, depth - 1, expr_depth):
+                for pred2 in gen_depth(var_list, depth - 1, expr_depth):
                     yield op(pred1, pred2)
+
+def gen_expr(var_list, expr_depth):
+    if expr_depth == 0:
+        for var in var_list:
+            yield VarRef(var)
+    else:
+        bin_ops = [Add, Sub]
+        for bin_op in bin_ops:
+            for pred1 in gen_expr(var_list, expr_depth - 1):
+                for pred2 in gen_expr(var_list, expr_depth - 1):
+                    yield bin_op(pred1, pred2)
 

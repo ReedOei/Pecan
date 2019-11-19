@@ -1,0 +1,7 @@
+#load("bin_add.aut", "hoa", bin_add(a, b, c))
+
+finite_num(x) := "F(G(!x))"
+zero(x) := "G(!x)"
+
+#context("adder", "bin_add")
+

@@ -3,6 +3,7 @@
 
 import spot
 
+from pecan.tools.convert_hoa import convert_hoa
 from pecan.lang.pecan_ast.prog import *
 
 class Directive(ASTNode):
@@ -77,26 +78,11 @@ class DirectiveSavePred(ASTNode):
     def __repr__(self):
         return '#save_pred({}, {})'.format(repr(self.filename), self.pred_name)
 
-class DirectiveLoadPreds(ASTNode):
-    def __init__(self, filename):
-        super().__init__()
-        self.filename = filename[1:-1]
-
-    def evaluate(self, prog):
-        realpath = prog.locate_file(self.filename)
-        with open(realpath, 'r') as f:
-            prog.parser.parse(f.read()).evaluate(prog)
-
-        return None
-
-    def __repr__(self):
-        return '#load_preds({})'.format(repr(self.filename))
-
 class DirectiveContext(ASTNode):
     def __init__(self, context_key, context_val):
         super().__init__()
-        self.context_key = context_key
-        self.context_val = context_val
+        self.context_key = context_key[1:-1]
+        self.context_val = context_val[1:-1]
 
     def evaluate(self, prog):
         prog.context[self.context_key] = self.context_val
@@ -108,7 +94,7 @@ class DirectiveContext(ASTNode):
 class DirectiveEndContext(ASTNode):
     def __init__(self, context_key):
         super().__init__()
-        self.context_key = context_key
+        self.context_key = context_key[1:-1]
 
     def evaluate(self, prog):
         prog.context.pop(self.context_key)
@@ -156,18 +142,22 @@ class DirectiveAssertProp(ASTNode):
         return '#assert_prop({}, {})'.format(self.truth_val, self.pred_name)
 
 class DirectiveLoadAut(ASTNode):
-    def __init__(self, filename, aut_format, pred_name, pred_args):
+    def __init__(self, filename, aut_format, pred):
         super().__init__()
         self.filename = filename[1:-1]
         self.aut_format = aut_format[1:-1] # Remove the quotes at the beginning and end # TODO: Do this better
-        self.pred_name = pred_name
-        self.pred_args = pred_args
+        self.pred = pred
 
     def evaluate(self, prog):
         if self.aut_format == 'hoa':
             realpath = prog.locate_file(self.filename)
             aut = spot.automaton(realpath)
-            prog.preds[self.pred_name] = NamedPred(self.pred_name, self.pred_args, AutLiteral(aut))
+            prog.preds[self.pred.name] = NamedPred(self.pred.name, self.pred.args, AutLiteral(aut))
+        elif self.aut_format == 'pecan':
+            realpath = prog.locate_file(self.filename)
+            convert_hoa(realpath, 'temp.aut')
+            aut = spot.automaton('temp.aut')
+            prog.preds[self.pred.name] = NamedPred(self.pred.name, self.pred.args, AutLiteral(aut))
         else:
             raise Exception('Unknown format: {}'.format(self.aut_format))
 
@@ -175,4 +165,19 @@ class DirectiveLoadAut(ASTNode):
 
     def __repr__(self):
         return '#load({}, {}, {})'.format(self.filename, self.aut_format, self.pred_name)
+
+class DirectiveImport(ASTNode):
+    def __init__(self, filename):
+        super().__init__()
+        self.filename = filename[1:-1]
+
+    def evaluate(self, prog):
+        realpath = prog.locate_file(self.filename)
+        new_prog = prog.loader(realpath, debug=prog.debug, quiet=prog.quiet)
+        new_prog.evaluate()
+        prog.include(new_prog)
+        return None
+
+    def __repr__(self):
+        return '#import({})'.format(repr(self.filename))
 

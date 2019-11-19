@@ -103,4 +103,5 @@ class Projection:
                 # where cond is the original condition. That is, the edge is taken if it holds with y being false or y being true.
                 return spot.formula_Or([if_0, if_1])
             self.aut = AutomatonTransformer(self.aut, build_projection_formula).transform()
-        return self.aut 
+        return self.aut
+
