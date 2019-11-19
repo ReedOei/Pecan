@@ -124,7 +124,7 @@ class Div(BinaryExpression):
     def evaluate(self, prog):
         if self.is_int:
             return IntConst(self.evaluate_int(prog)).evaluate(prog)
-        assert False 
+        assert False
         b = self.b.evaluate_int(prog)
         if b == 1:
             return self.a.evaluate(prog)
@@ -161,13 +161,13 @@ class IntConst(Expression):
         if self.val == 1:
             formula_1 = Conjunction(Less(IntConst(0),VarRef("__constant1")), Forall('b', Implies(Less(IntConst(0), VarRef('b')), \
                                     LessEquals(VarRef('__constant1'), VarRef("b")))))
-            constants_map[1] = (form_1.evaluate(prog), "__constant1")
+            constants_map[1] = (formula_1.evaluate(prog), "__constant1")
             return constants_map[1]
         assert self.val >= 2, "constant here should be greater than or equal to 2, while it is {}".format(self.val)
         if (self.val & (self.val-1) == 0):
             result = Add(IntConst(self.val // 2), IntConst(self.val // 2))
         else:
-            c = self.val 
+            c = self.val
             power = 1
             while c != 1:
                 power  = power << 1
