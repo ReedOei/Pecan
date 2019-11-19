@@ -50,8 +50,12 @@ class Exists(Predicate):
             self.pred = pred
 
     def evaluate_node(self, prog):
-        constraints = reduce(Conjunction, prog.get_restrictions(self.var), FormulaTrue())
-        new_pred = Conjunction(constraints, self.pred)
+        if len(prog.get_restrictions(self.var)) > 0:
+            constraints = reduce(Conjunction, prog.get_restrictions(self.var), FormulaTrue())
+            new_pred = Conjunction(constraints, self.pred)
+        else:
+            new_pred = self.pred
+
         return Projection(new_pred.evaluate(prog), [self.var]).project()
 
     def __repr__(self):
