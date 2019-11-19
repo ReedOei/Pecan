@@ -24,6 +24,11 @@ pip install -r requirements.txt
 pip3 install -r requirements.txt
 ```
 
+Then you can run Pecan files (`.pn`) by:
+```bash
+python3 pecan.py FILENAME
+```
+
 ## Examples
 
 Below `has_zeros` and `all_ones` are expressed as [LTL formula](https://en.wikipedia.org/wiki/Linear_temporal_logic).
@@ -37,6 +42,27 @@ prop_true() := forall x. has_zeros(x) => (not all_ones(x))
 
 prop_false() := exists x. has_zeros(x) & all_ones(x)
 #assert_prop(false, prop_false)
+```
+
+Below we prove basic properties of addition (specifically, binary addition), see ([here](https://github.com/ReedOei/Pecan/blob/master/examples/arith_props.pn)):
+```
+x, y, z are nat
+
+add_zero_id() := forall x. x + 0 = x
+add_comm() := forall x. forall y. x + y = y + x
+add_assoc() := forall x. forall y. forall z. x + (y + z) = (x + y) + z
+
+#assert_prop(true, add_zero_id)
+#assert_prop(true, add_comm)
+#assert_prop(true, assoc_assoc)
+```
+
+Running it gives:
+```bash
+$ python3 pecan.py examples/arith_props.pn
+add_zero_id is true.
+add_comm is true.
+add_assoc is true.
 ```
 
 ## Configuration
