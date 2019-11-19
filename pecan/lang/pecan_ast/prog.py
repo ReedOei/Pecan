@@ -142,6 +142,7 @@ class Program(ASTNode):
         self.search_paths = []
 
     def include(self, other_prog):
+        # Note: Intentionally do NOT merge restrictions, because it would be super confusing if variable restrictions "leaked" from imports
         self.preds.update(other_prog.preds)
         self.context.update(other_prog.context)
         self.parser = other_prog.parser
