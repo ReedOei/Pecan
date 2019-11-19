@@ -29,8 +29,11 @@ class Forall(Predicate):
             self.pred = pred
 
     def evaluate_node(self, prog):
-        constraints = reduce(Conjunction, prog.get_restrictions(self.var), FormulaTrue())
-        new_pred = Implies(constraints, self.pred)
+        if len(prog.get_restrictions(self.var)) > 0:
+            constraints = reduce(Conjunction, prog.get_restrictions(self.var), FormulaTrue())
+            new_pred = Implies(constraints, self.pred)
+        else:
+            new_pred = self.pred
         return Complement(Exists(self.var, Complement(new_pred))).evaluate(prog)
 
     def __repr__(self):
