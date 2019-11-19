@@ -6,6 +6,7 @@ import spot
 from pecan.lang.pecan_ast.prog import *
 from pecan.tools.automaton_tools import Substitution, AutomatonTransformer, Projection
 from pecan.lang.pecan_ast.bool import *
+from pecan.lang.pecan_ast.quant import Forall
 
 #TODO: memoize same expressions
 class Add(BinaryExpression):
@@ -158,8 +159,9 @@ class IntConst(Expression):
         if self.val in constants_map:
             return constants_map[self.val]
         if self.val == 1:
-            # TODO: a = 1 iff (a>0 and (for all b > 0, b>=a))
-            constants_map[1] = (spot.formula('{} & GX~{}'.format(self.label, self.label)).translate(), self.label)
+            formula_1 = Conjunction(Less(IntConst(0),VarRef("__constant1")), Forall('b', Implies(Less(IntConst(0), VarRef('b')), \
+                                    LessEquals(VarRef('__constant1'), VarRef("b")))))
+            constants_map[1] = (form_1.evaluate(prog), "__constant1")
             return constants_map[1]
         assert self.val >= 2, "constant here should be greater than or equal to 2, while it is {}".format(self.val)
         if (self.val & (self.val-1) == 0):
