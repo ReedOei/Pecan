@@ -91,10 +91,10 @@ class Call(Predicate):
     def __init__(self, name, args):
         super().__init__()
         self.name = name
-        self.args = args
+        self.args = args if isinstance(args, list) else [args]
 
-    def replace_first(self, name):
-        return Call(self.name, [name] + self.args[1:])
+    def replace_first(self, new_arg):
+        return Call(self.name, [new_arg] + self.args[1:])
 
     def evaluate(self, prog):
         return prog.call(self.name, self.args)
@@ -106,22 +106,31 @@ class NamedPred(ASTNode):
     def __init__(self, name, args, body):
         super().__init__()
         self.name = name
-        self.args = list(map(str, args))
+        self.args = args
         self.body = body
+
+        self.arg_restrictions = []
 
         self.body_evaluated = None
 
     def call(self, prog, arg_names=None):
-        if self.body_evaluated is None:
-            self.body_evaluated = self.body.evaluate(prog)
+        prog.enter_scope()
 
-        if arg_names is None:
-            return self.body_evaluated
-        else:
-            arg_names = list(map(str, arg_names))
-            arg_vars = list(map(lambda name: spot.formula_ap(name), arg_names))
-            substitution = Substitution(dict(zip(self.args, arg_vars)))
-            return AutomatonTransformer(self.body_evaluated, substitution.substitute).transform()
+        try:
+            for arg_restriction in self.arg_restrictions:
+                arg_restriction.evaluate(prog)
+
+            if self.body_evaluated is None:
+                self.body_evaluated = self.body.evaluate(prog)
+
+            if arg_names is None:
+                return self.body_evaluated
+            else:
+                subs_dict = {str(arg): spot.formula_ap(str(name)) for arg, name in zip(self.args, arg_names)}
+                substitution = Substitution(subs_dict)
+                return AutomatonTransformer(self.body_evaluated, substitution.substitute).transform()
+        finally:
+            prog.exit_scope()
 
     def __repr__(self):
         return '{}({}) := {}'.format(self.name, ', '.join(self.args), self.body)
@@ -133,7 +142,7 @@ class Program(ASTNode):
         self.defs = defs
         self.preds = {}
         self.context = {}
-        self.restrictions = {}
+        self.restrictions = [{}]
         self.parser = None # This will be "filled in" in the main.py after we load a program
         self.debug = False
         self.quiet = False
@@ -169,24 +178,34 @@ class Program(ASTNode):
         return self
 
     def forget(self, var_name):
-        self.restrictions.pop(var_name)
+        self.restrictions[-1].pop(var_name)
 
     def restrict(self, var_name, pred):
-        # Add this restriction to the global variable restriction
-        if var_name in self.restrictions:
-            self.restrictions[var_name].append(pred)
+        if var_name in self.restrictions[-1]:
+            self.restrictions[-1][var_name].append(pred)
         else:
-            self.restrictions[var_name] = [pred]
+            self.restrictions[-1][var_name] = [pred]
+
+    def enter_scope(self):
+        self.restrictions.append({})
+
+    def exit_scope(self):
+        if len(self.restrictions) <= 1:
+            raise Exception('Cannot exit the last scope!')
+        else:
+            self.restrictions.pop(-1)
 
     def get_restrictions(self, var_name):
-        return self.restrictions.get(var_name, [])
+        result = []
+        for scope in self.restrictions:
+            result.extend(scope.get(var_name, []))
+        return result
 
     def call(self, pred_name, args=None):
         if pred_name in self.preds:
             return self.preds[pred_name].call(self, args)
         else:
-            print(self.preds)
-            raise Exception(f'Predicate {pred_name} not found!')
+            raise Exception(f'Predicate {pred_name} not found (known predicates: {self.preds.keys()}!')
 
     def locate_file(self, filename):
         for path in self.search_paths:

@@ -74,4 +74,5 @@ It should be a colon-separated or semicolon-separated list of paths, depending o
 
 - Plotting?
 - Documentation
+- Implement a linter to check for basic mistakes in the AST
 
