@@ -1,0 +1,10 @@
+x, y, z are nat
+
+add_zero_id() := forall x. x + 0 = x
+add_comm() := forall x. forall y. x + y = y + x
+add_assoc() := forall x. forall y. forall z. x + (y + z) = (x + y) + z
+
+#assert_prop(true, add_zero_id)
+#assert_prop(true, add_comm)
+#assert_prop(true, add_assoc)
+
