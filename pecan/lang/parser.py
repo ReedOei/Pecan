@@ -118,13 +118,12 @@ pecan_grammar = """
 
 @v_args(inline=True)
 class PecanTransformer(Transformer):
-    var_tok = lambda self, tok: str(tok)
-
-    def args(self, *args):
-        return list(args)
-
-    def args_nonempty(self, *args):
-        return list(args)
+    var_tok = str
+    escaped_str = str
+    args = lambda self, *args: list(args)
+    args_nonempty = lambda self, *args: list(args)
+    directive = Directive
+    directive_assert_prop = DirectiveAssertProp
 
     def restrict_call(self, call):
         if len(call.args) <= 0:
@@ -134,15 +133,9 @@ class PecanTransformer(Transformer):
 
     def restrict_many(self, args, pred):
         if type(pred) is VarRef: # If we do something like `x,y,z are nat`
-            return Restriction(list(map(str, args)), Call(pred.var_name, ['']).replace_first) # '' is a dummy value because it'll get replaced
+            return Restriction(args, Call(pred.var_name, ['']).replace_first) # '' is a dummy value because it'll get replaced
         else:
-            return Restriction(list(map(str, args)), pred.replace_first)
-
-    def escaped_str(self, str_tok):
-        return str(str_tok)
-
-    def directive(self, name):
-        return Directive(name)
+            return Restriction(args, pred.replace_first)
 
     def directive_save_aut(self, filename, pred_name):
         return DirectiveSaveAut(filename, pred_name)
@@ -161,9 +154,6 @@ class PecanTransformer(Transformer):
 
     def directive_load(self, filename, aut_format, pred):
         return DirectiveLoadAut(filename, aut_format, pred)
-
-    def directive_assert_prop(self, bool_val, pred_name):
-        return DirectiveAssertProp(bool_val, pred_name)
 
     def directive_import(self, filename):
         return DirectiveImport(filename)
@@ -301,17 +291,8 @@ class PecanTransformer(Transformer):
     def formula_false(self):
         return FormulaFalse()
 
-    def nil_arg(self):
-        return []
-
     def spot_formula(self, formula_str):
         return SpotFormula(formula_str[1:-1])
-
-    def single_arg(self, arg):
-        return [arg]
-
-    def multi_arg(self, arg, args):
-        return [arg] + args
 
 pecan_parser = Lark(pecan_grammar, parser='lalr', transformer=PecanTransformer(), propagate_positions=True)
 

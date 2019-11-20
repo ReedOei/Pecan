@@ -23,3 +23,5 @@ test6() := exists c. !finite_num(c)
 test7() := exists c. !finite_num(c)
 #assert_prop(true, test7)
 
+test8(a is nat, b is nat) := a + b = b + a
+

@@ -106,11 +106,21 @@ class NamedPred(ASTNode):
     def __init__(self, name, args, body):
         super().__init__()
         self.name = name
-        self.args = args
-        self.body = body
 
+        self.args = []
         self.arg_restrictions = []
+        for arg in args:
+            if type(arg) is VarRef:
+                self.args.append(arg.var_name)
+            elif type(arg) is str:
+                self.args.append(arg)
+            elif type(arg) is Call:
+                self.args.append(arg.args[0])
+                self.arg_restrictions.append(Restriction([arg.args[0]], arg.replace_first))
+            else:
+                raise Exception("Argument '{}' is not: string, VarRef, or a Call!".format(arg))
 
+        self.body = body
         self.body_evaluated = None
 
     def call(self, prog, arg_names=None):
@@ -242,7 +252,14 @@ class Result:
 class Restriction(ASTNode):
     def __init__(self, var_names, pred):
         super().__init__()
-        self.var_names = var_names
+        self.var_names = []
+        for var_name in var_names:
+            if type(var_name) is str:
+                self.var_names.append(var_name)
+            elif type(var_name) is VarRef:
+                self.var_names.append(var_name.var_name)
+            else:
+                raise Exception("Argument '{}' is not a valid var name (string or VarRef)".format(var_name))
         self.pred = pred
 
     def evaluate(self, prog):
