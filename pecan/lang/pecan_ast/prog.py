@@ -217,7 +217,7 @@ class NamedPred(ASTNode):
         return Match(self.name, ['any'] * self.arity())
 
     def call(self, prog, arg_names=None):
-        prog.enter_scope()
+        prog.enter_scope() # TODO: Scopes should not be visible to functions that we call..., only the global scope should be
 
         try:
             for arg_restriction in self.arg_restrictions:
@@ -371,15 +371,10 @@ class Program(ASTNode):
                         return restriction.match()
                     elif pred_name in self.types[t]:
                         return self.types[t][pred_name].match()
-                    elif pred_name in self.preds:
-                        return self.lookup_pred_by_name(pred_name).match()
                     else:
                         return Match(match_any=True)
 
-        if pred_name in self.preds:
-            return self.lookup_pred_by_name(pred_name).match()
-        else:
-            return Match(match_any=True)
+        return Match(match_any=True)
 
     # Dynamic dispatch based on argument types
     def dynamic_call(self, pred_name, args):
@@ -393,8 +388,14 @@ class Program(ASTNode):
 
         # There will always be at least one match because there should always be
         # at least one argument, so no need for an initial value
-        final_match = reduce(lambda a, b: a.unify(b), matches).call_with(pred_name, unification, args)
-        return self.lookup_pred_by_name(final_match.name).call(self, final_match.args)
+        final_match = reduce(lambda a, b: a.unify(b), matches)
+
+        # Match any means that we didn't find any type-specific matches
+        if final_match.match_any:
+            return self.lookup_pred_by_name(pred_name).call(self, args)
+        else:
+            final_call = final_match.call_with(pred_name, unification, args)
+            return self.lookup_pred_by_name(final_call.name).call(self, final_call.args)
 
     def locate_file(self, filename):
         for path in self.search_paths:
