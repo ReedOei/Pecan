@@ -1,0 +1,34 @@
+x is nat_gt(n) := x is nat & x > n
+
+gt(n, a, b) := a > n & b > n
+
+#type(nat_gt(n), {
+    "adder": bin_add(any, any, any),
+    "less": bin_less(any, any),
+    "valid": gt(n, any, any)
+})
+
+// TODO: It would be nice if we could write "is" here...
+k are nat
+x, y are nat_gt(k)
+test() := forall k. forall x. forall y. valid(x, y) <=> gt(k, x, y)
+#assert_prop(true, test)
+
+test_a() := forall k. forall x. forall y. valid(x, y)
+#assert_prop(true, test_a)
+
+test_b() := forall k. forall x. forall y. gt(k, x, y)
+#assert_prop(true, test_b)
+
+#forget(k)
+#forget(x)
+#forget(y)
+test2() := forall k. forall x. forall y. gt(k, x, y)
+#assert_prop(false, test2)
+
+k are nat
+x are nat_gt(k)
+a are nat_gt(x)
+test3() := forall k. forall x. forall a. valid(a, a) <=> gt(k, a, a)
+#assert_prop(true, test3)
+

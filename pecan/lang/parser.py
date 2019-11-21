@@ -9,7 +9,7 @@ pecan_grammar = """
 
     ?defs:          -> nil_def
          | def -> single_def
-         | def NEWLINES defs -> multi_def
+         | def _NEWLINE+ defs -> multi_def
 
     ?def: call DEFEQ pred       -> def_pred
         | restriction
@@ -23,6 +23,10 @@ pecan_grammar = """
         | "#" "assert_prop" "(" PROP_VAL "," var ")" -> directive_assert_prop
         | "#" "import" "(" string ")" -> directive_import
         | "#" "forget" "(" var ")" -> directive_forget
+        | "#" "type" "(" pred_ref "," val_dict ")" -> directive_type
+
+    ?val_dict: "{" [_NEWLINE* kv_pair _NEWLINE* ("," _NEWLINE* kv_pair _NEWLINE*)*] "}"
+    ?kv_pair: string ":" pred_ref
 
     ?restriction: args_nonempty ("are" | "is") pred_ref -> restrict_many
 
@@ -81,8 +85,6 @@ pecan_grammar = """
 
     PROP_VAL: "sometimes"i | "true"i | "false"i // case insensitive
 
-    NEWLINES: NEWLINE+
-
     DEFEQ: ":="
 
     NE: "!=" | "/=" | "≠"
@@ -101,11 +103,11 @@ pecan_grammar = """
     ?forall_sym: "A" | "forall" | "∀"
     ?exists_sym: "E" | "exists" | "∃"
 
-    NEWLINE: /\\n/
+    _NEWLINE: /\\n/
 
     VAR: /(?!(is|are|forall|exists|not|or|and|sometimes|true|false)\\b)[a-zA-Z_][a-zA-Z_0-9]*/i
 
-    COMMENT: "//" /(.)+/ NEWLINE
+    COMMENT: "//" /(.)+/ _NEWLINE
 
     %ignore COMMENT
 
@@ -124,18 +126,26 @@ class PecanTransformer(Transformer):
     args_nonempty = lambda self, *args: list(args)
     directive = Directive
     directive_assert_prop = DirectiveAssertProp
+    directive_type = DirectiveType
+
+    def val_dict(self, *pairs):
+        return dict(pairs)
+
+    def kv_pair(self, key, val):
+        key = key[1:-1]
+        return (key, val)
 
     def restrict_call(self, call):
         if len(call.args) <= 0:
             raise Exception("Cannot restrict a call with no arguments: {}".format(call))
 
-        return Restriction(call.args[0], call.replace_first)
+        return Restriction(call.args[0], call.insert_first)
 
     def restrict_many(self, args, pred):
         if type(pred) is VarRef: # If we do something like `x,y,z are nat`
-            return Restriction(args, Call(pred.var_name, ['']).replace_first) # '' is a dummy value because it'll get replaced
+            return Restriction(args, Call(pred.var_name, []).insert_first) # '' is a dummy value because it'll get replaced
         else:
-            return Restriction(args, pred.replace_first)
+            return Restriction(args, pred.insert_first)
 
     def directive_save_aut(self, filename, pred_name):
         return DirectiveSaveAut(filename, pred_name)
@@ -167,7 +177,7 @@ class PecanTransformer(Transformer):
     def nil_def(self):
         return []
 
-    def multi_def(self, d, newlines, ds):
+    def multi_def(self, d, ds):
         return [d] + ds
 
     def single_def(self, d):

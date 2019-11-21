@@ -193,3 +193,16 @@ class DirectiveForget(Directive):
     def __repr__(self):
         return '#forget({})'.format(repr(self.var_name))
 
+class DirectiveType(Directive):
+    def __init__(self, pred_ref, val_dict):
+        super().__init__('type')
+        self.pred_ref = pred_ref
+        self.val_dict = val_dict
+
+    def evaluate(self, prog):
+        prog.declare_type(self.pred_ref, self.val_dict)
+        return None
+
+    def __repr__(self):
+        return '#type({}, {})'.format(self.pred_ref, self.val_dict)
+

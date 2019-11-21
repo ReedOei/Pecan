@@ -9,7 +9,7 @@ from pecan.lang.pecan_ast.bool import *
 from pecan.lang.pecan_ast.quant import Forall
 
 #TODO: memoize same expressions
-#TODO: Problem: can't change automaton for constants if definition of less_than or addition is changed in one run of Pecan. 
+#TODO: Problem: can't change automaton for constants if definition of less_than or addition is changed in one run of Pecan.
 class Add(BinaryExpression):
     def __init__(self, a, b, param=None):
         super().__init__(a, b)
@@ -88,7 +88,7 @@ class Mul(BinaryExpression):
             return IntConst(self.evaluate_int(prog)).evaluate(prog)
 
         c = self.a.evaluate_int(prog)  # copy of a
-        if c == 0: 
+        if c == 0:
             return IntConst(0).evaluate(prog)
 
         power = self.b

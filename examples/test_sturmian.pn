@@ -1,14 +1,11 @@
+a are nat
+
 #load("sturmian.aut", "hoa", sturmian(n))
 
-#context("numeration", "binary")
+test_one() := exists a. a = 1 & sturmian(a)
 
-    test_one() := exists a. a = 1 & sturmian(a)
+#assert_prop(true, test_one)
 
-    #assert_prop(true, test_one)
-
-    test_zero() := exists a. a = 2 & !sturmian(a)
-    #assert_prop(true, test_zero)
-
-#end_context("numeration")
-
+test_zero() := exists a. a = 2 & !sturmian(a)
+#assert_prop(true, test_zero)
 

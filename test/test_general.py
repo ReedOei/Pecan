@@ -33,3 +33,6 @@ class GeneralTest(unittest.TestCase):
     def test_quant_restricted(self):
         self.run_file('examples/test_quant_restricted.pn')
 
+    def test_types(self):
+        self.run_file('examples/test_types.pn')
+

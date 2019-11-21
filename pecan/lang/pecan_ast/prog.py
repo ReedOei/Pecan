@@ -5,6 +5,7 @@ from colorama import Fore, Style
 
 import time
 import os
+from functools import reduce
 
 from lark import Lark, Transformer, v_args
 import spot
@@ -50,6 +51,9 @@ class VarRef(Expression):
         self.var_name = var_name
         self.is_int = False
 
+    def insert_first(self, arg_name):
+        return Call(self.var_name, [arg_name])
+
     def evaluate(self, prog):
         # The automata accepts everything (because this isn't a predicate)
         return (spot.formula('1').translate(), self.var_name)
@@ -87,20 +91,95 @@ class SpotFormula(Predicate):
     def __repr__(self):
         return 'LTL({})'.format(self.formula_str)
 
+class Match:
+    def __init__(self, pred_name, pred_args):
+        self.pred_name = pred_name
+        self.pred_args = pred_args
+
+    def arity(self):
+        return len(self.pred_args)
+
+    def unify(self, other):
+        new_args = []
+        if self.pred_name != other.pred_name or self.arity() != other.arity():
+            raise Exception(f'Could not unify {self} and {other}')
+
+        for arg1, arg2 in zip(self.pred_args, other.pred_args):
+            if arg1 == 'any' and arg2 == 'any':
+                new_args.append('any')
+            elif arg1 == 'any' and arg2 != 'any':
+                new_args.append(arg2)
+            elif arg1 != 'any' and arg2 == 'any':
+                new_args.append(arg1)
+            else:
+                if arg1 == arg2:
+                    new_args.append(arg1)
+                else:
+                    raise Exception(f'Could not unify {self} and {other}: cannot unify {arg1} and {arg2}')
+
+        return Match(self.pred_name, new_args)
+
+    def actual_args(self):
+        actual_args = []
+        for arg in self.pred_args:
+            if type(arg) is VarRef:
+                actual_args.append(arg.var_name)
+            elif type(arg) is str:
+                actual_args.append(arg)
+            else:
+                raise Exception("Argument '{}' is not: string or VarRef!".format(arg))
+        return actual_args
+
+    def call_with(self, unification, rest_args):
+        i = 0
+        final_args = []
+        for arg in self.actual_args():
+            if arg == 'any':
+                if i >= len(rest_args):
+                    # TODO: We should check this in the linter probably
+                    raise Exception(f'Not enough arguments to call {self}: {rest_args}')
+
+                final_args.append(rest_args[i])
+                i += 1
+            else:
+                final_args.append(unification.get(arg, arg))
+
+        return Call(self.pred_name, final_args)
+
+    def __repr__(self):
+        return '{}({})'.format(self.pred_name, ', '.join(map(repr, self.pred_args)))
+
 class Call(Predicate):
     def __init__(self, name, args):
         super().__init__()
         self.name = name
         self.args = args if isinstance(args, list) else [args]
 
-    def replace_first(self, new_arg):
-        return Call(self.name, [new_arg] + self.args[1:])
+    def arity(self):
+        return len(self.args)
+
+    def match(self):
+        return Match(self.name, self.args)
+
+    def insert_first(self, new_arg):
+        return Call(self.name, [new_arg] + self.actual_args())
+
+    def actual_args(self):
+        actual_args = []
+        for arg in self.args:
+            if type(arg) is VarRef:
+                actual_args.append(arg.var_name)
+            elif type(arg) is str:
+                actual_args.append(arg)
+            else:
+                raise Exception("Argument '{}' is not: string or VarRef!".format(arg))
+        return actual_args
 
     def evaluate(self, prog):
-        return prog.call(self.name, self.args)
+        return prog.call(self.name, self.actual_args())
 
     def __repr__(self):
-        return '({}({}))'.format(self.name, ', '.join(self.args))
+        return '{}({})'.format(self.name, ', '.join(map(repr, self.args)))
 
 class NamedPred(ASTNode):
     def __init__(self, name, args, body):
@@ -116,12 +195,18 @@ class NamedPred(ASTNode):
                 self.args.append(arg)
             elif type(arg) is Call:
                 self.args.append(arg.args[0])
-                self.arg_restrictions.append(Restriction([arg.args[0]], arg.replace_first))
+                self.arg_restrictions.append(Restriction([arg.args[0]], arg.insert_first))
             else:
                 raise Exception("Argument '{}' is not: string, VarRef, or a Call!".format(arg))
 
         self.body = body
         self.body_evaluated = None
+
+    def arity(self):
+        return len(self.args)
+
+    def match(self):
+        return Match(self.name, ['any'] * self.arity())
 
     def call(self, prog, arg_names=None):
         prog.enter_scope()
@@ -153,6 +238,7 @@ class Program(ASTNode):
         self.preds = {}
         self.context = {}
         self.restrictions = [{}]
+        self.types = {}
         self.parser = None # This will be "filled in" in the main.py after we load a program
         self.debug = False
         self.quiet = False
@@ -164,7 +250,11 @@ class Program(ASTNode):
         # Note: Intentionally do NOT merge restrictions, because it would be super confusing if variable restrictions "leaked" from imports
         self.preds.update(other_prog.preds)
         self.context.update(other_prog.context)
+        self.types.update(other_prog.types)
         self.parser = other_prog.parser
+
+    def declare_type(self, pred_ref, val_dict):
+        self.types[pred_ref] = val_dict
 
     def evaluate(self, old_env=None):
         if old_env is not None:
@@ -212,10 +302,86 @@ class Program(ASTNode):
         return result
 
     def call(self, pred_name, args=None):
+        if args is None:
+            if pred_name in self.preds:
+                return self.preds[pred_name].call(self, args)
+            else:
+                raise Exception(f'Predicate {pred_name} not found (known predicates: {self.preds.keys()}!')
+        else:
+            return self.dynamic_call(pred_name, args)
+
+    def unify_with(self, a, b, unification):
+        if b in unification:
+            return unification[b] == a
+        else:
+            unification[b] = a
+            return True
+
+    def unify_type(self, t1, t2, unification):
+        if type(t1) is VarRef and type(t2) is VarRef:
+            return self.unify_type(t1.var_name, t2.var_name, unification)
+        elif type(t1) is str and type(t2) is str:
+            return self.unify_with(t1, t2, unification)
+        elif type(t1) is Call and type(t2) is Call:
+            if t1.name != t2.name or len(t1.args) != len(t2.args):
+                return False
+
+            for arg1, arg2 in zip(t1.args, t2.args):
+                if not self.unify_type(arg1, arg2, unification):
+                    return False
+
+            return True
+        else:
+            return False
+
+    def try_unify_type(self, t1, t2, unification):
+        old_unification = dict(unification)
+        result = self.unify_type(t1, t2, unification)
+        if result:
+            return result
+        else:
+            # Do it this way so we mutate `unification` itself, and we don't want to change it unless we successfully unify
+            unification.clear()
+            unification.update(old_unification)
+            return False
+
+    def lookup_pred_by_name(self, pred_name):
         if pred_name in self.preds:
-            return self.preds[pred_name].call(self, args)
+            return self.preds[pred_name]
         else:
             raise Exception(f'Predicate {pred_name} not found (known predicates: {self.preds.keys()}!')
+
+    def lookup_call(self, pred_name, arg, unification):
+        restrictions = self.get_restrictions(arg)
+
+        # TODO: Improve this?
+        # For now, use the restriction in the most local scope that we can find a match for
+        for restriction in restrictions[::-1]:
+            for t in self.types:
+                if self.try_unify_type(restriction, t.insert_first(arg), unification):
+                    if pred_name == restriction.name:
+                        return restriction.match()
+                    elif pred_name in self.types[t]:
+                        return self.types[t][pred_name].match()
+                    else:
+                        return self.lookup_pred_by_name(pred_name).match()
+
+        return self.lookup_pred_by_name(pred_name).match()
+
+    # Dynamic dispatch based on argument types
+    def dynamic_call(self, pred_name, args):
+        matches = []
+        unification = {}
+        for arg in args:
+            match = self.lookup_call(pred_name, arg, unification)
+            if match is None:
+                raise Exception(f'No matching predicate found for {arg} called {pred_name}')
+            matches.append(match)
+
+        # There will always be at least one match because there should always be
+        # at least one argument, so no need for an initial value
+        final_match = reduce(lambda a, b: a.unify(b), matches).call_with(unification, args)
+        return self.lookup_pred_by_name(final_match.name).call(self, final_match.args)
 
     def locate_file(self, filename):
         for path in self.search_paths:
@@ -253,7 +419,7 @@ class Restriction(ASTNode):
     def __init__(self, var_names, pred):
         super().__init__()
         self.var_names = []
-        for var_name in var_names:
+        for var_name in var_names if isinstance(var_names, list) else [var_names]:
             if type(var_name) is str:
                 self.var_names.append(var_name)
             elif type(var_name) is VarRef:
@@ -267,5 +433,5 @@ class Restriction(ASTNode):
             prog.restrict(var_name, self.pred(var_name))
 
     def __repr__(self):
-        return '{} are {}'.format(var_names.join(','), pred('')) # TODO: Improve this
+        return '{} are {}'.format(', '.join(self.var_names), self.pred('')) # TODO: Improve this
 
