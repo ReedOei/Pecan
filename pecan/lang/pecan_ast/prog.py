@@ -92,14 +92,20 @@ class SpotFormula(Predicate):
         return 'LTL({})'.format(self.formula_str)
 
 class Match:
-    def __init__(self, pred_name, pred_args):
+    def __init__(self, pred_name=None, pred_args=[], match_any=False):
         self.pred_name = pred_name
         self.pred_args = pred_args
+        self.match_any = match_any
 
     def arity(self):
         return len(self.pred_args)
 
     def unify(self, other):
+        if other.match_any:
+            return self
+        if self.match_any:
+            return other
+
         new_args = []
         if self.pred_name != other.pred_name or self.arity() != other.arity():
             raise Exception(f'Could not unify {self} and {other}')
@@ -130,7 +136,9 @@ class Match:
                 raise Exception("Argument '{}' is not: string or VarRef!".format(arg))
         return actual_args
 
-    def call_with(self, unification, rest_args):
+    def call_with(self, pred_name, unification, rest_args):
+        if self.match_any:
+            raise Exception(f'Predicate not found: {pred_name}')
         i = 0
         final_args = []
         for arg in self.actual_args():
@@ -354,8 +362,8 @@ class Program(ASTNode):
     def lookup_call(self, pred_name, arg, unification):
         restrictions = self.get_restrictions(arg)
 
-        # TODO: Improve this?
         # For now, use the restriction in the most local scope that we can find a match for
+        # TODO: Improve this?
         for restriction in restrictions[::-1]:
             for t in self.types:
                 if self.try_unify_type(restriction, t.insert_first(arg), unification):
@@ -363,10 +371,15 @@ class Program(ASTNode):
                         return restriction.match()
                     elif pred_name in self.types[t]:
                         return self.types[t][pred_name].match()
-                    else:
+                    elif pred_name in self.preds:
                         return self.lookup_pred_by_name(pred_name).match()
+                    else:
+                        return Match(match_any=True)
 
-        return self.lookup_pred_by_name(pred_name).match()
+        if pred_name in self.preds:
+            return self.lookup_pred_by_name(pred_name).match()
+        else:
+            return Match(match_any=True)
 
     # Dynamic dispatch based on argument types
     def dynamic_call(self, pred_name, args):
@@ -380,7 +393,7 @@ class Program(ASTNode):
 
         # There will always be at least one match because there should always be
         # at least one argument, so no need for an initial value
-        final_match = reduce(lambda a, b: a.unify(b), matches).call_with(unification, args)
+        final_match = reduce(lambda a, b: a.unify(b), matches).call_with(pred_name, unification, args)
         return self.lookup_pred_by_name(final_match.name).call(self, final_match.args)
 
     def locate_file(self, filename):
