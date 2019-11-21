@@ -308,15 +308,4 @@ class PecanTransformer(Transformer):
         return SpotFormula(formula_str[1:-1])
 
 pecan_parser = Lark(pecan_grammar, parser='lalr', transformer=PecanTransformer(), propagate_positions=True)
-# class Parser:
-#     def __init__(self):
-#         self.inner_parser = Lark(pecan_grammar, parser='earley', propagate_positions=True)
-
-#     def parse(self, source_str):
-#         tree = self.inner_parser.parse(source_str)
-#         res = PecanTransformer().transform(tree)
-#         print(res)
-#         return res
-
-# pecan_parser = Parser()
 
