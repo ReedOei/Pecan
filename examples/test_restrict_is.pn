@@ -1,0 +1,12 @@
+// This test just tests that we can write `x is nat` instead of `x are nat`
+x is nat
+
+test() := exists x. !finite_num(x)
+#assert_prop(false, test)
+
+#forget(x)
+
+// This is the same as the above, except that x is no longer restricted to nat
+test2() := exists x. !finite_num(x)
+#assert_prop(true, test2)
+

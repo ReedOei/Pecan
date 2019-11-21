@@ -39,6 +39,9 @@ def main():
             print(pred)
     elif args.file is not None:
         prog = program.load(args.file, quiet=args.quiet, debug=args.debug, load_stdlib=args.load_stdlib)
+        if args.debug:
+            print('Parsed program:')
+            print(prog)
         env = prog.evaluate()
     elif not args.interactive:
         parser.print_help()

@@ -36,3 +36,6 @@ class GeneralTest(unittest.TestCase):
     def test_types(self):
         self.run_file('examples/test_types.pn')
 
+    def test_restrict_is(self):
+        self.run_file('examples/test_restrict_is.pn')
+

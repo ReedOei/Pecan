@@ -12,6 +12,7 @@ pecan_grammar = """
          | def _NEWLINE+ defs -> multi_def
 
     ?def: call DEFEQ pred       -> def_pred
+        | call -> restrict_call
         | restriction
         | "#" var -> directive
         | "#" "save_aut" "(" string "," var ")" -> directive_save_aut
@@ -28,7 +29,8 @@ pecan_grammar = """
     ?val_dict: "{" [_NEWLINE* kv_pair _NEWLINE* ("," _NEWLINE* kv_pair _NEWLINE*)*] "}"
     ?kv_pair: string ":" pred_ref
 
-    ?restriction: args_nonempty ("are" | "is") pred_ref -> restrict_many
+    ?restriction: varlist "are" pred_ref -> restrict_many
+    ?varlist: [var ("," var)*]
 
     ?args: [args_nonempty]
     ?args_nonempty: pred_ref ("," pred_ref)*
@@ -122,6 +124,7 @@ pecan_grammar = """
 class PecanTransformer(Transformer):
     var_tok = str
     escaped_str = str
+    varlist = lambda self, *vals: list(vals)
     args = lambda self, *args: list(args)
     args_nonempty = lambda self, *args: list(args)
     directive = Directive
@@ -139,7 +142,7 @@ class PecanTransformer(Transformer):
         if len(call.args) <= 0:
             raise Exception("Cannot restrict a call with no arguments: {}".format(call))
 
-        return Restriction(call.args[0], call.insert_first)
+        return Restriction(call.args[0], Call(call.name, call.args[1:]).insert_first)
 
     def restrict_many(self, args, pred):
         if type(pred) is VarRef: # If we do something like `x,y,z are nat`
@@ -305,4 +308,15 @@ class PecanTransformer(Transformer):
         return SpotFormula(formula_str[1:-1])
 
 pecan_parser = Lark(pecan_grammar, parser='lalr', transformer=PecanTransformer(), propagate_positions=True)
+# class Parser:
+#     def __init__(self):
+#         self.inner_parser = Lark(pecan_grammar, parser='earley', propagate_positions=True)
+
+#     def parse(self, source_str):
+#         tree = self.inner_parser.parse(source_str)
+#         res = PecanTransformer().transform(tree)
+#         print(res)
+#         return res
+
+# pecan_parser = Parser()
 

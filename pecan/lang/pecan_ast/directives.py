@@ -89,7 +89,7 @@ class DirectiveContext(Directive):
         return None
 
     def __repr__(self):
-        return '#context({})'.format(self.context)
+        return '#context({}, {})'.format(self.context_key, self.context_val)
 
 class DirectiveEndContext(Directive):
     def __init__(self, context_key):
@@ -164,7 +164,7 @@ class DirectiveLoadAut(Directive):
         return None
 
     def __repr__(self):
-        return '#load({}, {}, {})'.format(self.filename, self.aut_format, self.pred_name)
+        return '#load({}, {}, {})'.format(self.filename, self.aut_format, repr(self.pred))
 
 class DirectiveImport(Directive):
     def __init__(self, filename):

@@ -446,5 +446,5 @@ class Restriction(ASTNode):
             prog.restrict(var_name, self.pred(var_name))
 
     def __repr__(self):
-        return '{} are {}'.format(', '.join(self.var_names), self.pred('')) # TODO: Improve this
+        return '{} are {}'.format(', '.join(self.var_names), self.pred('*')) # TODO: Improve this
 
