@@ -27,12 +27,14 @@ def make_search_paths(filepath=None):
 
 def load(filename, *args, **kwargs):
     with open(filename, 'r') as f:
-        prog = pecan_parser.parse(f.read())
+        return from_source(f.read(), *args, **kwargs)
 
-    prog.parser = pecan_parser
+def from_source(source_code, *args, **kwargs):
+    prog = pecan_parser.parse(source_code)
+
     prog.debug = kwargs.get('debug', False)
     prog.quiet = kwargs.get('quiet', False)
-    prog.search_paths = make_search_paths(filename)
+    prog.search_paths = make_search_paths()
     prog.loader = load
 
     # Load the standard library

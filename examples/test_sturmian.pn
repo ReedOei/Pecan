@@ -1,4 +1,4 @@
-a are nat
+a is nat
 
 #load("sturmian.aut", "hoa", sturmian(n))
 

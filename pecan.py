@@ -48,13 +48,7 @@ def main():
 
     if args.interactive:
         if env is None:
-            prog = Program([])
-
-            prog.parser = pecan_parser
-            prog.debug = args.debug
-            prog.quiet = args.quiet
-            prog.search_paths = make_search_paths()
-
+            prog = program.from_source('', quiet=args.quiet, debug=args.debug, load_stdlib=args.load_stdlib)
             env = prog.evaluate()
 
         run_repl(args.debug, env)
