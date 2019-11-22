@@ -1,20 +1,26 @@
 #load("bin_add.aut", "hoa", bin_add(a, b, c))
 #load("bin_less.aut", "hoa", bin_less(a, b))
 
+#load("odd_ones.aut", "hoa", odd_ones(a))
+
 finite_num(x) := "F(G(!x))"
 zero(x) := "G(!x)"
 
 #context("adder", "bin_add")
 #context("less", "bin_less")
 
-// The top of the hierachy
 x is any := true
-
 x is nat := finite_num(x)
+// binary is, for the moment, a synonym for nat; eventually we may decouple the two
+x is binary := finite_num(x)
 
 #type(nat, {
     "adder": bin_add(any, any, any),
     "less": bin_less(any, any)
 })
 
+#type(binary, {
+    "adder": bin_add(any, any, any),
+    "less": bin_less(any, any)
+})
 

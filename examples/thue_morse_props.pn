@@ -1,0 +1,20 @@
+// The nth digit of the thue_morse word is 1 iff n in binary has an odd number of ones
+thue_morse(x) := odd_ones(x)
+
+i, j, ij, jn, n are binary
+
+tm(i, j) := thue_morse(i) <=> thue_morse(j)
+
+// TODO: Would be nice to be able to write thue_morse(j + n)
+square(i, n) := n > 0 & forall j. j < n => (exists jn. exists ij. ij = i + j & jn = ij + n & tm(ij, jn))
+squares_exist() := exists i. exists n. square(i, n)
+#assert_prop(true, squares_exist)
+
+cube(i, n) := exists j. j = i + n & square(i, n) & square(j, n)
+cubes_exist() := exists i. exists n. cube(i, n)
+#assert_prop(false, cubes_exist)
+
+fourth_power(i, n) := exists j. j = 2*i + n & cube(i, n) & square(j, n)
+fourth_power_exist() := exists i. exists n. fourth_power(i, n)
+#assert_prop(false, fourth_power_exist)
+

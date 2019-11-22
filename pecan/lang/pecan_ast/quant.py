@@ -30,7 +30,7 @@ class Forall(Predicate):
 
     def evaluate_node(self, prog):
         if len(prog.get_restrictions(self.var)) > 0:
-            constraints = reduce(Conjunction, prog.get_restrictions(self.var), FormulaTrue())
+            constraints = reduce(Conjunction, prog.get_restrictions(self.var))
             new_pred = Implies(constraints, self.pred)
         else:
             new_pred = self.pred
@@ -51,7 +51,7 @@ class Exists(Predicate):
 
     def evaluate_node(self, prog):
         if len(prog.get_restrictions(self.var)) > 0:
-            constraints = reduce(Conjunction, prog.get_restrictions(self.var), FormulaTrue())
+            constraints = reduce(Conjunction, prog.get_restrictions(self.var))
             new_pred = Conjunction(constraints, self.pred)
         else:
             new_pred = self.pred
