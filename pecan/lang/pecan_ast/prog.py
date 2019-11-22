@@ -156,7 +156,6 @@ class Call(Predicate):
             else:
                 final_args.append(arg)
 
-        # Final pred will be the automata equivalent of __var0 = a + b & f(__var0); we need to then project out all the __var0
         from pecan.lang.pecan_ast.bool import Conjunction
         from pecan.lang.pecan_ast.quant import Exists
 
