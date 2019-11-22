@@ -24,9 +24,14 @@ pip install -r requirements.txt
 pip3 install -r requirements.txt
 ```
 
-Then you can run Pecan files (`.pn`) by:
+Then you can run Pecan files (`*.pn`) by:
 ```bash
 python3 pecan.py FILENAME
+```
+
+or start interactive mode via:
+```bash
+python3 pecan.py -i
 ```
 
 ## Examples
