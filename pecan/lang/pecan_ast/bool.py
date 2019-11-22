@@ -3,7 +3,7 @@
 
 import spot
 
-from pecan.lang.pecan_ast.prog import *
+from pecan.lang.pecan_ast import *
 from pecan.tools.automaton_tools import Projection
 
 class Conjunction(Predicate):

@@ -1,13 +1,9 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-import buddy
-import spot
-
 from functools import reduce
 
-from pecan.lang.pecan_ast.prog import *
-from pecan.lang.pecan_ast.bool import *
+from pecan.lang.pecan_ast import *
 from pecan.tools.automaton_tools import Projection
 
 def extract_var_cond(var_pred):

@@ -3,7 +3,6 @@ import unittest
 import spot
 
 from pecan.lang.parser import pecan_parser
-from pecan.lang.pecan_ast import *
 
 from pecan import program
 

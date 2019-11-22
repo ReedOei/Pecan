@@ -4,7 +4,7 @@
 import os
 
 from pecan.lang.parser import pecan_parser
-from pecan.lang.pecan_ast import Program
+from pecan.lang.pecan_ast import *
 
 PECAN_PATH_VAR = 'PECAN_PATH'
 

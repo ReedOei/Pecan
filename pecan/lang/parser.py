@@ -43,7 +43,7 @@ pecan_grammar = """
            | var "is" var "(" varlist ")" -> formal_is_call
 
     ?args: [arg ("," arg)*]
-    ?arg: var
+    ?arg: expr
 
     ?call: var "(" args ")" -> call_args
          | var "is" var     -> call_is

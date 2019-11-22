@@ -4,7 +4,7 @@
 import spot
 
 from pecan.tools.convert_hoa import convert_hoa
-from pecan.lang.pecan_ast.prog import *
+from pecan.lang.pecan_ast import *
 
 class Directive(ASTNode):
     def __init__(self, name):

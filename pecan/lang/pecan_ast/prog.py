@@ -10,40 +10,8 @@ from functools import reduce
 from lark import Lark, Transformer, v_args
 import spot
 
-from pecan.tools.automaton_tools import AutomatonTransformer, Substitution
-
-class ASTNode:
-    id = 0
-    def __init__(self):
-        #TODO: detect used labels and avoid those
-        self.label = "__pecan"+str(Expression.id)
-        Expression.id += 1
-
-    def evaluate(self, prog):
-        prog.eval_level += 1
-        if prog.debug:
-            start_time = time.time()
-        result = self.evaluate_node(prog)
-        prog.eval_level -= 1
-        if prog.debug:
-            end_time = time.time()
-            print('{}{} has {} states and {} edges ({:.2f} seconds)'.format(' ' * prog.eval_level, self, result.num_states(), result.num_edges(), end_time - start_time))
-
-        return result
-
-class Expression(ASTNode):
-    def __init__(self):
-        super().__init__()
-        self.is_int = True
-    def evaluate_node(self, prog):
-        return None
-
-class BinaryExpression(ASTNode):
-    def __init__(self, a, b):
-        super().__init__()
-        self.a = a
-        self.b = b
-        self.is_int = a.is_int and b.is_int
+from pecan.tools.automaton_tools import AutomatonTransformer, Substitution, Projection
+from pecan.lang.pecan_ast import *
 
 class VarRef(Expression):
     def __init__(self, var_name):
@@ -60,14 +28,6 @@ class VarRef(Expression):
 
     def __repr__(self):
         return self.var_name
-
-class Predicate(ASTNode):
-    def __init__(self):
-        super().__init__()
-
-    # The evaluate function returns an automaton representing the expression
-    def evaluate_node(self, prog):
-        return None # Should never be called on the base Predicate class
 
 class AutLiteral(Predicate):
     def __init__(self, aut):
@@ -177,14 +137,34 @@ class Call(Predicate):
         for arg in self.args:
             if type(arg) is VarRef:
                 actual_args.append(arg.var_name)
-            elif type(arg) is str:
-                actual_args.append(arg)
             else:
-                raise Exception("Argument '{}' is not: string or VarRef!".format(arg))
+                actual_args.append(arg)
         return actual_args
 
-    def evaluate(self, prog):
-        return prog.call(self.name, self.actual_args())
+    def evaluate_node(self, prog):
+        # We may need to compute some values for the args
+        arg_preds = []
+        final_args = []
+        for arg in self.actual_args():
+            # If it's not just a name, we need to actually do something
+            if type(arg) is not str:
+                new_var = prog.fresh_name()
+                # For some reason we need to import again here?
+                from pecan.lang.pecan_ast.arith import Equals
+                arg_preds.append((Equals(arg, VarRef(new_var)), new_var))
+                final_args.append(new_var)
+            else:
+                final_args.append(arg)
+
+        # Final pred will be the automata equivalent of __var0 = a + b & f(__var0); we need to then project out all the __var0
+        from pecan.lang.pecan_ast.bool import Conjunction
+        from pecan.lang.pecan_ast.quant import Exists
+
+        final_pred = AutLiteral(prog.call(self.name, final_args))
+        for pred, var_name in arg_preds:
+            final_pred = Exists(var_name, Conjunction(pred, final_pred))
+
+        return final_pred.evaluate(prog)
 
     def __repr__(self):
         return '{}({})'.format(self.name, ', '.join(map(repr, self.args)))
@@ -253,6 +233,7 @@ class Program(ASTNode):
         self.eval_level = 0
         self.result = None
         self.search_paths = []
+        self.fresh_counter = 0
 
     def include(self, other_prog):
         # Note: Intentionally do NOT merge restrictions, because it would be super confusing if variable restrictions "leaked" from imports
@@ -261,8 +242,15 @@ class Program(ASTNode):
         self.types.update(other_prog.types)
         self.parser = other_prog.parser
 
+        self.fresh_counter += other_prog.fresh_counter + 1
+
     def declare_type(self, pred_ref, val_dict):
         self.types[pred_ref] = val_dict
+
+    def fresh_name(self):
+        self.fresh_counter += 1
+        # TODO: Merge this will the __pecan thing in ASTNode
+        return f'__var{self.fresh_counter}'
 
     def evaluate(self, old_env=None):
         if old_env is not None:

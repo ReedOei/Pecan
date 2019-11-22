@@ -3,10 +3,8 @@
 
 import spot
 
-from pecan.lang.pecan_ast.prog import *
 from pecan.tools.automaton_tools import Substitution, AutomatonTransformer, Projection
-from pecan.lang.pecan_ast.bool import *
-from pecan.lang.pecan_ast.quant import Forall
+from pecan.lang.pecan_ast import *
 
 #TODO: memoize same expressions
 #TODO: Problem: can't change automaton for constants if definition of less_than or addition is changed in one run of Pecan.
@@ -42,7 +40,6 @@ class Add(BinaryExpression):
     def evaluate_int(self, prog):
         assert self.is_int
         return self.a.evaluate_int(prog) + self.b.evaluate_int(prog)
-
 
 class Sub(BinaryExpression):
     def __init__(self, a, b, param=None):
@@ -159,6 +156,7 @@ class IntConst(Expression):
 
     def __repr__(self):
         return str(self.val)
+
     def evaluate(self,prog):
         if self.val in constants_map:
             return constants_map[self.val]
