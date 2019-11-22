@@ -196,7 +196,11 @@ class DirectiveForget(Directive):
 class DirectiveType(Directive):
     def __init__(self, pred_ref, val_dict):
         super().__init__('type')
-        self.pred_ref = pred_ref
+        if type(pred_ref) is str:
+            self.pred_ref = Call(pred_ref, [])
+        else:
+            self.pred_ref = pred_ref
+
         self.val_dict = val_dict
 
     def evaluate(self, prog):

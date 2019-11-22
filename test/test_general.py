@@ -39,3 +39,6 @@ class GeneralTest(unittest.TestCase):
     def test_restrict_is(self):
         self.run_file('examples/test_restrict_is.pn')
 
+    def test_thue_morse(self):
+        self.run_file('examples/thue_morse_props.pn')
+

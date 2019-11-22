@@ -11,8 +11,7 @@ pecan_grammar = """
          | def -> single_def
          | def _NEWLINE+ defs -> multi_def
 
-    ?def: call DEFEQ pred       -> def_pred
-        | call -> restrict_call
+    ?def: pred_definition
         | restriction
         | "#" var -> directive
         | "#" "save_aut" "(" string "," var ")" -> directive_save_aut
@@ -20,26 +19,35 @@ pecan_grammar = """
         | "#" "save_pred" "(" string "," var ")" -> directive_save_pred
         | "#" "context" "(" string "," string ")" -> directive_context
         | "#" "end_context" "(" string ")" -> directive_end_context
-        | "#" "load" "(" string "," string "," call ")" -> directive_load
+        | "#" "load" "(" string "," string "," formal ")" -> directive_load
         | "#" "assert_prop" "(" PROP_VAL "," var ")" -> directive_assert_prop
         | "#" "import" "(" string ")" -> directive_import
         | "#" "forget" "(" var ")" -> directive_forget
-        | "#" "type" "(" pred_ref "," val_dict ")" -> directive_type
+        | "#" "type" "(" formal "," val_dict ")" -> directive_type
 
     ?val_dict: "{" [_NEWLINE* kv_pair _NEWLINE* ("," _NEWLINE* kv_pair _NEWLINE*)*] "}"
-    ?kv_pair: string ":" pred_ref
+    ?kv_pair: string ":" call
 
-    ?restriction: varlist "are" pred_ref -> restrict_many
-    ?varlist: [var ("," var)*]
+    ?restriction: varlist ("are" | "is") var -> restrict_is
+                | varlist ("are" | "is") var "(" varlist ")" -> restrict_call
+    varlist: var ("," var)*
 
-    ?args: [args_nonempty]
-    ?args_nonempty: pred_ref ("," pred_ref)*
+    ?pred_definition: var "(" formals ")" ":=" pred -> def_pred_standard
+                    | var "is" var [":=" pred] -> def_pred_is
+                    | var "is" var "(" formals ")" [":=" pred] -> def_pred_is_call
 
-    ?pred_ref: var -> var_ref
-             | call
+    formals: [formal ("," formal)*]
+    ?formal: var
+           | var "(" varlist ")" -> formal_call
+           | var "is" var -> formal_is
+           | var "is" var "(" varlist ")" -> formal_is_call
+
+    ?args: [arg ("," arg)*]
+    ?arg: var
 
     ?call: var "(" args ")" -> call_args
-         | var "is" pred_ref     -> call_is
+         | var "is" var     -> call_is
+         | var "is" var "(" args ")" -> call_is_args
 
     ?pred: expr EQ expr                     -> equal
          | expr NE expr                     -> not_equal
@@ -52,8 +60,8 @@ pecan_grammar = """
          | pred CONJ pred                   -> conj
          | pred DISJ pred                   -> disj
          | COMP pred                        -> comp
-         | forall_sym pred_ref "." pred              -> forall
-         | exists_sym pred_ref "." pred              -> exists
+         | forall_sym formal "." pred              -> forall
+         | exists_sym formal "." pred              -> exists
          | call
          | "(" pred ")"
          | string                           -> spot_formula
@@ -86,8 +94,6 @@ pecan_grammar = """
     ?string: ESCAPED_STRING -> escaped_str
 
     PROP_VAL: "sometimes"i | "true"i | "false"i // case insensitive
-
-    DEFEQ: ":="
 
     NE: "!=" | "/=" | "≠"
     COMP: "!" | "~" | "¬" | "not"
@@ -126,10 +132,36 @@ class PecanTransformer(Transformer):
     escaped_str = str
     varlist = lambda self, *vals: list(vals)
     args = lambda self, *args: list(args)
-    args_nonempty = lambda self, *args: list(args)
     directive = Directive
     directive_assert_prop = DirectiveAssertProp
     directive_type = DirectiveType
+
+    def formals(self, *args):
+        return list(args)
+
+    def restrict_is(self, varlist, var_ref):
+        return Restriction(varlist, Call(var_ref, []).insert_first)
+
+    def restrict_call(self, varlist, call_name, call_arg_vars):
+        return Restriction(varlist, Call(call_name, call_arg_vars).insert_first)
+
+    def formal_is(self, var_name, call_name):
+        return Call(call_name, [var_name])
+
+    def formal_is_call(self, var_name, call_name, call_args):
+        return Call(call_name, [var_name] + call_args)
+
+    def formal_call(self, call_name, call_args):
+        return Call(call_name, call_args)
+
+    def call_args(self, call_name, args):
+        return Call(call_name, args)
+
+    def call_is(self, var_name, call_name):
+        return Call(call_name, [var_name])
+
+    def call_is_args(self, var_name, call_name, args):
+        return Call(call_name, [var_name] + args)
 
     def val_dict(self, *pairs):
         return dict(pairs)
@@ -137,12 +169,6 @@ class PecanTransformer(Transformer):
     def kv_pair(self, key, val):
         key = key[1:-1]
         return (key, val)
-
-    def restrict_call(self, call):
-        if len(call.args) <= 0:
-            raise Exception("Cannot restrict a call with no arguments: {}".format(call))
-
-        return Restriction(call.args[0], Call(call.name, call.args[1:]).insert_first)
 
     def restrict_many(self, args, pred):
         if type(pred) is VarRef: # If we do something like `x,y,z are nat`
@@ -186,13 +212,24 @@ class PecanTransformer(Transformer):
     def single_def(self, d):
         return [d]
 
-    def def_pred(self, pred, defeq, body):
-        if type(pred) is Call:
-            return NamedPred(pred.name, pred.args, body)
-        elif type(pred) is VarRef:
-            return NamedPred(pred.name, [], body)
+    def def_pred_standard(self, name, args, body):
+        return NamedPred(name, args, body)
+
+    # Unfortunately, Lark seems to have trouble determining when something is a predicate,
+    # and when it is a restriction, so the body of predicates has been made optional.
+    # If the body is not provided, then we just treat it as a restriction.
+    # TODO: Fix?
+    def def_pred_is(self, var_name, pred_name, body=None):
+        if body is None:
+            return self.restrict_is([var_name], pred_name)
         else:
-            raise Exception('Invalid syntax in definition: {} := {}'.format(pred, body))
+            return NamedPred(pred_name, [var_name], body)
+
+    def def_pred_is_call(self, var_name, pred_name, pred_args, body):
+        if body is None:
+            return self.restrict_call([var_name], pred_name, pred_args)
+        else:
+            return NamedPred(pred_name, [var_name] + pred_args, body)
 
     def var(self, letter, *args):
         return letter + ''.join(args)
@@ -289,14 +326,6 @@ class PecanTransformer(Transformer):
 
     def var_ref(self, name):
         return VarRef(str(name))
-
-    def call_is(self, name, pred_other):
-        if type(pred_other) is Call:
-            return Call(pred_other.name, [name] + pred_other.args)
-        elif type(pred_other) is VarRef:
-            return Call(pred_other.var_name, [name])
-        else:
-            raise Exception('Unexpected value after `is`: {}'.format(pred_other))
 
     def formula_true(self):
         return FormulaTrue()
