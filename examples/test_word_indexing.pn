@@ -1,0 +1,21 @@
+thue_morse(x) := odd_ones(x)
+// A conveniently short alias for the Thue-Morse word
+T(x) := thue_morse(x)
+
+i, j, n are binary
+
+tm(i, j) := thue_morse(i) <=> thue_morse(j)
+test_equality(i, j) := T[i] = T[j]
+index_equality_works() := forall i. forall j. test_equality(i, j) <=> tm(i, j)
+#assert_prop(true, index_equality_works)
+
+tm_not(i, j) := !(thue_morse(i) <=> thue_morse(j))
+test_inequality(i, j) := T[i] != T[j]
+index_inequality_works() := forall i. forall j. test_inequality(i, j) <=> tm_not(i, j)
+#assert_prop(true, index_inequality_works)
+
+square(i, n) := n > 0 & T[i..i+n] = T[i+n..i+2*n]
+square_prim(i, n) := n > 0 & forall j. j < n => tm(i + j, i + j + n)
+square_defs_equiv() := forall i. forall n. square(i, n) <=> square_prim(i, n)
+#assert_prop(true, square_defs_equiv)
+

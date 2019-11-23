@@ -20,7 +20,7 @@ class Index(Predicate):
         return '{}[{}]'.format(self.var_name, self.index_expr)
 
 # TODO: It would be nice to support [x, x+2..y] as an indexing expression.
-class IndexRange(Expression):
+class IndexRange(Predicate):
     def __init__(self, var_name, start, end):
         super().__init__()
         self.var_name = var_name
@@ -78,10 +78,10 @@ class EqualsCompareRange(Predicate):
     def evaluate_node(self, prog):
         idx_var = VarRef(prog.fresh_name())
 
-        same_range = Equals(Add(self.index_a.end, self.index_b.start), Add(self.index_b.end, self.index_a.start)),
+        same_range = Equals(Add(self.index_a.end, self.index_b.start), Add(self.index_b.end, self.index_a.start))
         bounds_checks = Conjunction(self.index_a.bounds_check(idx_var), self.index_b.bounds_check(idx_var))
         equality_check = EqualsCompareIndex(True, self.index_a.index_expr(idx_var), self.index_b.index_expr(idx_var))
-        all_equals = Forall(idx_var, Implies(bounds_checks, equality_check))
+        all_equal = Forall(idx_var, Implies(bounds_checks, equality_check))
         base_pred = Conjunction(same_range, all_equal)
 
         if self.is_equals:

@@ -41,3 +41,6 @@ class GeneralTest(unittest.TestCase):
     def test_thue_morse(self):
         self.run_file('examples/thue_morse_props.pn')
 
+    def test_word_indexing(self):
+        self.run_file('examples/test_word_indexing.pn')
+
