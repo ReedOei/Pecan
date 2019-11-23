@@ -19,3 +19,8 @@ square_prim(i, n) := n > 0 & forall j. j < n => tm(i + j, i + j + n)
 square_defs_equiv() := forall i. forall n. square(i, n) <=> square_prim(i, n)
 #assert_prop(true, square_defs_equiv)
 
+word_refl() := forall i. T[i] = T[i]
+#assert_prop(true, word_refl)
+word_irrefl() := forall i. T[i] != T[i]
+#assert_prop(false, word_irrefl)
+

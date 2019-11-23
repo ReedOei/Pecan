@@ -6,7 +6,7 @@ i, j, n are binary
 
 tm(i, j) := thue_morse(i) <=> thue_morse(j)
 
-square(i, n) := n > 0 & forall j. j < n => tm(i + j, i + j + n)
+square(i, n) := n > 0 & T[i..i+n] = T[i+n..i+2*n]
 squares_exist() := exists i. exists n. square(i, n)
 #assert_prop(true, squares_exist)
 
@@ -14,11 +14,11 @@ cube(i, n) := square(i, n) & square(i + n, n)
 cubes_exist() := exists i. exists n. cube(i, n)
 #assert_prop(false, cubes_exist)
 
-fourth_power(i, n) := cube(i, n) & square(2*i + n, n)
+fourth_power(i, n) := cube(i, n) & square(i + 2*n, n)
 fourth_power_exist() := exists i. exists n. fourth_power(i, n)
 #assert_prop(false, fourth_power_exist)
 
-fourth_power_alternate(i, n) := square(i, n) & square(i + n, n) & square(2*i + n, n)
+fourth_power_alternate(i, n) := square(i, n) & square(i + n, n) & square(i + 2*n, n)
 fourth_power_defs_equiv() := forall i. forall n. fourth_power(i, n) <=> fourth_power_alternate(i, n)
 #assert_prop(true, fourth_power_defs_equiv)
 

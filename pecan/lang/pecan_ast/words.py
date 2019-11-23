@@ -19,7 +19,6 @@ class Index(Predicate):
     def __repr__(self):
         return '{}[{}]'.format(self.var_name, self.index_expr)
 
-# TODO: It would be nice to support [x, x+2..y] as an indexing expression.
 class IndexRange(Predicate):
     def __init__(self, var_name, start, end):
         super().__init__()
@@ -34,7 +33,7 @@ class IndexRange(Predicate):
         return Index(self.var_name, Add(self.start, idx_var))
 
     def __repr__(self):
-        return '{}[{}..{}]'.format(self.var_name, self.start, self.step, self.end)
+        return '{}[{}..{}]'.format(self.var_name, self.start, self.end)
 
 class EqualsCompareIndex(Predicate):
     def __init__(self, is_equals, index_a, index_b):
@@ -78,7 +77,11 @@ class EqualsCompareRange(Predicate):
     def evaluate_node(self, prog):
         idx_var = VarRef(prog.fresh_name())
 
+        # We want to make sure that the two words that we are comparing are the same length;
+        # Ordinarily, you'd probably use subtraction, but addition is safer because subtraction
+        # on natural numbers can be very weird if we go negative
         same_range = Equals(Add(self.index_a.end, self.index_b.start), Add(self.index_b.end, self.index_a.start))
+
         bounds_checks = Conjunction(self.index_a.bounds_check(idx_var), self.index_b.bounds_check(idx_var))
         equality_check = EqualsCompareIndex(True, self.index_a.index_expr(idx_var), self.index_b.index_expr(idx_var))
         all_equal = Forall(idx_var, Implies(bounds_checks, equality_check))
