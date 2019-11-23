@@ -323,16 +323,3 @@ class AutomatonArithmeticError(Exception):
 class NotImplementedError(Exception):
     pass
 
-
-
-# is this something that we will want? Probably not, I'm not implementing it for now.
-class Index(Expression):
-    def __init__(self, var_name, index_expr):
-        super().__init__()
-        self.var_name = var_name
-        self.index_expr = index_expr
-        self.is_int = False
-        raise NotImplementedError("Indexing hasn't been implemented, sorry. {}".format(self))
-
-    def __repr__(self):
-        return '({}[{}])'.format(self.var_name, self.index_expr)

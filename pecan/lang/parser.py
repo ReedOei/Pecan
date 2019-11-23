@@ -60,8 +60,8 @@ pecan_grammar = """
          | pred CONJ pred                   -> conj
          | pred DISJ pred                   -> disj
          | COMP pred                        -> comp
-         | forall_sym formal "." pred              -> forall
-         | exists_sym formal "." pred              -> exists
+         | forall_sym formal "." pred       -> forall
+         | exists_sym formal "." pred       -> exists
          | call
          | "(" pred ")"
          | string                           -> spot_formula
@@ -70,6 +70,7 @@ pecan_grammar = """
 
     ?expr: arith
          | var "[" arith "]"  -> index
+         | var "[" arith "." "." ["."] arith "]" -> index_range
 
     ?arith: product
           | arith "+" product -> add
@@ -103,7 +104,7 @@ pecan_grammar = """
     IMPLIES: "=>" | "⇒" | "⟹ " | "->"
     IFF: "<=>" | "⟺" | "⇔"
 
-    EQ: "="
+    EQ: "=" | "=="
 
     CONJ: "&" | "/\\\\" | "∧" | "and"
     DISJ: "|" | "\\\\/" | "∨" | "or"
@@ -276,11 +277,36 @@ class PecanTransformer(Transformer):
     def index(self, var_name, index_expr):
         return Index(var_name, index_expr)
 
+    def index_range(self, var_name, start_expr, end_expr):
+        return IndexRange(var_name, start_expr, end_expr)
+
     def equal(self, a, sym, b):
-        return Equals(a, b)
+        # Resolve what sort of equality we're doing (e.g., "regular" equality, equality of subwords, etc.)
+
+        # TODO: It would be nice to support automatic words with outputs other than 0 or 1
+        if type(a) is Index and type(b) is IntConst:
+            return EqualsCompareIndex(True, a, b)
+        elif type(a) is IntConst and type(b) is Index:
+            return EqualsCompareIndex(True, b, a)
+        elif type(a) is Index and type(b) is Index:
+            return EqualsCompareIndex(True, a, b)
+        elif type(a) is IndexRange and type(b) is IndexRange:
+            return EqualsCompareRange(True, a, b)
+        else:
+            return Equals(a, b)
 
     def not_equal(self, a, sym, b):
-        return NotEquals(a, b)
+        # Resolve what sort of equality we're doing (e.g., "regular" equality, equality of subwords, etc.)
+        if type(a) is Index and type(b) is IntConst:
+            return EqualsCompareIndex(False, a, b)
+        elif type(a) is IntConst and type(b) is Index:
+            return EqualsCompareIndex(False, b, a)
+        elif type(a) is Index and type(b) is Index:
+            return EqualsCompareIndex(False, a, b)
+        elif type(a) is IndexRange and type(b) is IndexRange:
+            return EqualsCompareRange(False, a, b)
+        else:
+            return NotEquals(a, b)
 
     def less(self, a, b):
         return Less(a, b)
