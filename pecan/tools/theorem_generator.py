@@ -4,9 +4,10 @@ import string
 import spot
 
 from pecan.lang.pecan_ast import *
+from pecan import program
 
-def truth_val(pred):
-    evaluated = pred.evaluate(Program([]))
+def truth_val(prog, pred):
+    evaluated = pred.evaluate(prog)
     if evaluated.is_empty(): # If we accept nothing, we are false
         return 'false'
     elif spot.complement(evaluated).is_empty(): # If our complement accepts nothing, we accept everything, so we are true
@@ -34,7 +35,8 @@ def gen_vars(c):
         tot += 1
 
 def gen_thms(var_count):
-    return gen_preds(list(gen_vars(var_count)))
+    prog = program.from_source('')
+    return gen_preds(prog, list(gen_vars(var_count)))
 
 def gen_pairs():
     lim = 0
@@ -45,12 +47,12 @@ def gen_pairs():
             yield (i, lim)
         lim += 1
 
-def gen_preds(var_list):
+def gen_preds(prog, var_list):
     while True:
         for depth, expr_depth in gen_pairs():
             for pred in gen_depth(var_list, depth, expr_depth):
                 for quantified in quantify(var_list, pred):
-                    if truth_val(quantified) == 'true':
+                    if truth_val(prog, quantified) == 'true':
                         yield quantified
 
 def quantify(var_list, pred):
