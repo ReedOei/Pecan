@@ -3,7 +3,7 @@
 
 import spot
 
-from pecan.tools.convert_hoa import convert_hoa
+from pecan.tools.convert_hoa import convert_aut
 from pecan.lang.pecan_ast import *
 
 class Directive(ASTNode):
@@ -155,8 +155,7 @@ class DirectiveLoadAut(Directive):
             prog.preds[self.pred.name] = NamedPred(self.pred.name, self.pred.args, AutLiteral(aut))
         elif self.aut_format == 'pecan':
             realpath = prog.locate_file(self.filename)
-            convert_hoa(realpath, 'temp.aut')
-            aut = spot.automaton('temp.aut')
+            aut = convert_aut(realpath, self.pred.args)
             prog.preds[self.pred.name] = NamedPred(self.pred.name, self.pred.args, AutLiteral(aut))
         else:
             raise Exception('Unknown format: {}'.format(self.aut_format))
