@@ -5,7 +5,6 @@ import spot
 
 from pecan.lang.pecan_ast import *
 
-# Below, Index and IndexRange just exist for parsing purposes, eventually we will transform these into EqualsCompare(Index|Range|Const) predicates
 class Index(Predicate):
     def __init__(self, var_name, index_expr):
         super().__init__()
@@ -15,6 +14,9 @@ class Index(Predicate):
 
     def evaluate_node(self, prog):
         return Call(self.var_name, [self.index_expr]).evaluate(prog)
+
+    def transform(self, transformer):
+        return transformer.transform_Index(self)
 
     def __repr__(self):
         return '{}[{}]'.format(self.var_name, self.index_expr)
@@ -31,6 +33,9 @@ class IndexRange(Predicate):
 
     def index_expr(self, idx_var):
         return Index(self.var_name, Add(self.start, idx_var))
+
+    def transform(self, transformer):
+        return transformer.transform_IndexRange(self)
 
     def __repr__(self):
         return '{}[{}..{}]'.format(self.var_name, self.start, self.end)
@@ -52,7 +57,7 @@ class EqualsCompareIndex(Predicate):
         elif isinstance(index_b, Predicate):
             self.index_b = index_b
         else:
-            raise Exception('Unexpected index expression on RHS: {} = {}'.format(index_a, const_val))
+            raise Exception('Unexpected index expression on RHS: {} = {}'.format(index_a, index_b))
 
     def evaluate_node(self, prog):
         base_pred = Iff(self.index_a, self.index_b)
@@ -60,6 +65,9 @@ class EqualsCompareIndex(Predicate):
             return base_pred.evaluate(prog)
         else:
             return Complement(base_pred).evaluate(prog)
+
+    def transform(self, transformer):
+        return transformer.transform_EqualsCompareIndex(self)
 
     def __repr__(self):
         if self.is_equals:
@@ -91,6 +99,9 @@ class EqualsCompareRange(Predicate):
             return base_pred.evaluate(prog)
         else:
             return Complement(base_pred).evaluate(prog)
+
+    def transform(self, transformer):
+        return transformer.transform_EqualsCompareRange(self)
 
     def __repr__(self):
         if self.is_equals:

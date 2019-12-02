@@ -29,6 +29,9 @@ class ASTNode:
 
         return result
 
+    def transform(self, transformer):
+        return NotImplementedError('Transform not implemented for {}'.format(self.__class__.__name__))
+
 class Expression(ASTNode):
     def __init__(self):
         super().__init__()

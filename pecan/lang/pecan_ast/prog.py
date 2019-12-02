@@ -26,6 +26,9 @@ class VarRef(Expression):
         # The automata accepts everything (because this isn't a predicate)
         return (spot.formula('1').translate(), self.var_name)
 
+    def transform(self, transformer):
+        return transformer.transform_VarRef(self)
+
     def __repr__(self):
         return self.var_name
 
@@ -37,6 +40,9 @@ class AutLiteral(Predicate):
     def evaluate(self, prog):
         return self.aut
 
+    def transform(self, transformer):
+        return transformer.transform_AutLiteral(self)
+
     def __repr__(self):
         return 'AUTOMATON LITERAL' # TODO: Maybe improve this?
 
@@ -47,6 +53,9 @@ class SpotFormula(Predicate):
 
     def evaluate(self, prog):
         return spot.translate(self.formula_str)
+
+    def transform(self, transformer):
+        return transformer.transform_SpotFormula(self)
 
     def __repr__(self):
         return 'LTL({})'.format(self.formula_str)
@@ -165,6 +174,9 @@ class Call(Predicate):
 
         return final_pred.evaluate(prog)
 
+    def transform(self, transformer):
+        return transformer.transform_Call(self)
+
     def __repr__(self):
         return '{}({})'.format(self.name, ', '.join(map(repr, self.args)))
 
@@ -197,6 +209,9 @@ class NamedPred(ASTNode):
         # This causes our behavior to depend on lexically where we are used in the program, which would be confusing.
         self.restriction_env = prog.get_restriction_env()
 
+    def transform(self, transformer):
+        return transformer.transform_NamedPred(self)
+
     def arity(self):
         return len(self.args)
 
@@ -226,21 +241,32 @@ class NamedPred(ASTNode):
         return '{}({}) := {}'.format(self.name, ', '.join(self.args), self.body)
 
 class Program(ASTNode):
-    def __init__(self, defs):
+    def __init__(self, defs, *args, **kwargs):
         super().__init__()
 
         self.defs = defs
-        self.preds = {}
-        self.context = {}
-        self.restrictions = [{}]
-        self.types = {}
-        self.parser = None # This will be "filled in" in the main.py after we load a program
-        self.debug = False
-        self.quiet = False
-        self.eval_level = 0
-        self.result = None
-        self.search_paths = []
-        self.fresh_counter = 0
+        self.preds = kwargs.get('preds', {})
+        self.context = kwargs.get('context', {})
+        self.restrictions = kwargs.get('restrictions', [{}])
+        self.types = kwargs.get('types', {})
+        self.parser = kwargs.get('parser', None) # This will be "filled in" in the main.py after we load a program
+        self.debug = kwargs.get('debug', False)
+        self.quiet = kwargs.get('quiet', False)
+        self.eval_level = kwargs.get('eval_level', 0)
+        self.result = kwargs.get('result', None)
+        self.search_paths = kwargs.get('search_paths', [])
+        self.fresh_counter = kwargs.get('fresh_counter', 0)
+
+    def copy_defaults(self, other_prog):
+        self.context = other_prog.context
+        self.parser = other_prog.parser
+        self.debug = other_prog.debug
+        self.quiet = other_prog.quiet
+        self.eval_level = other_prog.eval_level
+        self.result = other_prog.result
+        self.search_paths = other_prog.search_paths
+        self.fresh_counter = other_prog.fresh_counter
+        return self
 
     def include(self, other_prog):
         # Note: Intentionally do NOT merge restrictions, because it would be super confusing if variable restrictions "leaked" from imports
@@ -280,6 +306,9 @@ class Program(ASTNode):
         self.result = Result('\n'.join(msgs), succeeded)
 
         return self
+
+    def transform(self, transformer):
+        return transformer.transform_Program(self)
 
     def forget(self, var_name):
         self.restrictions[-1].pop(var_name)
@@ -449,6 +478,9 @@ class Restriction(ASTNode):
     def evaluate(self, prog):
         for var_name in self.var_names:
             prog.restrict(var_name, self.pred(var_name))
+
+    def transform(self, transformer):
+        return transformer.transform_Restriction(self)
 
     def __repr__(self):
         return '{} are {}'.format(', '.join(self.var_names), self.pred('*')) # TODO: Improve this

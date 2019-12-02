@@ -15,6 +15,9 @@ class Conjunction(Predicate):
     def evaluate_node(self, prog):
         return spot.product(self.a.evaluate(prog), self.b.evaluate(prog))
 
+    def transform(self, transformer):
+        return transformer.transform_Conjunction(self)
+
     def __repr__(self):
         return '({} ∧ {})'.format(self.a, self.b)
 
@@ -27,6 +30,9 @@ class Disjunction(Predicate):
     def evaluate_node(self, prog):
         return spot.product_or(self.a.evaluate(prog), self.b.evaluate(prog))
 
+    def transform(self, transformer):
+        return transformer.transform_Disjunction(self)
+
     def __repr__(self):
         return '({} ∨ {})'.format(self.a, self.b)
 
@@ -37,6 +43,9 @@ class Complement(Predicate):
 
     def evaluate_node(self, prog):
         return spot.complement(self.a.evaluate(prog))
+
+    def transform(self, transformer):
+        return transformer.transform_Complement(self)
 
     def __repr__(self):
         return '(¬{})'.format(self.a)
@@ -50,6 +59,9 @@ class Iff(Predicate):
     def evaluate_node(self, prog):
         return Conjunction(Implies(self.a, self.b), Implies(self.b, self.a)).evaluate(prog)
 
+    def transform(self, transformer):
+        return transformer.transform_Iff(self)
+
     def __repr__(self):
         return '({} ⟺  {})'.format(self.a, self.b)
 
@@ -62,6 +74,9 @@ class Implies(Predicate):
     def evaluate_node(self, prog):
         return Disjunction(Complement(self.a), self.b).evaluate(prog)
 
+    def transform(self, transformer):
+        return transformer.transform_Implies(self)
+
     def __repr__(self):
         return '({} ⟹  {})'.format(self.a, self.b)
 
@@ -72,6 +87,9 @@ class FormulaTrue(Predicate):
     def evaluate_node(self, prog):
         return spot.translate("1")
 
+    def transform(self, transformer):
+        return transformer.transform_FormulaTrue(self)
+
     def __repr__(self):
         return '⊤'
 
@@ -81,6 +99,9 @@ class FormulaFalse(Predicate):
 
     def evaluate_node(self, prog):
         return spot.translate("0")
+
+    def transform(self, transformer):
+        return transformer.transform_FormulaFalse(self)
 
     def __repr__(self):
         return '⊥'

@@ -13,6 +13,7 @@ class Add(BinaryExpression):
         super().__init__(a, b)
         self.a = a
         self.b = b
+        self.param = param
 
     def change_label(self, label): # for changing label to __constant#
         self.label = label
@@ -37,6 +38,9 @@ class Add(BinaryExpression):
         result = Projection(result, proj_vars).project()
         return (result, self.label)
 
+    def transform(self, transformer):
+        return transformer.transform_Add(self)
+
     def evaluate_int(self, prog):
         assert self.is_int
         return self.a.evaluate_int(prog) + self.b.evaluate_int(prog)
@@ -46,6 +50,7 @@ class Sub(BinaryExpression):
         super().__init__(a, b)
         self.a = a
         self.b = b
+        self.param = param
 
     def __repr__(self):
         return '({} - {})'.format(self.a, self.b)
@@ -68,6 +73,9 @@ class Sub(BinaryExpression):
         result = Projection(result, proj_vars).project()
         return (result, self.label)
 
+    def transform(self, transformer):
+        return transformer.transform_Sub(self)
+
     def evaluate_int(self, prog):
         assert self.is_int
         return self.a.evaluate_int(prog) - self.b.evaluate_int(prog)
@@ -77,6 +85,7 @@ class Mul(BinaryExpression):
         super().__init__(a, b)
         self.a = a
         self.b = b
+        self.param = param
         if not self.a.is_int:
             raise AutomatonArithmeticError("First argument of multiplication must be an integer in {}".format(self))
 
@@ -100,6 +109,9 @@ class Mul(BinaryExpression):
         # I think there are no unwanted APs that we need to project. TODO: remove this comment.
         return sum.evaluate(prog)
 
+    def transform(self, transformer):
+        return transformer.transform_Mul(self)
+
     def __repr__(self):
         return '({} * {})'.format(self.a, self.b)
 
@@ -114,6 +126,7 @@ class Div(BinaryExpression):
         super().__init__(a, b)
         self.a = a
         self.b = b
+        self.param = param
         if not self.is_int:
             raise NotImplementedError("Division with automaton hasn't been implemented, sorry. {}".format(self))
         if not self.b.is_int:
@@ -145,6 +158,8 @@ class Div(BinaryExpression):
                 raise AutomatonArithmeticError("Division among integers must output an integer in {}".format(self))
         return self.a.evaluate_int(prog) // self.b.evaluate_int(prog)
 
+    def transform(self, transformer):
+        return transformer.transform_Div(self)
 
 constants_map = {0:(spot.formula('G(~__constant0)').translate(), "__constant0")}
 class IntConst(Expression):
@@ -153,9 +168,7 @@ class IntConst(Expression):
         super().__init__()
         self.val = val
         self.label = "__constant{}".format(self.val)
-
-    def __repr__(self):
-        return str(self.val)
+        self.param = param
 
     def evaluate(self,prog):
         if self.val in constants_map:
@@ -184,6 +197,12 @@ class IntConst(Expression):
     def evaluate_int(self, prog):
         return self.val
 
+    def transform(self, transformer):
+        return self.transform_IntConst(self)
+
+    def __repr__(self):
+        return str(self.val)
+
 class Equals(Predicate):
     def __init__(self, a, b):
         super().__init__()
@@ -206,6 +225,9 @@ class Equals(Predicate):
         result = Projection(result, proj_vars).project()
         return result
 
+    def transform(self, transformer):
+        return transformer.transform_Equals(self)
+
     def __repr__(self):
         return '({} = {})'.format(self.a, self.b)
 
@@ -220,6 +242,9 @@ class NotEquals(Predicate):
             return spot.formula('1').translate() if self.a.evaluate_int(prog) != self.b.evaluate_int(prog) else spot.formula('0').translate()
         return Complement(Equals(self.a, self.b)).evaluate(prog)
 
+    def transform(self, transformer):
+        return transformer.transform_NotEquals(self)
+
     def __repr__(self):
         return '({} ≠ {})'.format(self.a, self.b)
 
@@ -228,6 +253,7 @@ class Less(Predicate):
         super().__init__()
         self.a = a
         self.b = b
+
     def evaluate(self, prog):
         if self.a.is_int and self.b.is_int:
             return spot.formula('1').translate() if self.a.evaluate_int(prog) < self.b.evaluate_int(prog) else spot.formula('0').translate()
@@ -245,6 +271,9 @@ class Less(Predicate):
         result = Projection(result, proj_vars).project()
         return result
 
+    def transform(self, transformer):
+        return transformer.transform_Less(self)
+
     def __repr__(self):
         return '({} < {})'.format(self.a, self.b)
 
@@ -254,11 +283,14 @@ class Greater(Predicate):
         self.a = a
         self.b = b
 
-    def __repr__(self):
-        return '({} > {})'.format(self.a, self.b)
-
     def evaluate(self, prog):
         return Less(self.b,self.a).evaluate(prog)
+
+    def transform(self, transformer):
+        return transformer.transform_Greater(self)
+
+    def __repr__(self):
+        return '({} > {})'.format(self.a, self.b)
 
 class LessEquals(Predicate):
     def __init__(self, a, b):
@@ -266,13 +298,16 @@ class LessEquals(Predicate):
         self.a = a
         self.b = b
 
-    def __repr__(self):
-        return '({} ≤ {})'.format(self.a, self.b)
-
     def evaluate(self, prog):
         if self.a.is_int and self.b.is_int:
             return spot.formula('1').translate() if self.a.evaluate_int(prog) <= self.b.evaluate_int(prog) else spot.formula('0').translate()
         return Disjunction(Less(self.a,self.b),Equals(self.a,self.b)).evaluate(prog)
+
+    def transform(self, transformer):
+        return transformer.transform_LessEquals(self)
+
+    def __repr__(self):
+        return '({} ≤ {})'.format(self.a, self.b)
 
 class GreaterEquals(Predicate):
     def __init__(self, a, b):
@@ -280,19 +315,24 @@ class GreaterEquals(Predicate):
         self.a = a
         self.b = b
 
-    def __repr__(self):
-        return '({} ≥ {})'.format(self.a, self.b)
-
     def evaluate(self, prog):
         if self.a.is_int and self.b.is_int:
             return spot.formula('1').translate() if self.a.evaluate_int(prog) >= self.b.evaluate_int(prog) else spot.formula('0').translate()
         return Disjunction(Less(self.b,self.a),Equals(self.a,self.b)).evaluate(prog)
 
-class Neg(Expression): # Should this be allowed?
+    def transform(self, transformer):
+        return transformer.transform_GreaterEquals(self)
 
+    def __repr__(self):
+        return '({} ≥ {})'.format(self.a, self.b)
+
+class Neg(Expression): # Should this be allowed?
     def __init__(self, a):
         super().__init__()
         self.a = a
+
+    def transform(self, transformer):
+        return transformer.transform_Neg(self)
 
     def __repr__(self):
         return '(-{})'.format(self.a)

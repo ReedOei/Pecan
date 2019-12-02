@@ -32,6 +32,9 @@ class Forall(Predicate):
             new_pred = self.pred
         return Complement(Exists(self.var, Complement(new_pred))).evaluate(prog)
 
+    def transform(self, transformer):
+        return transformer.transform_Forall(self)
+
     def __repr__(self):
         return '(∀{} ({}))'.format(self.var, self.pred)
 
@@ -53,6 +56,9 @@ class Exists(Predicate):
             new_pred = self.pred
 
         return Projection(new_pred.evaluate(prog), [self.var]).project()
+
+    def transform(self, transformer):
+        return transformer.transform_Exists(self)
 
     def __repr__(self):
         return '(∃{} ({}))'.format(self.var, self.pred)

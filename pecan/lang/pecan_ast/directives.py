@@ -24,6 +24,9 @@ class DirectiveSaveAut(Directive):
         prog.call(self.pred_name).postprocess('BA').save(self.filename)
         return None
 
+    def transform(self, transformer):
+        return transformer.transform_DirectiveSaveAut(self)
+
     def __repr__(self):
         return '#save_aut({}, {})'.format(str(self.filename), self.pred_name)
 
@@ -40,43 +43,11 @@ class DirectiveSaveAutImage(Directive):
 
         return None
 
+    def transform(self, transformer):
+        return transformer.transform_DirectiveSaveAutImage(self)
+
     def __repr__(self):
         return '#save_aut_img({}, {})'.format(repr(self.filename), self.pred_name)
-
-class DirectiveSavePred(Directive):
-    def __init__(self, filename, pred_name):
-        super().__init__('save_pred')
-        self.filename = filename[1:-1]
-        self.pred_name = pred_name
-
-    def evaluate(self, prog):
-        try:
-            with open(self.filename, 'r') as f:
-                new_prog = prog.parser.parse(f.read())
-
-            with open(self.filename, 'w') as f:
-                for d in new_prog.defs:
-                    if type(d) is NamedPred and d.name == self.pred_name:
-                        self.write_pred(f, prog)
-                    else:
-                        f.write(repr(d))
-                        f.write('\n')
-        except FileNotFoundError: # No problem, just create the file
-            with open(self.filename, 'w') as f:
-                self.write_pred(f, prog)
-
-    def write_pred(self, f, prog):
-        for k, v in prog.context.items():
-            f.write(repr(DirectiveContext(k, v)))
-            f.write('\n')
-        f.write(repr(prog.preds[self.pred_name])) # Write the predicate definition itself into the file
-        f.write('\n')
-        for ctx in prog.context[::-1]:
-            f.write(repr(DirectiveEndContext(k)))
-            f.write('\n')
-
-    def __repr__(self):
-        return '#save_pred({}, {})'.format(repr(self.filename), self.pred_name)
 
 class DirectiveContext(Directive):
     def __init__(self, context_key, context_val):
@@ -87,6 +58,9 @@ class DirectiveContext(Directive):
     def evaluate(self, prog):
         prog.context[self.context_key] = self.context_val
         return None
+
+    def transform(self, transformer):
+        return transformer.transform_DirectiveContext(self)
 
     def __repr__(self):
         return '#context({}, {})'.format(self.context_key, self.context_val)
@@ -99,6 +73,9 @@ class DirectiveEndContext(Directive):
     def evaluate(self, prog):
         prog.context.pop(self.context_key)
         return None
+
+    def transform(self, transformer):
+        return transformer.transform_DirectiveEndContext(self)
 
     def __repr__(self):
         return '#end_context({})'.format(self.context)
@@ -132,6 +109,9 @@ class DirectiveAssertProp(Directive):
 
         return result
 
+    def transform(self, transformer):
+        return transformer.transform_DirectiveAssertProp(self)
+
     def display_truth_val(self):
         if self.truth_val == 'sometimes':
             return 'sometimes true'
@@ -162,6 +142,9 @@ class DirectiveLoadAut(Directive):
 
         return None
 
+    def transform(self, transformer):
+        return transformer.transform_DirectiveLoadAut(self)
+
     def __repr__(self):
         return '#load({}, {}, {})'.format(self.filename, self.aut_format, repr(self.pred))
 
@@ -177,6 +160,9 @@ class DirectiveImport(Directive):
         prog.include(new_prog)
         return None
 
+    def transform(self, transformer):
+        return transformer.transform_DirectiveImport(self)
+
     def __repr__(self):
         return '#import({})'.format(repr(self.filename))
 
@@ -188,6 +174,9 @@ class DirectiveForget(Directive):
     def evaluate(self, prog):
         prog.forget(self.var_name)
         return None
+
+    def transform(self, transformer):
+        return transformer.transform_DirectiveForget(self)
 
     def __repr__(self):
         return '#forget({})'.format(repr(self.var_name))
@@ -205,6 +194,9 @@ class DirectiveType(Directive):
     def evaluate(self, prog):
         prog.declare_type(self.pred_ref, self.val_dict)
         return None
+
+    def transform(self, transformer):
+        return transformer.transform_DirectiveType(self)
 
     def __repr__(self):
         return '#type({}, {})'.format(self.pred_ref, self.val_dict)

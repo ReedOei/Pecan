@@ -16,7 +16,6 @@ pecan_grammar = """
         | "#" var -> directive
         | "#" "save_aut" "(" string "," var ")" -> directive_save_aut
         | "#" "save_aut_img" "(" string "," var ")" -> directive_save_aut_img
-        | "#" "save_pred" "(" string "," var ")" -> directive_save_pred
         | "#" "context" "(" string "," string ")" -> directive_context
         | "#" "end_context" "(" string ")" -> directive_end_context
         | "#" "load" "(" string "," string "," formal ")" -> directive_load
@@ -76,13 +75,13 @@ pecan_grammar = """
           | arith "+" product -> add
           | arith "+_" var product -> add_with_param
           | arith "-" product -> sub
-          | arith "-_" product -> sub_with_param
+          | arith "-_" var product -> sub_with_param
 
     ?product: atom
             | product "*" atom -> mul
-            | product "*_" atom -> mul_with_param
+            | product "*_" var atom -> mul_with_param
             | product "/" atom -> div
-            | product "/_" atom -> div_with_param
+            | product "/_" var atom -> div_with_param
 
     ?atom: var -> var_ref
          | INT -> const
