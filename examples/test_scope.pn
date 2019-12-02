@@ -1,0 +1,13 @@
+x is nat_gt(n) := x is nat & x > n
+
+k is nat
+y is nat_gt(k)
+
+test() := forall k. forall y. y > k
+
+#forget(k)
+#forget(y)
+
+// Despite forgetting the restrictions, they were still in scope when we defined test, so the proposition should still be true:
+#assert_prop(true, test)
+

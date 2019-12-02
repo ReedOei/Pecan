@@ -186,8 +186,16 @@ class NamedPred(ASTNode):
             else:
                 raise Exception("Argument '{}' is not: string, VarRef, or a Call!".format(arg))
 
+        self.restriction_env = {}
+
         self.body = body
         self.body_evaluated = None
+
+    def evaluate(self, prog):
+        # Here we keep track of all restrictions that were in scope when we are evaluated; this essentially builds a closure
+        # Otherwise, if we forget a variable after the declaration of this predicate, then we will lose the restriction when we are called
+        # This causes our behavior to depend on lexically where we are used in the program, which would be confusing.
+        self.restriction_env = prog.get_restriction_env()
 
     def arity(self):
         return len(self.args)
@@ -196,7 +204,7 @@ class NamedPred(ASTNode):
         return Match(self.name, ['any'] * self.arity())
 
     def call(self, prog, arg_names=None):
-        prog.enter_scope() # TODO: Scopes should not be visible to functions that we call..., only the global scope should be
+        prog.enter_scope(self.restriction_env)
 
         try:
             for arg_restriction in self.arg_restrictions:
@@ -260,6 +268,7 @@ class Program(ASTNode):
 
         for d in self.defs:
             if type(d) is NamedPred:
+                d.evaluate(self)
                 self.preds[d.name] = d
             else:
                 result = d.evaluate(self)
@@ -281,8 +290,16 @@ class Program(ASTNode):
         else:
             self.restrictions[-1][var_name] = [pred]
 
-    def enter_scope(self):
-        self.restrictions.append({})
+    def get_restriction_env(self):
+        result = {}
+
+        for restriction_set in self.restrictions:
+            result.update(restriction_set)
+
+        return result
+
+    def enter_scope(self, new_restrictions={}):
+        self.restrictions.append(dict(new_restrictions))
 
     def exit_scope(self):
         if len(self.restrictions) <= 1:

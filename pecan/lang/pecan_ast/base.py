@@ -33,6 +33,7 @@ class Expression(ASTNode):
     def __init__(self):
         super().__init__()
         self.is_int = True
+
     def evaluate_node(self, prog):
         return None
 

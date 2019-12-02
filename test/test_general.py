@@ -44,3 +44,6 @@ class GeneralTest(unittest.TestCase):
     def test_word_indexing(self):
         self.run_file('examples/test_word_indexing.pn')
 
+    def test_scope(self):
+        return self.run_file('examples/test_scope.pn')
+

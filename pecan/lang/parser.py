@@ -226,7 +226,7 @@ class PecanTransformer(Transformer):
         else:
             return NamedPred(pred_name, [var_name], body)
 
-    def def_pred_is_call(self, var_name, pred_name, pred_args, body):
+    def def_pred_is_call(self, var_name, pred_name, pred_args, body=None):
         if body is None:
             return self.restrict_call([var_name], pred_name, pred_args)
         else:

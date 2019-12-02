@@ -35,7 +35,7 @@ def state_line(line):
         global org_states
         state(int(acc))
         org_states.append(str(state_counter))
-        
+
 def state(acc):
         state = {'acc': acc}
         global state_counter, states
@@ -44,14 +44,14 @@ def state(acc):
 
 
 # EDGE FUNCTIONS
-def intermediate_edge(b_inputs, start_state, end_state, base): 
+def intermediate_edge(b_inputs, start_state, end_state, base):
         global states
         s = states[str(start_state)]
         for i in range(base):
             inp = column(b_inputs, i)
             if inp in s.keys():
                 key = s[inp]
-                if key[0] == 'o': 
+                if key[0] == 'o':
                     key = org_states[int(key[1:])]
                     s[inp] = key
                 s = states[key]
@@ -81,7 +81,7 @@ def make_edge(aps, inp):
         return ans
 
 
-# BASE FUNCTION 
+# BASE FUNCTION
 def adjust_base(line):
         bases = []
         base = 1
@@ -117,10 +117,10 @@ def convert_aut(txt, inp_names = []):
         aut = spot.make_twa_graph()
         aps = []
         for i in range(len(bases)):
-            # should require same length? 
+            # should require same length?
             if len(inp_names) > i:
                 aps.append(buddy.bdd_ithvar(aut.register_ap(inp_names[i])))
-            else: 
+            else:
                 aps.append(buddy.bdd_ithvar(aut.register_ap("p" + str(i + 1))))
 
         aut.set_buchi()
@@ -138,6 +138,7 @@ def convert_aut(txt, inp_names = []):
                     label = make_edge(aps, j)
                     if states[end_state]["acc"]:
                         aut.new_edge(int(i), int(end_state), label, [0])
-                    else: 
+                    else:
                         aut.new_edge(int(i), int(end_state), label)
         return aut
+
