@@ -208,22 +208,22 @@ class TypeInferer(AstTransformer):
         res_type = a.get_type()
         return Neg(a).with_type(res_type)
 
-    def transform_Forall(self, node):
+    def transform_Forall(self, node: Forall):
         if node.cond is None:
-            self.type_env[node.var_name] = AnyType()
+            self.type_env[node.var.var_name] = AnyType()
         else:
-            self.type_env[node.var_name] = RestrictionType(node.cond)
+            self.type_env[node.var.var_name] = RestrictionType(node.cond)
         val = super().transform_Forall(node)
-        self.type_env.remove(node.var_name)
+        self.type_env.remove(node.var.var_name)
         return val
 
-    def transform_Exists(self, node):
+    def transform_Exists(self, node: Exists):
         if node.cond is None:
-            self.type_env[node.var_name] = AnyType()
+            self.type_env[node.var.var_name] = AnyType()
         else:
-            self.type_env[node.var_name] = RestrictionType(node.cond)
+            self.type_env[node.var.var_name] = RestrictionType(node.cond)
         val = super().transform_Exists(node)
-        self.type_env.remove(node.var_name)
+        self.type_env.remove(node.var.var_name)
         return val
 
     def transform_Call(self, node: Call):
