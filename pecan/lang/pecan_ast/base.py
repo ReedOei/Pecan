@@ -16,6 +16,14 @@ class ASTNode:
         #TODO: detect used labels and avoid those
         self.label = "__pecan{}".format(Expression.id)
         Expression.id += 1
+        self.type = None
+
+    def with_type(self, new_type):
+        self.type = new_type
+        return self
+
+    def get_type(self):
+        return self.type
 
     def evaluate(self, prog):
         prog.eval_level += 1
@@ -32,21 +40,26 @@ class ASTNode:
     def transform(self, transformer):
         return NotImplementedError('Transform not implemented for {}'.format(self.__class__.__name__))
 
+    def evaluate_node(self, prog):
+        raise NotImplementedError
+
 class Expression(ASTNode):
     def __init__(self):
         super().__init__()
         self.is_int = True
-        self.type = None
-
-    def with_type(self, new_type):
-        self.type = new_type
-        return self
-
-    def get_type(self):
-        return self.type
 
     def evaluate_node(self, prog):
         return None
+
+    # This should be overriden by all expressions
+    def show(self):
+        raise NotImplementedError
+
+    def __repr__(self):
+        if self.type is None:
+            return self.show()
+        else:
+            return f'{self.show()} : {self.get_type()}'
 
 class UnaryExpression(Expression):
     def __init__(self, a):

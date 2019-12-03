@@ -10,13 +10,23 @@ class Type:
     def __init__(self):
         pass
 
+    def get_restriction(self):
+        return None
+
 class AnyType(Type):
     def __init__(self):
         super().__init__()
 
+    def __repr__(self):
+        return 'any'
+
+# These should only be present during type inference
 class InferredType(Type):
     def __init__(self):
         super().__init__()
+
+    def __repr__(self):
+        return 'inferred'
 
 class RestrictionType(Type):
     def __init__(self, restriction):
@@ -30,6 +40,9 @@ class RestrictionType(Type):
         else:
             return self.restriction
 
+    def __repr__(self):
+        return repr(self.get_restriction())
+
 class TypeEnv:
     def __init__(self, prog):
         self.prog = prog
@@ -41,6 +54,9 @@ class TypeEnv:
 
     def __getitem__(self, item):
         return self.type_env[item]
+
+    def __contains__(self, item):
+        return item in self.type_env
 
     def __setitem__(self, key, value):
         self.type_env[key] = value
@@ -161,10 +177,11 @@ class TypeInferer(AstTransformer):
 
     def transform_VarRef(self, node: VarRef):
         restrictions = self.prog.get_restrictions(node.var_name)
-        if len(restrictions) == 0:
-            self.type_env[node.var_name] = AnyType()
-        else:
-            self.type_env[node.var_name] = RestrictionType(restrictions[-1]) # For now just use the last restriction
+        if not node.var_name in self.type_env:
+            if len(restrictions) == 0:
+                self.type_env[node.var_name] = AnyType()
+            else:
+                self.type_env[node.var_name] = RestrictionType(restrictions[-1]) # For now just use the last restriction
         return VarRef(node.var_name).with_type(self.type_env[node.var_name])
 
     def transform_Equals(self, node: Equals):
@@ -210,20 +227,24 @@ class TypeInferer(AstTransformer):
 
     def transform_Forall(self, node: Forall):
         if node.cond is None:
-            self.type_env[node.var.var_name] = AnyType()
+            if len(self.prog.get_restrictions(node.var.var_name)) == 0:
+                self.type_env[node.var.var_name] = AnyType()
         else:
             self.type_env[node.var.var_name] = RestrictionType(node.cond)
         val = super().transform_Forall(node)
-        self.type_env.remove(node.var.var_name)
+        if node.var.var_name in self.type_env:
+            self.type_env.remove(node.var.var_name)
         return val
 
     def transform_Exists(self, node: Exists):
         if node.cond is None:
-            self.type_env[node.var.var_name] = AnyType()
+            if len(self.prog.get_restrictions(node.var.var_name)) == 0:
+                self.type_env[node.var.var_name] = AnyType()
         else:
             self.type_env[node.var.var_name] = RestrictionType(node.cond)
         val = super().transform_Exists(node)
-        self.type_env.remove(node.var.var_name)
+        if node.var.var_name in self.type_env:
+            self.type_env.remove(node.var.var_name)
         return val
 
     def transform_Call(self, node: Call):

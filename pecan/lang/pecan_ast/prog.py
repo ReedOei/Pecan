@@ -29,13 +29,14 @@ class VarRef(Expression):
     def transform(self, transformer):
         return transformer.transform_VarRef(self)
 
-    def __repr__(self):
+    def show(self):
         return self.var_name
 
 class AutLiteral(Predicate):
     def __init__(self, aut):
         super().__init__()
         self.aut = aut
+        self.is_int = False
 
     def evaluate(self, prog):
         return self.aut
@@ -313,6 +314,8 @@ class Program(ASTNode):
                 # Infer types for the body of the
                 self.preds[d.name] = self.type_inferer.reset().transform(d)
                 self.preds[d.name].evaluate(self)
+                if self.debug:
+                    print(self.preds[d.name])
             else:
                 result = d.evaluate(self)
                 if result is not None and type(result) is Result:
@@ -331,10 +334,11 @@ class Program(ASTNode):
         self.restrictions[-1].pop(var_name)
 
     def restrict(self, var_name, pred):
-        if var_name in self.restrictions[-1]:
-            self.restrictions[-1][var_name].append(pred)
-        else:
-            self.restrictions[-1][var_name] = [pred]
+        if pred is not None:
+            if var_name in self.restrictions[-1]:
+                self.restrictions[-1][var_name].append(pred)
+            else:
+                self.restrictions[-1][var_name] = [pred]
 
     def get_restriction_env(self):
         result = {}
@@ -362,13 +366,19 @@ class Program(ASTNode):
         return result
 
     def call(self, pred_name, args=None):
-        if args is None or len(args) == 0:
-            if pred_name in self.preds:
-                return self.preds[pred_name].call(self, args)
+        try:
+            if args is None or len(args) == 0:
+                if pred_name in self.preds:
+                    return self.preds[pred_name].call(self, args)
+                else:
+                    raise Exception(f'Predicate {pred_name} not found (known predicates: {self.preds.keys()}!')
             else:
-                raise Exception(f'Predicate {pred_name} not found (known predicates: {self.preds.keys()}!')
-        else:
-            return self.dynamic_call(pred_name, args)
+                return self.dynamic_call(pred_name, args)
+        except Exception as e:
+            if pred_name in self.context:
+                return self.call(self.context[pred_name], args)
+            else:
+                raise e
 
     def unify_with(self, a, b, unification):
         if b in unification:

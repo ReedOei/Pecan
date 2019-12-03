@@ -16,16 +16,17 @@ class Add(BinaryExpression):
     def change_label(self, label): # for changing label to __constant#
         self.label = label
 
-    def __repr__(self):
+    def show(self):
         return '({} + {})'.format(self.a, self.b)
 
     def evaluate(self, prog):
         if self.is_int:
-            return IntConst(self.evaluate_int(prog)).evaluate(prog)
+            return IntConst(self.evaluate_int(prog)).with_type(self.get_type()).evaluate(prog)
 
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
-        aut_add = prog.call(prog.context['adder'], [val_a, val_b, self.label])
+        prog.restrict(self.label, self.a.get_type().get_restriction())
+        aut_add = prog.call('adder', [val_a, val_b, self.label])
         result = spot.product(aut_b, aut_a)
         result = spot.product(aut_add, result)
         proj_vars = set()
@@ -53,11 +54,12 @@ class Sub(BinaryExpression):
 
     def evaluate(self, prog):
         if self.is_int:
-            return IntConst(self.evaluate_int(prog)).evaluate(prog)
+            return IntConst(self.evaluate_int(prog)).with_type(self.get_type()).evaluate(prog)
 
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
-        aut_sub = prog.call(prog.context['adder'], [self.label, val_b, val_a])
+        prog.restrict(self.label, self.a.get_type().get_restriction())
+        aut_sub = prog.call('adder', [self.label, val_b, val_a])
         result = spot.product(aut_b, aut_a)
         result = spot.product(aut_sub, result)
 
@@ -85,7 +87,7 @@ class Mul(BinaryExpression):
 
     def evaluate(self, prog):
         if self.is_int:
-            return IntConst(self.evaluate_int(prog)).evaluate(prog)
+            return IntConst(self.evaluate_int(prog)).with_type(self.get_type()).evaluate(prog)
 
         c = self.a.evaluate_int(prog)  # copy of a
         if c == 0:
@@ -95,18 +97,18 @@ class Mul(BinaryExpression):
         sum = IntConst(0)
         while True:
             if c & 1 == 1:
-                sum = EvaluatedExpression(Add(power,sum).evaluate(prog))
+                sum = AutLiteral(Add(power,sum).with_type(self.get_type()).evaluate(prog))
             c = c >> 1
             if c <= 0:
                 break
-            power = EvaluatedExpression(Add(power, power).evaluate(prog))
-        # I think there are no unwanted APs that we need to project. TODO: remove this comment.
+            power = AutLiteral(Add(power, power).with_type(self.get_type()).evaluate(prog))
+
         return sum.evaluate(prog)
 
     def transform(self, transformer):
         return transformer.transform_Mul(self)
 
-    def __repr__(self):
+    def show(self):
         return '({} * {})'.format(self.a, self.b)
 
     def evaluate_int(self, prog):
@@ -124,12 +126,12 @@ class Div(BinaryExpression):
         if not self.b.is_int:
             raise AutomatonArithmeticError("Second argument of division must be an integer in {}".format(self))
 
-    def __repr__(self):
+    def show(self):
         return '({} / {})'.format(self.a, self.b)
 
     def evaluate(self, prog):
         if self.is_int:
-            return IntConst(self.evaluate_int(prog)).evaluate(prog)
+            return IntConst(self.evaluate_int(prog)).with_type(self.get_type()).evaluate(prog)
         assert False
         b = self.b.evaluate_int(prog)
         if b == 1:
@@ -153,7 +155,7 @@ class Div(BinaryExpression):
     def transform(self, transformer):
         return transformer.transform_Div(self)
 
-constants_map = {0:(spot.formula('G(~__constant0)').translate(), "__constant0")}
+constants_map = {0: (spot.formula('G(~__constant0)').translate(), "__constant0")}
 class IntConst(Expression):
     # Constant 0 is defined as 000000...
     def __init__(self, val, param=None):
@@ -163,23 +165,39 @@ class IntConst(Expression):
         self.param = param
 
     def evaluate(self,prog):
-        if self.val in constants_map:
-            return constants_map[self.val]
+        # TODO: Put constants map back, after we figure out how to do it for the various changing bases/numeration
+        #  systems
+        zero_const_var  = VarRef("__constant0").with_type(self.get_type())
+        zero_const = IntConst(0).with_type(self.get_type())
+        one_const_var = VarRef("__constant1").with_type(self.get_type())
+        b_const = VarRef('b').with_type(self.get_type())
+
+        # if self.val in constants_map:
+        #     return constants_map[self.val]
+        if self.val == 0:
+            # TODO: For some reason, the below definition doesn't work
+            # formula_0 = Forall('b', LessEquals(zero_const_var, b_const))
+            # return formula_0.evaluate(prog), zero_const_var.var_name
+
+            return constants_map[0]
         if self.val == 1:
-            formula_1 = Conjunction(Less(IntConst(0),VarRef("__constant1")), Forall('b', Implies(Less(IntConst(0), VarRef('b')), \
-                                    LessEquals(VarRef('__constant1'), VarRef("b")))))
-            constants_map[1] = (formula_1.evaluate(prog), "__constant1")
+            formula_1 = Conjunction(Less(zero_const, one_const_var), Forall('b', Implies(Less(zero_const, b_const), LessEquals(one_const_var, b_const))))
+            constants_map[1] = (formula_1.evaluate(prog), one_const_var.var_name)
             return constants_map[1]
-        assert self.val >= 2, "constant here should be greater than or equal to 2, while it is {}".format(self.val)
-        if (self.val & (self.val-1) == 0):
-            result = Add(IntConst(self.val // 2), IntConst(self.val // 2))
+
+        assert self.val >= 2, "constant here should be greater than or equal to 1, while it is {}".format(self.val)
+
+        if self.val & (self.val - 1) == 0:
+            half = IntConst(self.val // 2).with_type(self.get_type())
+            result = Add(half, half)
         else:
             c = self.val
             power = 1
             while c != 1:
                 power  = power << 1
                 c = c >> 1
-            result = Add(IntConst(power), IntConst(self.val - power))
+            result = Add(IntConst(power).with_type(self.get_type()), IntConst(self.val - power).with_type(self.get_type()))
+
         result.change_label(self.label)
         result.is_int = False
         (result,val) = result.evaluate(prog)
@@ -192,7 +210,7 @@ class IntConst(Expression):
     def transform(self, transformer):
         return transformer.transform_IntConst(self)
 
-    def __repr__(self):
+    def show(self):
         return str(self.val)
 
 class Equals(Predicate):
@@ -326,29 +344,18 @@ class Neg(UnaryExpression): # Should this be allowed?
     def transform(self, transformer):
         return transformer.transform_Neg(self)
 
-    def __repr__(self):
+    def show(self):
         return '(-{})'.format(self.a)
 
     def evaluate(self, prog):
         if self.a.is_int:
             return IntConst(self.evaluate_int(prog)).evaluate(prog)
         raise AutomatonArithmeticError("Should not negate automaton in {}".format(self))
-        return Sub(IntConst(0),self.a).evaluate(prog)
+        # return Sub(IntConst(0),self.a).evaluate(prog)
 
     def evaluate_int(self, prog):
         assert self.is_int
         return -self.a.evaluate_int(prog)
-
-# For memoization in Mul.evaluate(), is there a better way to do this?
-class EvaluatedExpression(ASTNode):
-    def __init__(self, result):
-        super().__init__()
-        self.result = result
-        # self.result should be (aut,val) form
-        self.is_int = False
-
-    def evaluate(self, prog):
-        return self.result
 
 class AutomatonArithmeticError(Exception):
     pass
