@@ -42,15 +42,32 @@ class Expression(ASTNode):
         self.type = new_type
         return self
 
+    def get_type(self):
+        return self.type
+
     def evaluate_node(self, prog):
         return None
 
-class BinaryExpression(ASTNode):
+class UnaryExpression(Expression):
+    def __init__(self, a):
+        super().__init__()
+        self.a = a
+
+    def with_type(self, new_type):
+        self.a = self.a.with_type(new_type)
+        return super().with_type(new_type)
+
+class BinaryExpression(Expression):
     def __init__(self, a, b):
         super().__init__()
         self.a = a
         self.b = b
         self.is_int = a.is_int and b.is_int
+
+    def with_type(self, new_type):
+        self.a = self.a.with_type(new_type)
+        self.b = self.b.with_type(new_type)
+        return super().with_type(new_type)
 
 class Predicate(ASTNode):
     def __init__(self):

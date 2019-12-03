@@ -105,3 +105,15 @@ class Projection:
             self.aut = AutomatonTransformer(self.aut, build_projection_formula).transform()
         return self.aut
 
+class TruthValue:
+    def __init__(self, pred):
+        self.pred = pred
+
+    def truth_value(self, prog):
+        evaluated = self.pred.evaluate(prog)
+        if evaluated.is_empty(): # If we accept nothing, we are false
+            return 'false'
+        elif spot.complement(evaluated).is_empty(): # If our complement accepts nothing, we accept everything, so we are true
+            return 'true'
+        else: # Otherwise, we are neither true nor false: i.e., not all variables have been eliminated
+            return 'sometimes'

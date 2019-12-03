@@ -62,16 +62,16 @@ class AstTransformer:
         return node
 
     def transform_Add(self, node):
-        return Add(self.transform(node.a), self.transform(node.b), param=node.param)
+        return Add(self.transform(node.a), self.transform(node.b), param=node.param).with_type(node.get_type())
 
     def transform_Sub(self, node):
-        return Sub(self.transform(node.a), self.transform(node.b), param=node.param)
+        return Sub(self.transform(node.a), self.transform(node.b), param=node.param).with_type(node.get_type())
 
     def transform_Mul(self, node):
-        return Mul(self.transform(node.a), self.transform(node.b), param=node.param)
+        return Mul(self.transform(node.a), self.transform(node.b), param=node.param).with_type(node.get_type())
 
     def transform_Div(self, node):
-        return Div(self.transform(node.a), self.transform(node.b), param=node.param)
+        return Div(self.transform(node.a), self.transform(node.b), param=node.param).with_type(node.get_type())
 
     def transform_IntConst(self, node):
         return node
@@ -95,7 +95,7 @@ class AstTransformer:
         return GreaterEquals(self.transform(node.a), self.transform(node.b))
 
     def transform_Neg(self, node):
-        return Neg(self.transform(node.a))
+        return Neg(self.transform(node.a)).with_type(node.get_type())
 
     def transform_Index(self, node):
         return Index(node.var_name, self.transform(node.index_expr))

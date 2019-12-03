@@ -11,8 +11,6 @@ from pecan.lang.pecan_ast import *
 class Add(BinaryExpression):
     def __init__(self, a, b, param=None):
         super().__init__(a, b)
-        self.a = a
-        self.b = b
         self.param = param
 
     def change_label(self, label): # for changing label to __constant#
@@ -48,8 +46,6 @@ class Add(BinaryExpression):
 class Sub(BinaryExpression):
     def __init__(self, a, b, param=None):
         super().__init__(a, b)
-        self.a = a
-        self.b = b
         self.param = param
 
     def __repr__(self):
@@ -83,8 +79,6 @@ class Sub(BinaryExpression):
 class Mul(BinaryExpression):
     def __init__(self, a, b, param=None):
         super().__init__(a, b)
-        self.a = a
-        self.b = b
         self.param = param
         if not self.a.is_int:
             raise AutomatonArithmeticError("First argument of multiplication must be an integer in {}".format(self))
@@ -124,8 +118,6 @@ class Mul(BinaryExpression):
 class Div(BinaryExpression):
     def __init__(self, a, b, param=None):
         super().__init__(a, b)
-        self.a = a
-        self.b = b
         self.param = param
         if not self.is_int:
             raise NotImplementedError("Division with automaton hasn't been implemented, sorry. {}".format(self))
@@ -326,9 +318,9 @@ class GreaterEquals(Predicate):
     def __repr__(self):
         return '({} ≥ {})'.format(self.a, self.b)
 
-class Neg(Expression): # Should this be allowed?
+class Neg(UnaryExpression): # Should this be allowed?
     def __init__(self, a):
-        super().__init__()
+        super().__init__(a)
         self.a = a
 
     def transform(self, transformer):

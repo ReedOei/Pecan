@@ -3,6 +3,7 @@
 
 import spot
 
+from pecan.tools.automaton_tools import TruthValue
 from pecan.tools.convert_hoa import convert_aut
 from pecan.lang.pecan_ast import *
 
@@ -88,13 +89,7 @@ class DirectiveAssertProp(Directive):
         self.pred_name = pred_name
 
     def pred_truth_value(self, prog):
-        evaluated = prog.call(self.pred_name)
-        if evaluated.is_empty(): # If we accept nothing, we are false
-            return 'false'
-        elif spot.complement(evaluated).is_empty(): # If our complement accepts nothing, we accept everything, so we are true
-            return 'true'
-        else: # Otherwise, we are neither true nor false: i.e., not all variables have been eliminated
-            return 'sometimes'
+        return TruthValue(Call(self.pred_name, [])).truth_value(prog)
 
     def evaluate(self, prog):
         pred_truth_value = self.pred_truth_value(prog)

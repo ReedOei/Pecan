@@ -1,10 +1,12 @@
-test() := forall x is nat. 0 + x = x
+x is nat
+
+test() := forall x. 0 + x = x
 #assert_prop(true, test)
 
-test2() := exists x is nat. x + x = x
+test2() := exists x. x + x = x
 #assert_prop(true, test2)
 
-test3() := exists x is nat. !finite_num(x)
+test3() := exists x. !finite_num(x)
 #assert_prop(false, test3)
 
 a, b, c are nat

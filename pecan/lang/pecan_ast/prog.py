@@ -141,6 +141,12 @@ class Call(Predicate):
     def match(self):
         return Match(self.name, self.args)
 
+    def with_args(self, new_args):
+        if len(new_args) == 0:
+            return VarRef(self.name)
+        else:
+            return Call(self.name, new_args)
+
     def insert_first(self, new_arg):
         return Call(self.name, [new_arg] + self.actual_args())
 
@@ -304,10 +310,9 @@ class Program(ASTNode):
 
         for d in self.defs:
             if type(d) is NamedPred:
-                d.evaluate(self)
-
                 # Infer types for the body of the
-                self.preds[d.name] = self.type_inferer.transform(d)
+                self.preds[d.name] = self.type_inferer.reset().transform(d)
+                self.preds[d.name].evaluate(self)
             else:
                 result = d.evaluate(self)
                 if result is not None and type(result) is Result:
@@ -350,14 +355,14 @@ class Program(ASTNode):
         else:
             self.restrictions.pop(-1)
 
-    def get_restrictions(self, var_name):
+    def get_restrictions(self, var_name: str):
         result = []
         for scope in self.restrictions:
             result.extend(scope.get(var_name, []))
         return result
 
     def call(self, pred_name, args=None):
-        if args is None:
+        if args is None or len(args) == 0:
             if pred_name in self.preds:
                 return self.preds[pred_name].call(self, args)
             else:
@@ -498,4 +503,3 @@ class Restriction(ASTNode):
 
     def __repr__(self):
         return '{} are {}'.format(', '.join(self.var_names), self.pred('*')) # TODO: Improve this
-
