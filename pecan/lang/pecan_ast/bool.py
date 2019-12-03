@@ -1,10 +1,7 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-import spot
-
 from pecan.lang.pecan_ast import *
-from pecan.tools.automaton_tools import Projection
 
 class Conjunction(Predicate):
     def __init__(self, a, b):

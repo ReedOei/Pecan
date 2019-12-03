@@ -10,8 +10,8 @@ from functools import reduce
 from lark import Lark, Transformer, v_args
 import spot
 
-from pecan.tools.automaton_tools import AutomatonTransformer, Substitution, Projection
-from pecan.lang.pecan_ast import *
+from pecan.tools.automaton_tools import AutomatonTransformer, Substitution
+from pecan.lang.pecan_ast.base import *
 
 class VarRef(Expression):
     def __init__(self, var_name):
@@ -24,7 +24,7 @@ class VarRef(Expression):
 
     def evaluate(self, prog):
         # The automata accepts everything (because this isn't a predicate)
-        return (spot.formula('1').translate(), self.var_name)
+        return spot.formula('1').translate(), self.var_name
 
     def transform(self, transformer):
         return transformer.transform_VarRef(self)
@@ -61,7 +61,10 @@ class SpotFormula(Predicate):
         return 'LTL({})'.format(self.formula_str)
 
 class Match:
-    def __init__(self, pred_name=None, pred_args=[], match_any=False):
+    def __init__(self, pred_name=None, pred_args=None, match_any=False):
+        if pred_args is None:
+            pred_args = []
+
         self.pred_name = pred_name
         self.pred_args = pred_args
         self.match_any = match_any
@@ -181,7 +184,7 @@ class Call(Predicate):
         return '{}({})'.format(self.name, ', '.join(map(repr, self.args)))
 
 class NamedPred(ASTNode):
-    def __init__(self, name, args, body):
+    def __init__(self, name, args, body, restriction_env=None):
         super().__init__()
         self.name = name
 
@@ -198,16 +201,25 @@ class NamedPred(ASTNode):
             else:
                 raise Exception("Argument '{}' is not: string, VarRef, or a Call!".format(arg))
 
-        self.restriction_env = {}
+        self.restriction_env = restriction_env or {}
 
         self.body = body
         self.body_evaluated = None
 
     def evaluate(self, prog):
-        # Here we keep track of all restrictions that were in scope when we are evaluated; this essentially builds a closure
-        # Otherwise, if we forget a variable after the declaration of this predicate, then we will lose the restriction when we are called
-        # This causes our behavior to depend on lexically where we are used in the program, which would be confusing.
-        self.restriction_env = prog.get_restriction_env()
+        # Here we keep track of all restrictions that were in scope when we are evaluated;
+        # this essentially builds a closure. Otherwise, if we forget a variable after the declaration of this predicate,
+        # then we will lose the restriction when we are called. This would cause our behavior to depend on lexically
+        # where this predicate is used in the program, which would be confusing.
+        prog.enter_scope()
+
+        try:
+            for arg_restriction in self.arg_restrictions:
+                arg_restriction.evaluate(prog)
+
+            self.restriction_env = prog.get_restriction_env()
+        finally:
+            prog.exit_scope()
 
     def transform(self, transformer):
         return transformer.transform_NamedPred(self)
@@ -219,12 +231,9 @@ class NamedPred(ASTNode):
         return Match(self.name, ['any'] * self.arity())
 
     def call(self, prog, arg_names=None):
-        prog.enter_scope(self.restriction_env)
+        prog.enter_scope(dict(self.restriction_env))
 
         try:
-            for arg_restriction in self.arg_restrictions:
-                arg_restriction.evaluate(prog)
-
             if self.body_evaluated is None:
                 self.body_evaluated = self.body.evaluate(prog)
 
@@ -244,6 +253,7 @@ class Program(ASTNode):
     def __init__(self, defs, *args, **kwargs):
         super().__init__()
 
+        self.type_inferer = kwargs.get('type_inferer', None)
         self.defs = defs
         self.preds = kwargs.get('preds', {})
         self.context = kwargs.get('context', {})
@@ -295,7 +305,9 @@ class Program(ASTNode):
         for d in self.defs:
             if type(d) is NamedPred:
                 d.evaluate(self)
-                self.preds[d.name] = d
+
+                # Infer types for the body of the
+                self.preds[d.name] = self.type_inferer.transform(d)
             else:
                 result = d.evaluate(self)
                 if result is not None and type(result) is Result:
@@ -327,7 +339,9 @@ class Program(ASTNode):
 
         return result
 
-    def enter_scope(self, new_restrictions={}):
+    def enter_scope(self, new_restrictions=None):
+        if new_restrictions is None:
+            new_restrictions = {}
         self.restrictions.append(dict(new_restrictions))
 
     def exit_scope(self):

@@ -5,6 +5,7 @@ import os
 
 from pecan.lang.parser import pecan_parser
 from pecan.lang.pecan_ast import *
+from pecan.lang.type_inference import TypeInferer
 
 PECAN_PATH_VAR = 'PECAN_PATH'
 
@@ -37,6 +38,7 @@ def from_source(source_code, *args, **kwargs):
     prog.quiet = kwargs.get('quiet', False)
     prog.search_paths = make_search_paths(kwargs.get('filename', None))
     prog.loader = load
+    prog.type_inferer = TypeInferer(prog)
 
     # Load the standard library
     if kwargs.get('load_stdlib', True):

@@ -36,6 +36,11 @@ class Expression(ASTNode):
     def __init__(self):
         super().__init__()
         self.is_int = True
+        self.type = None
+
+    def with_type(self, new_type):
+        self.type = new_type
+        return self
 
     def evaluate_node(self, prog):
         return None

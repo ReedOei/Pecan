@@ -8,7 +8,10 @@ class AstTransformer:
         pass
 
     def transform(self, node):
-        return node.transform(self)
+        if type(node) is str:
+            return node
+        else:
+            return node.transform(self)
 
     def transform_Conjunction(self, node):
         return Conjunction(self.transform(node.a), self.transform(node.b))
@@ -125,12 +128,12 @@ class AstTransformer:
         return Call(node.name, [self.transform(arg) for arg in node.args])
 
     def transform_NamedPred(self, node):
-        return NamedPred(node.name, [self.transform(arg) for arg in node.args], self.transform(body))
+        return NamedPred(node.name, [self.transform(arg) for arg in node.args], self.transform(node.body), restriction_env=node.restriction_env)
 
     def transform_Program(self, node):
         new_defs = [self.transform(d) for d in node.defs]
-        new_restrictions = [{k: self.transform(restriction) for k, v in restrictions.items()} for restrictions in node.restrictions]
-        new_types = dict(self.transform_type(k, v) for k, v in node.types.items()]
+        new_restrictions = [{k: self.transform(v) for k, v in restrictions.items()} for restrictions in node.restrictions]
+        new_types = dict([self.transform_type(k, v) for k, v in node.types.items()])
 
         return Program(new_defs, restrictions=new_restrictions, types=new_types).copy_defaults(node)
 

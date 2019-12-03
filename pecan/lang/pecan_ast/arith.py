@@ -198,7 +198,7 @@ class IntConst(Expression):
         return self.val
 
     def transform(self, transformer):
-        return self.transform_IntConst(self)
+        return transformer.transform_IntConst(self)
 
     def __repr__(self):
         return str(self.val)
@@ -350,6 +350,7 @@ class Neg(Expression): # Should this be allowed?
 # For memoization in Mul.evaluate(), is there a better way to do this?
 class EvaluatedExpression(ASTNode):
     def __init__(self, result):
+        super().__init__()
         self.result = result
         # self.result should be (aut,val) form
         self.is_int = False
@@ -357,9 +358,5 @@ class EvaluatedExpression(ASTNode):
     def evaluate(self, prog):
         return self.result
 
-
 class AutomatonArithmeticError(Exception):
     pass
-class NotImplementedError(Exception):
-    pass
-
