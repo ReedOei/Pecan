@@ -119,6 +119,9 @@ class TypeEnv:
             self.unification.update(old_unification)
             raise Exception(f'Could not unify {a} : {t_a} and {b} : {t_b}')
 
+    def remove(self, var_name):
+        self.type_env.pop(var_name)
+
 class TypeInferer(AstTransformer):
     def __init__(self, prog: Program):
         super().__init__()
@@ -204,6 +207,24 @@ class TypeInferer(AstTransformer):
         a = self.transform(node.a)
         res_type = a.get_type()
         return Neg(a).with_type(res_type)
+
+    def transform_Forall(self, node):
+        if node.cond is None:
+            self.type_env[node.var_name] = AnyType()
+        else:
+            self.type_env[node.var_name] = RestrictionType(node.cond)
+        val = super().transform_Forall(node)
+        self.type_env.remove(node.var_name)
+        return val
+
+    def transform_Exists(self, node):
+        if node.cond is None:
+            self.type_env[node.var_name] = AnyType()
+        else:
+            self.type_env[node.var_name] = RestrictionType(node.cond)
+        val = super().transform_Exists(node)
+        self.type_env.remove(node.var_name)
+        return val
 
     def transform_Call(self, node: Call):
         # TODO: Handle the arg restrictions giving us additional type information

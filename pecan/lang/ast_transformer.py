@@ -110,10 +110,16 @@ class AstTransformer:
         return EqualsCompareRange(node.is_equals, self.transform(node.index_a), self.transform(node.index_b))
 
     def transform_Forall(self, node):
-        return Forall(node.var, self.transform(node.pred))
+        if node.cond is not None:
+            return Forall(node.cond, self.transform(node.pred))
+        else:
+            return Forall(node.var_name, self.transform(node.pred))
 
     def transform_Exists(self, node):
-        return Exists(node.var, self.transform(node.pred))
+        if node.cond is not None:
+            return Exists(node.cond, self.transform(node.pred))
+        else:
+            return Exists(node.var_name, self.transform(node.pred))
 
     def transform_VarRef(self, node):
         return node

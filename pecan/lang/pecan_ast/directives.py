@@ -79,7 +79,7 @@ class DirectiveEndContext(Directive):
         return transformer.transform_DirectiveEndContext(self)
 
     def __repr__(self):
-        return '#end_context({})'.format(self.context)
+        return '#end_context({})'.format(self.context_key)
 
 # Asserts that pred_name is truth_val: i.e., that pred_name is 'true' (always), 'false' (always), or 'sometimes' true
 class DirectiveAssertProp(Directive):
