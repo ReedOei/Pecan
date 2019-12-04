@@ -15,6 +15,7 @@ class Add(BinaryExpression):
         super().__init__(a, b)
         self.a = a
         self.b = b
+        self.param = param
 
     def change_label(self, label): # for changing label to __constant#
         self.label = label
@@ -42,10 +43,14 @@ class Add(BinaryExpression):
 
     def evaluate(self, prog):
         if self.is_int:
-            return IntConst(self.evaluate_int(prog)).evaluate(prog)
+            return IntConst(self.evaluate_int(prog), self.param).evaluate(prog)
 
-        # should yell meaningful things if "adder" is not defined
-        return UndeterminedExpression("adder", [self.a, self.b, VarRef(self.label)], self.label).evaluate(prog)
+        # Should yell meaningful things if "adder" is not defined
+        # Assuming adder with parameter puts parameter at last
+        if self.param is None:
+            return UndeterminedExpression("adder", [self.a, self.b, VarRef(self.label)], self.label).evaluate(prog)
+        else:
+            return UndeterminedExpression("adder", [self.a, self.b, VarRef(self.label), self.param], self.label).evaluate(prog)
 
     def evaluate_int(self, prog):
         assert self.is_int
@@ -56,6 +61,7 @@ class Sub(BinaryExpression):
         super().__init__(a, b)
         self.a = a
         self.b = b
+        self.param = param
 
     def __repr__(self):
         return '({} - {})'.format(self.a, self.b)
@@ -81,10 +87,13 @@ class Sub(BinaryExpression):
 
     def evaluate(self, prog):
         if self.is_int:
-            return IntConst(self.evaluate_int(prog)).evaluate(prog)
+            return IntConst(self.evaluate_int(prog), self.param).evaluate(prog)
 
         # should yell meaningful things if "adder" is not defined
-        return UndeterminedExpression("adder", [VarRef(self.label), self.b, self.a], self.label).evaluate(prog)
+        if self.param is None:
+            return UndeterminedExpression("adder", [VarRef(self.label), self.b, self.a], self.label).evaluate(prog)
+        else:
+            return UndeterminedExpression("adder", [VarRef(self.label), self.b, self.a, self.param], self.label).evaluate(prog)
 
     def evaluate_int(self, prog):
         assert self.is_int
@@ -95,26 +104,27 @@ class Mul(BinaryExpression):
         super().__init__(a, b)
         self.a = a
         self.b = b
+        self.param = param
         if not self.a.is_int:
             raise AutomatonArithmeticError("First argument of multiplication must be an integer in {}".format(self))
 
     def evaluate(self, prog):
         if self.is_int:
-            return IntConst(self.evaluate_int(prog)).evaluate(prog)
+            return IntConst(self.evaluate_int(prog), self.param).evaluate(prog)
 
         c = self.a.evaluate_int(prog)  # copy of a
         if c == 0:
-            return IntConst(0).evaluate(prog)
+            return IntConst(0, self.param).evaluate(prog)
 
         power = self.b
         sum = IntConst(0)
         while True:
             if c & 1 == 1:
-                sum = EvaluatedExpression(Add(power,sum).evaluate(prog))
+                sum = EvaluatedExpression(Add(power, sum, self.param).evaluate(prog))
             c = c >> 1
             if c <= 0:
                 break
-            power = EvaluatedExpression(Add(power, power).evaluate(prog))
+            power = EvaluatedExpression(Add(power, power, self.param).evaluate(prog))
         return sum.evaluate(prog)
 
     def __repr__(self):
@@ -131,6 +141,7 @@ class Div(BinaryExpression):
         super().__init__(a, b)
         self.a = a
         self.b = b
+        self.param = param
         if not self.is_int:
             raise NotImplementedError("Division with automaton hasn't been implemented, sorry. {}".format(self))
         if not self.b.is_int:
@@ -170,6 +181,9 @@ class IntConst(Expression):
         super().__init__()
         self.val = val
         self.label = "__constant{}".format(self.val)
+        self.param = param
+        if param is not None:
+            raise NotImplementedError("constant with parameter hasn't been implemented, sorry. {}".format(self))
 
     def __repr__(self):
         return str(self.val)
@@ -245,6 +259,7 @@ class Less(Predicate):
         super().__init__()
         self.a = a
         self.b = b
+
     def evaluate(self, prog):
         if self.a.is_int and self.b.is_int:
             return spot.formula('1').translate() if self.a.evaluate_int(prog) < self.b.evaluate_int(prog) else spot.formula('0').translate()
@@ -261,6 +276,7 @@ class Less(Predicate):
             proj_vars.add(val_b)
         result = Projection(result, proj_vars).project()
         return result
+
 
     def __repr__(self):
         return '({} < {})'.format(self.a, self.b)
