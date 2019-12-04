@@ -1,4 +1,8 @@
-double(x, y) := x+x=y
+// Should enable newline before first def
+// Should we have "everything is xxx"? 
+x,y,z are binary
+
+double(x, y) := x+x=y 
 
 is_even(x) := exists y. double(y, x)
 
@@ -58,6 +62,7 @@ test17() := forall x. forall y.  ((x <= y) <=> (x < y | x = y))
 test18() := forall x. forall y.  ((x >= y) <=> (x > y | x = y))
 #assert_prop(true, test18)
 
+//TODO: Still need to fix int const to pass these tests
 test19() := forall x. finite_num(x) => (1+2) + x = 1 + (x + 2)
 #assert_prop(true, test19)
 

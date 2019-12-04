@@ -11,3 +11,5 @@ class ArithTest(unittest.TestCase):
         pred = pecan_parser.parse(prop)
         print(pred.evaluate(Program([])))
 
+    def test_undetermined(self):
+        print(UndeterminedExpression("adder", [IntConst(1), IntConst(2), VarRef("a")], "a").evaluate(Program([])))

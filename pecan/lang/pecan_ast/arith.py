@@ -6,6 +6,8 @@ import spot
 from pecan.tools.automaton_tools import Substitution, AutomatonTransformer, Projection
 from pecan.lang.pecan_ast import *
 
+from functools import reduce
+
 #TODO: memoize same expressions
 #TODO: Problem: can't change automaton for constants if definition of less_than or addition is changed in one run of Pecan.
 class Add(BinaryExpression):
@@ -20,22 +22,30 @@ class Add(BinaryExpression):
     def __repr__(self):
         return '({} + {})'.format(self.a, self.b)
 
+    # Old evaluate() TODO: remove these after verifying the new one
+    # def evaluate(self, prog):
+    #     if self.is_int:
+    #         return IntConst(self.evaluate_int(prog)).evaluate(prog)
+
+    #     (aut_a, val_a) = self.a.evaluate(prog)
+    #     (aut_b, val_b) = self.b.evaluate(prog)
+    #     aut_add = prog.call('adder', [val_a, val_b, self.label])
+    #     result = spot.product(aut_b, aut_a)
+    #     result = spot.product(aut_add, result)
+    #     proj_vars = set()
+    #     if type(self.a) is not VarRef:
+    #         proj_vars.add(val_a)
+    #     if type(self.b) is not VarRef:
+    #         proj_vars.add(val_b)
+    #     result = Projection(result, proj_vars).project()
+    #     return (result, self.label)
+
     def evaluate(self, prog):
         if self.is_int:
             return IntConst(self.evaluate_int(prog)).evaluate(prog)
 
-        (aut_a, val_a) = self.a.evaluate(prog)
-        (aut_b, val_b) = self.b.evaluate(prog)
-        aut_add = prog.call(prog.context['adder'], [val_a, val_b, self.label])
-        result = spot.product(aut_b, aut_a)
-        result = spot.product(aut_add, result)
-        proj_vars = set()
-        if type(self.a) is not VarRef:
-            proj_vars.add(val_a)
-        if type(self.b) is not VarRef:
-            proj_vars.add(val_b)
-        result = Projection(result, proj_vars).project()
-        return (result, self.label)
+        # should yell meaningful things if "adder" is not defined
+        return UndeterminedExpression("adder", [self.a, self.b, VarRef(self.label)], self.label).evaluate(prog)
 
     def evaluate_int(self, prog):
         assert self.is_int
@@ -50,23 +60,31 @@ class Sub(BinaryExpression):
     def __repr__(self):
         return '({} - {})'.format(self.a, self.b)
 
+    # Old evaluate() TODO: remove these after verifying the new one
+    # def evaluate(self, prog):
+    #     if self.is_int:
+    #         return IntConst(self.evaluate_int(prog)).evaluate(prog)
+
+    #     (aut_a, val_a) = self.a.evaluate(prog)
+    #     (aut_b, val_b) = self.b.evaluate(prog)
+    #     aut_sub = prog.call('adder', [self.label, val_b, val_a])
+    #     result = spot.product(aut_b, aut_a)
+    #     result = spot.product(aut_sub, result)
+
+    #     proj_vars = set()
+    #     if type(self.a) is not VarRef:
+    #         proj_vars.add(val_a)
+    #     if type(self.b) is not VarRef:
+    #         proj_vars.add(val_b)
+    #     result = Projection(result, proj_vars).project()
+    #     return (result, self.label)
+
     def evaluate(self, prog):
         if self.is_int:
             return IntConst(self.evaluate_int(prog)).evaluate(prog)
 
-        (aut_a, val_a) = self.a.evaluate(prog)
-        (aut_b, val_b) = self.b.evaluate(prog)
-        aut_sub = prog.call(prog.context['adder'], [self.label, val_b, val_a])
-        result = spot.product(aut_b, aut_a)
-        result = spot.product(aut_sub, result)
-
-        proj_vars = set()
-        if type(self.a) is not VarRef:
-            proj_vars.add(val_a)
-        if type(self.b) is not VarRef:
-            proj_vars.add(val_b)
-        result = Projection(result, proj_vars).project()
-        return (result, self.label)
+        # should yell meaningful things if "adder" is not defined
+        return UndeterminedExpression("adder", [VarRef(self.label), self.b, self.a], self.label).evaluate(prog)
 
     def evaluate_int(self, prog):
         assert self.is_int
@@ -97,7 +115,6 @@ class Mul(BinaryExpression):
             if c <= 0:
                 break
             power = EvaluatedExpression(Add(power, power).evaluate(prog))
-        # I think there are no unwanted APs that we need to project. TODO: remove this comment.
         return sum.evaluate(prog)
 
     def __repr__(self):
@@ -233,7 +250,7 @@ class Less(Predicate):
             return spot.formula('1').translate() if self.a.evaluate_int(prog) < self.b.evaluate_int(prog) else spot.formula('0').translate()
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
-        aut_less = prog.call(prog.context['less'], [val_a, val_b])
+        aut_less = prog.call('less', [val_a, val_b])
         result = spot.product(aut_a, aut_b)
         result = spot.product(aut_less, result)
 
@@ -317,9 +334,36 @@ class EvaluatedExpression(ASTNode):
     def evaluate(self, prog):
         return self.result
 
+class UndeterminedExpression(Expression):
+    def __init__(self, pred, subs, val):
+        self.pred = pred # string, which function to be called
+        self.is_int = False
+        self.subs = subs
+        self.val = val # val that is undetermined
+
+    def evaluate(self, prog):
+        reps = [x.evaluate(prog) for x in self.subs]
+        auts = [rep[0] for rep in reps]
+        vals = [rep[1] for rep in reps]
+        assert self.val in vals
+        idxs = [idx for idx,val in enumerate(vals) if val == self.val]
+
+        # product of all auts with aut without auts at idxs, and with pred
+        result = reduce(spot.product,[aut for aut,val in reps if val != self.val])
+        result = spot.product(result, prog.call(self.pred, vals))
+
+        # project var except those we want
+        proj_vals = set()
+        for idx,sub in enumerate(self.subs):
+            if type(sub) is not VarRef and reps[idx][1] != self.val:
+                proj_vals.add(vals[idx])
+        result = Projection(result, proj_vals).project()
+        return (result, self.val)
+
+        # def __repr__(self)
+        # return '()'.format()
 
 class AutomatonArithmeticError(Exception):
     pass
 class NotImplementedError(Exception):
     pass
-
