@@ -1,0 +1,6 @@
+// The nth digit of the thue_morse word is 1 iff n in binary has an odd number of ones
+thue_morse(x) := odd_ones(x)
+T(x) := thue_morse(x)
+
+#show_word(T, binary, 0, 100)
+

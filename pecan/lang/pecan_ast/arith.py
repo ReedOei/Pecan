@@ -214,7 +214,8 @@ class IntConst(Expression):
 
             result.change_label(self.label)
             result.is_int = False
-            constants_map[(self.val, self.get_type())] = result.evaluate(prog)
+            (result_aut, val) = result.evaluate(prog)
+            constants_map[(self.val, self.get_type())] = (result_aut.postprocess('BA'), val)
 
         return constants_map[(self.val, self.get_type())]
 
