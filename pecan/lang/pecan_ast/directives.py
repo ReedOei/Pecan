@@ -1,6 +1,8 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
+import sys
+
 import spot
 
 from pecan.tools.automaton_tools import TruthValue
@@ -198,4 +200,38 @@ class DirectiveType(Directive):
 
     def __repr__(self):
         return '#type({}, {})'.format(self.pred_ref, self.val_dict)
+
+class DirectiveShowWord(Directive):
+    def __init__(self, word_name, index_type, start_index, end_index):
+        super().__init__('show_word')
+        self.word_name = word_name
+
+        from pecan.lang.type_inference import RestrictionType
+        self.index_type = RestrictionType(VarRef(index_type)) if index_type is not None else None
+
+        self.start_index = start_index.evaluate_int(None)
+        self.end_index = end_index.evaluate_int(None)
+
+    def evaluate(self, prog):
+        from pecan.lang.pecan_ast.words import EqualsCompareIndex, Index
+        from pecan.lang.pecan_ast.arith import IntConst
+        index_expr = lambda idx_val: EqualsCompareIndex(True, Index(self.word_name, IntConst(idx_val).with_type(self.index_type)), IntConst(1))
+
+        for idx in range(self.start_index, self.end_index + 1):
+            if TruthValue(index_expr(idx)).truth_value(prog) == 'true':
+                sys.stdout.write('1')
+                sys.stdout.flush()
+            else:
+                sys.stdout.write('0')
+                sys.stdout.flush()
+
+        sys.stdout.write('\n')
+
+        return None
+
+    def transform(self, transformer):
+        return transformer.transform_DirectiveShowWord(self)
+
+    def __repr__(self):
+        return '#show_word({}, {}, {}, {})'.format(self.word_name, self.index_type, self.start_index, self.end_index)
 

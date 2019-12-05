@@ -116,3 +116,4 @@ class TruthValue:
             return 'true'
         else: # Otherwise, we are neither true nor false: i.e., not all variables have been eliminated
             return 'sometimes'
+

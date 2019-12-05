@@ -105,7 +105,7 @@ class Mul(BinaryExpression):
             return IntConst(0).with_type(self.get_type()).evaluate(prog)
 
         power = self.b
-        s = IntConst(0)
+        s = IntConst(0).with_type(self.get_type())
         while True:
             if c & 1 == 1:
                 s = Add(power,s).with_type(self.get_type())
@@ -186,8 +186,8 @@ class IntConst(Expression):
             prog.restrict(self.label, self.get_type().restrict(self.label))
 
         # TODO: Add a hash method to Type (see: type_inference.py) so that the constant map works properly
-        # if (self.val, self.get_type()) in constants_map:
-        #     return constants_map[(self.val, self.get_type())]
+        if (self.val, self.get_type()) in constants_map:
+            return constants_map[(self.val, self.get_type())]
 
         if self.val == 0:
             constants_map[(self.val, self.get_type())] = (spot.formula('G(~__constant0)').translate(), "__constant0")
@@ -197,37 +197,24 @@ class IntConst(Expression):
             if self.get_type().get_restriction() is not None:
                 formula_1 = Conjunction(self.get_type().restrict(one_const_var), formula_1)
 
-            constants_map[(self.val, self.get_type())] = (formula_1.evaluate(prog), one_const_var.var_name)
+            constants_map[(self.val, self.get_type())] = (formula_1.evaluate(prog).postprocess('BA'), one_const_var.var_name)
         else:
             assert self.val >= 2, "constant here should be greater than or equal to 1, while it is {}".format(self.val)
 
-            one_const = IntConst(1).with_type(self.get_type())
-            v = VarRef(prog.fresh_name()).with_type(self.get_type())
+            if self.val & (self.val - 1) == 0:
+                half = IntConst(self.val // 2)
+                result = Add(half, half).with_type(self.get_type())
+            else:
+                c = self.val
+                power = 1
+                while c != 1:
+                    power  = power << 1
+                    c = c >> 1
+                result = Add(IntConst(power), IntConst(self.val - power)).with_type(self.get_type())
 
-            if self.get_type() is not None:
-                prog.restrict(v.var_name, self.get_type().restrict(self.label))
-
-            result = reduce(Add, [v] * self.val).with_type(self.get_type())
-            result = Exists(v, Conjunction(Equals(v, one_const), Equals(VarRef(self.label).with_type(self.get_type()), result)))
-
-            # TODO: I would like to put back this more clever algorithm for computing constants,
-            #  but it doesn't work for some reason, so we do a more naive thing above
-            # if self.val & (self.val - 1) == 0:
-            #     half = IntConst(self.val // 2).with_type(self.get_type())
-            #     result = Add(half, half).with_type(self.get_type())
-            # else:
-            #     c = self.val
-            #     power = 1
-            #     while c != 1:
-            #         power  = power << 1
-            #         c = c >> 1
-            #     result = Add(IntConst(power).with_type(self.get_type()), IntConst(self.val - power).with_type(self.get_type()))
-
-            # result.change_label(self.label)
+            result.change_label(self.label)
             result.is_int = False
-            result_aut = result.evaluate(prog)
-            # print('Constant:', result)
-            constants_map[(self.val, self.get_type())] = (result_aut,self.label)
+            constants_map[(self.val, self.get_type())] = result.evaluate(prog)
 
         return constants_map[(self.val, self.get_type())]
 

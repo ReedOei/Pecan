@@ -23,6 +23,7 @@ pecan_grammar = """
         | "#" "import" "(" string ")" -> directive_import
         | "#" "forget" "(" var ")" -> directive_forget
         | "#" "type" "(" formal "," val_dict ")" -> directive_type
+        | "#" "show_word" "(" var "," formal "," int "," int ")" -> directive_show_word
 
     ?val_dict: "{" [_NEWLINE* kv_pair _NEWLINE* ("," _NEWLINE* kv_pair _NEWLINE*)*] "}"
     ?kv_pair: string ":" call
@@ -84,10 +85,12 @@ pecan_grammar = """
             | product "/_" var atom -> div_with_param
 
     ?atom: var -> var_ref
-         | INT -> const
-         | INT "_" var -> const_with_param
-         | "-" INT  -> neg
+         | int
+         | int "_" var -> const_with_param
+         | "-" int  -> neg
          | "(" arith ")"
+
+    int: INT -> const
 
     ?var: VAR -> var_tok
 
@@ -135,6 +138,7 @@ class PecanTransformer(Transformer):
     directive = Directive
     directive_assert_prop = DirectiveAssertProp
     directive_type = DirectiveType
+    directive_show_word = DirectiveShowWord
 
     def formals(self, *args):
         return list(args)
