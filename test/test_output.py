@@ -14,5 +14,5 @@ class GeneralTest(unittest.TestCase):
         self.assertEqual(f.getvalue().strip(), expected_output.strip())
 
     def test_show_word(self):
-        self.run_file('examples/test_show_word.pn', '10010110011010010110100110010110011010011001011010010110011010010110100110010110100101100110100110010')
+        self.run_file('examples/test_show_word.pn', '01101001100101101001011001101001100101100110100101101001100101101001011001101001011010011001011001101')
 

@@ -24,6 +24,9 @@ class DirectiveSaveAut(Directive):
         self.pred_name = pred_name
 
     def evaluate(self, prog):
+        if not prog.quiet:
+            print(f'[INFO] Saving {self.pred_name} as {self.filename}')
+
         prog.call(self.pred_name).postprocess('BA').save(self.filename)
         return None
 
@@ -40,6 +43,10 @@ class DirectiveSaveAutImage(Directive):
         self.pred_name = pred_name
 
     def evaluate(self, prog):
+        if not prog.quiet:
+            # TODO: Support formats other than SVG?
+            print(f'[INFO] Saving {self.pred_name} as an SVG in {self.filename}')
+
         evaluated = prog.call(self.pred_name).postprocess('BA')
         with open(self.filename, 'w') as f:
             f.write(evaluated.show().data) # Write the raw svg data into the file

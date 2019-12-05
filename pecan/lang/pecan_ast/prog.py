@@ -30,7 +30,7 @@ class VarRef(Expression):
         return transformer.transform_VarRef(self)
 
     def show(self):
-        return self.var_name
+        return str(self.var_name)
 
 class AutLiteral(Predicate):
     def __init__(self, aut):

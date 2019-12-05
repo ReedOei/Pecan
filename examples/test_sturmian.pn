@@ -1,11 +1,12 @@
-a is nat
+#load("sturmian_bin.txt", "pecan", sturmian_bin(n))
 
-#load("sturmian.aut", "hoa", sturmian(n))
+a is binary
 
-test_one() := exists a. a = 1 & sturmian(a)
+// TODO: note that, until we have better type inference (e.g., we use the input types of predicates to infer types),
+// we have to use exists below so that Pecan can figure out what type `1`/`2` should be
+test1() := exists a. a = 1 & sturmian_bin[a] = 0
+#assert_prop(true, test1)
 
-#assert_prop(true, test_one)
-
-test_zero() := exists a. a = 2 & !sturmian(a)
-#assert_prop(true, test_zero)
+test2() := exists a. a = 2 & sturmian_bin[a] = 1
+#assert_prop(true, test2)
 

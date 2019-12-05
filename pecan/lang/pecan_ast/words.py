@@ -48,9 +48,9 @@ class EqualsCompareIndex(Predicate):
 
         if type(index_b) is IntConst:
             if index_b.val == 0:
-                self.index_b = FormulaTrue()
-            elif index_b.val == 1:
                 self.index_b = FormulaFalse()
+            elif index_b.val == 1:
+                self.index_b = FormulaTrue()
             else:
                 # TODO: Remove this restriction
                 raise Exception('Automatic words can only be binary (i.e., 0 or 1), {} is not allowed (in "{} = {}")'.format(b.val, a, b))
