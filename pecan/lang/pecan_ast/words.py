@@ -29,10 +29,10 @@ class IndexRange(Predicate):
         self.end = end
 
     def bounds_check(self, idx_var):
-        return Less(Add(self.start, idx_var), self.end)
+        return Less(Add(self.start, idx_var).with_type(self.start.get_type()), self.end)
 
     def index_expr(self, idx_var):
-        return Index(self.var_name, Add(self.start, idx_var))
+        return Index(self.var_name, Add(self.start, idx_var).with_type(self.start.get_type()))
 
     def transform(self, transformer):
         return transformer.transform_IndexRange(self)
@@ -88,9 +88,12 @@ class EqualsCompareRange(Predicate):
         # We want to make sure that the two words that we are comparing are the same length;
         # Ordinarily, you'd probably use subtraction, but addition is safer because subtraction
         # on natural numbers can be very weird if we go negative
-        same_range = Equals(Add(self.index_a.end, self.index_b.start), Add(self.index_b.end, self.index_a.start))
+        same_range = Equals(Add(self.index_a.end, self.index_b.start).with_type(self.index_a.end.get_type()),
+                            Add(self.index_b.end, self.index_a.start).with_type(self.index_a.end.get_type()))
 
-        bounds_checks = Conjunction(self.index_a.bounds_check(idx_var), self.index_b.bounds_check(idx_var))
+        # bounds_checks = Conjunction(self.index_a.bounds_check(idx_var), self.index_b.bounds_check(idx_var))
+        # Only do bounds check on the first index, because we've verified the bounds are the same
+        bounds_checks = self.index_a.bounds_check(idx_var)
         equality_check = EqualsCompareIndex(True, self.index_a.index_expr(idx_var), self.index_b.index_expr(idx_var))
         all_equal = Forall(idx_var, Implies(bounds_checks, equality_check))
         base_pred = Conjunction(same_range, all_equal)

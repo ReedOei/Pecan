@@ -38,7 +38,7 @@ class DirectiveSaveAutImage(Directive):
         self.pred_name = pred_name
 
     def evaluate(self, prog):
-        evaluated = prog.call(self.pred_name)
+        evaluated = prog.call(self.pred_name).postprocess('BA')
         with open(self.filename, 'w') as f:
             f.write(evaluated.show().data) # Write the raw svg data into the file
 
@@ -92,6 +92,9 @@ class DirectiveAssertProp(Directive):
         return TruthValue(Call(self.pred_name, [])).truth_value(prog)
 
     def evaluate(self, prog):
+        if not prog.quiet:
+            print(f'[INFO] Checking if {self.pred_name} is {self.display_truth_val()}.')
+
         pred_truth_value = self.pred_truth_value(prog)
 
         if pred_truth_value == self.truth_val:

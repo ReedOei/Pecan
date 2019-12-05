@@ -23,12 +23,7 @@ class Forall(Predicate):
         self.pred = pred
 
     def evaluate_node(self, prog):
-        if len(prog.get_restrictions(self.var.var_name)) > 0:
-            constraints = reduce(Conjunction, prog.get_restrictions(self.var.var_name))
-            new_pred = Implies(constraints, self.pred)
-        else:
-            new_pred = self.pred
-        return Complement(Exists(self.var, Complement(self.with_cond(new_pred)))).evaluate(prog)
+        return Complement(Exists(self.var, Complement(self.with_cond(self.pred)))).evaluate(prog)
 
     def with_cond(self, pred):
         if self.cond is not None:
@@ -58,7 +53,15 @@ class Exists(Predicate):
         else:
             new_pred = self.pred
 
-        return Projection(self.with_cond(new_pred).evaluate(prog), [self.var.var_name]).project()
+        if self.cond is not None:
+            prog.restrict(self.var.var_name, self.cond)
+
+        res = Projection(self.with_cond(new_pred).evaluate(prog), [self.var.var_name]).project()
+
+        if self.cond is not None:
+            prog.forget(self.var.var_name)
+
+        return res
 
     def with_cond(self, pred):
         if self.cond is not None:
@@ -74,3 +77,4 @@ class Exists(Predicate):
             return '(∃{} ({}))'.format(self.var, self.pred)
         else:
             return '(∃{} {})'.format(self.var, Conjunction(self.cond, self.pred))
+

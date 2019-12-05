@@ -13,8 +13,7 @@ class AutomatonTransformer:
 
     def transform(self):
         # Build a new automata with different edges
-        # bdict = spot.make_bdd_dict()
-        new_aut = spot.make_twa_graph() # bdict)
+        new_aut = spot.make_twa_graph()
 
         aps = {}
         for ap in self.original_aut.ap():

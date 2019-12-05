@@ -13,6 +13,9 @@ class Type:
     def get_restriction(self):
         return None
 
+    def restrict(self, var):
+        return None
+
 class AnyType(Type):
     def __init__(self):
         super().__init__()
@@ -39,6 +42,9 @@ class RestrictionType(Type):
             return self.restriction.with_args(self.restriction.args[1:])
         else:
             return self.restriction
+
+    def restrict(self, var):
+        return self.get_restriction().insert_first(var)
 
     def __repr__(self):
         return repr(self.get_restriction())

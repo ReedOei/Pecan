@@ -34,11 +34,16 @@ class Disjunction(Predicate):
         return '({} ∨ {})'.format(self.a, self.b)
 
 class Complement(Predicate):
-    def __init__(self, a):
+    def __init__(self, a, use_not_equals=True):
         super().__init__()
         self.a = a
+        self.use_not_equals = use_not_equals
 
     def evaluate_node(self, prog):
+        # from pecan.lang.pecan_ast.arith import Equals, NotEquals
+        # if self.use_not_equals and type(self.a) is Equals:
+        #     return NotEquals(self.a.a, self.a.b).evaluate(prog)
+        # else:
         return spot.complement(self.a.evaluate(prog))
 
     def transform(self, transformer):

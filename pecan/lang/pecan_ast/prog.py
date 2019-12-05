@@ -44,6 +44,9 @@ class AutLiteral(Predicate):
     def transform(self, transformer):
         return transformer.transform_AutLiteral(self)
 
+    def show(self):
+        return repr(self)
+
     def __repr__(self):
         return 'AUTOMATON LITERAL' # TODO: Maybe improve this?
 
@@ -242,7 +245,8 @@ class NamedPred(ASTNode):
 
         try:
             if self.body_evaluated is None:
-                self.body_evaluated = self.body.evaluate(prog)
+                # We postprocess here because we will do it every time we call anyway (in AutomatonTransformer)
+                self.body_evaluated = self.body.evaluate(prog).postprocess('BA')
 
             if arg_names is None:
                 return self.body_evaluated
@@ -334,7 +338,10 @@ class Program(ASTNode):
         self.restrictions[-1].pop(var_name)
 
     def restrict(self, var_name, pred):
-        if pred is not None:
+        if pred is not None and pred not in self.get_restrictions(var_name):
+            if type(pred) is not Call or len(pred.args) == 0:
+                raise Exception('Unexpected predicate used as restriction (must be Call with the first argument as the variable to restrict): {}'.format(pred))
+
             if var_name in self.restrictions[-1]:
                 self.restrictions[-1][var_name].append(pred)
             else:
@@ -362,7 +369,9 @@ class Program(ASTNode):
     def get_restrictions(self, var_name: str):
         result = []
         for scope in self.restrictions:
-            result.extend(scope.get(var_name, []))
+            for r in scope.get(var_name, []):
+                if not r in result:
+                    result.append(r)
         return result
 
     def call(self, pred_name, args=None):

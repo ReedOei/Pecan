@@ -17,18 +17,26 @@ class Add(BinaryExpression):
         self.label = label
 
     def show(self):
-        return '({} + {})'.format(self.a, self.b)
+        # The operands should always have the same type, but in the interest of debugging, we should display when this is not the case
+        if self.a.get_type() == self.b.get_type():
+            return '({} + {})'.format(self.a.show(), self.b.show())
+        else:
+            return '({} + {})'.format(self.a, self.b)
 
-    def evaluate(self, prog):
-        if self.is_int:
-            return IntConst(self.evaluate_int(prog)).with_type(self.get_type()).evaluate(prog)
+    def evaluate_node(self, prog):
+        # if self.is_int:
+        #     return IntConst(self.evaluate_int(prog)).with_type(self.get_type()).evaluate(prog)
 
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
-        prog.restrict(self.label, self.a.get_type().get_restriction())
+
+        if self.get_type() is not None:
+            prog.restrict(self.label, self.get_type().restrict(self.label))
+
         aut_add = prog.call('adder', [val_a, val_b, self.label])
         result = spot.product(aut_b, aut_a)
         result = spot.product(aut_add, result)
+
         proj_vars = set()
         if type(self.a) is not VarRef:
             proj_vars.add(val_a)
@@ -52,13 +60,16 @@ class Sub(BinaryExpression):
     def __repr__(self):
         return '({} - {})'.format(self.a, self.b)
 
-    def evaluate(self, prog):
+    def evaluate_node(self, prog):
         if self.is_int:
             return IntConst(self.evaluate_int(prog)).with_type(self.get_type()).evaluate(prog)
 
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
-        prog.restrict(self.label, self.a.get_type().get_restriction())
+
+        if self.get_type() is not None:
+            prog.restrict(self.label, self.get_type().restrict(self.label))
+
         aut_sub = prog.call('adder', [self.label, val_b, val_a])
         result = spot.product(aut_b, aut_a)
         result = spot.product(aut_sub, result)
@@ -85,25 +96,25 @@ class Mul(BinaryExpression):
         if not self.a.is_int:
             raise AutomatonArithmeticError("First argument of multiplication must be an integer in {}".format(self))
 
-    def evaluate(self, prog):
+    def evaluate_node(self, prog):
         if self.is_int:
             return IntConst(self.evaluate_int(prog)).with_type(self.get_type()).evaluate(prog)
 
         c = self.a.evaluate_int(prog)  # copy of a
         if c == 0:
-            return IntConst(0).evaluate(prog)
+            return IntConst(0).with_type(self.get_type()).evaluate(prog)
 
         power = self.b
-        sum = IntConst(0)
+        s = IntConst(0)
         while True:
             if c & 1 == 1:
-                sum = AutLiteral(Add(power,sum).with_type(self.get_type()).evaluate(prog))
+                s = Add(power,s).with_type(self.get_type())
             c = c >> 1
             if c <= 0:
                 break
-            power = AutLiteral(Add(power, power).with_type(self.get_type()).evaluate(prog))
+            power = Add(power, power).with_type(self.get_type())
 
-        return sum.evaluate(prog)
+        return s.evaluate(prog)
 
     def transform(self, transformer):
         return transformer.transform_Mul(self)
@@ -129,7 +140,7 @@ class Div(BinaryExpression):
     def show(self):
         return '({} / {})'.format(self.a, self.b)
 
-    def evaluate(self, prog):
+    def evaluate_node(self, prog):
         if self.is_int:
             return IntConst(self.evaluate_int(prog)).with_type(self.get_type()).evaluate(prog)
         assert False
@@ -155,7 +166,7 @@ class Div(BinaryExpression):
     def transform(self, transformer):
         return transformer.transform_Div(self)
 
-constants_map = {0: (spot.formula('G(~__constant0)').translate(), "__constant0")}
+constants_map = {}
 class IntConst(Expression):
     # Constant 0 is defined as 000000...
     def __init__(self, val, param=None):
@@ -164,45 +175,61 @@ class IntConst(Expression):
         self.label = "__constant{}".format(self.val)
         self.param = param
 
-    def evaluate(self,prog):
-        # TODO: Put constants map back, after we figure out how to do it for the various changing bases/numeration
-        #  systems
-        zero_const_var  = VarRef("__constant0").with_type(self.get_type())
+    def evaluate_node(self,prog):
+        zero_const_var = VarRef("__constant0").with_type(self.get_type())
         zero_const = IntConst(0).with_type(self.get_type())
         one_const_var = VarRef("__constant1").with_type(self.get_type())
+
         b_const = VarRef('b').with_type(self.get_type())
 
-        # if self.val in constants_map:
-        #     return constants_map[self.val]
+        if self.get_type() is not None:
+            prog.restrict(self.label, self.get_type().restrict(self.label))
+
+        # TODO: Add a hash method to Type (see: type_inference.py) so that the constant map works properly
+        # if (self.val, self.get_type()) in constants_map:
+        #     return constants_map[(self.val, self.get_type())]
+
         if self.val == 0:
-            # TODO: For some reason, the below definition doesn't work
-            # formula_0 = Forall('b', LessEquals(zero_const_var, b_const))
-            # return formula_0.evaluate(prog), zero_const_var.var_name
+            constants_map[(self.val, self.get_type())] = (spot.formula('G(~__constant0)').translate(), "__constant0")
+        elif self.val == 1:
+            formula_1 = Conjunction(Less(zero_const, one_const_var), Forall(self.get_type().restrict(b_const), Implies(Less(zero_const, b_const), LessEquals(one_const_var, b_const))))
 
-            return constants_map[0]
-        if self.val == 1:
-            formula_1 = Conjunction(Less(zero_const, one_const_var), Forall('b', Implies(Less(zero_const, b_const), LessEquals(one_const_var, b_const))))
-            constants_map[1] = (formula_1.evaluate(prog), one_const_var.var_name)
-            return constants_map[1]
+            if self.get_type().get_restriction() is not None:
+                formula_1 = Conjunction(self.get_type().restrict(one_const_var), formula_1)
 
-        assert self.val >= 2, "constant here should be greater than or equal to 1, while it is {}".format(self.val)
-
-        if self.val & (self.val - 1) == 0:
-            half = IntConst(self.val // 2).with_type(self.get_type())
-            result = Add(half, half)
+            constants_map[(self.val, self.get_type())] = (formula_1.evaluate(prog), one_const_var.var_name)
         else:
-            c = self.val
-            power = 1
-            while c != 1:
-                power  = power << 1
-                c = c >> 1
-            result = Add(IntConst(power).with_type(self.get_type()), IntConst(self.val - power).with_type(self.get_type()))
+            assert self.val >= 2, "constant here should be greater than or equal to 1, while it is {}".format(self.val)
 
-        result.change_label(self.label)
-        result.is_int = False
-        (result,val) = result.evaluate(prog)
-        constants_map[self.val] = (result,val)
-        return constants_map[self.val]
+            one_const = IntConst(1).with_type(self.get_type())
+            v = VarRef(prog.fresh_name()).with_type(self.get_type())
+
+            if self.get_type() is not None:
+                prog.restrict(v.var_name, self.get_type().restrict(self.label))
+
+            result = reduce(Add, [v] * self.val).with_type(self.get_type())
+            result = Exists(v, Conjunction(Equals(v, one_const), Equals(VarRef(self.label).with_type(self.get_type()), result)))
+
+            # TODO: I would like to put back this more clever algorithm for computing constants,
+            #  but it doesn't work for some reason, so we do a more naive thing above
+            # if self.val & (self.val - 1) == 0:
+            #     half = IntConst(self.val // 2).with_type(self.get_type())
+            #     result = Add(half, half).with_type(self.get_type())
+            # else:
+            #     c = self.val
+            #     power = 1
+            #     while c != 1:
+            #         power  = power << 1
+            #         c = c >> 1
+            #     result = Add(IntConst(power).with_type(self.get_type()), IntConst(self.val - power).with_type(self.get_type()))
+
+            # result.change_label(self.label)
+            result.is_int = False
+            result_aut = result.evaluate(prog)
+            # print('Constant:', result)
+            constants_map[(self.val, self.get_type())] = (result_aut,self.label)
+
+        return constants_map[(self.val, self.get_type())]
 
     def evaluate_int(self, prog):
         return self.val
@@ -250,7 +277,13 @@ class NotEquals(Predicate):
     def evaluate_node(self, prog):
         if self.a.is_int and self.b.is_int:
             return spot.formula('1').translate() if self.a.evaluate_int(prog) != self.b.evaluate_int(prog) else spot.formula('0').translate()
-        return Complement(Equals(self.a, self.b)).evaluate(prog)
+
+        # TODO: The following is more efficient than complementation, but only works if we have "less" defined for the arguments
+        # try:
+        #     return Disjunction(Less(self.a, self.b), Greater(self.a, self.b)).evaluate(prog)
+        # except Exception as e: # TODO: Add a predicate not found exception type and only catch that
+        #     print('hi')
+        return Complement(Equals(self.a, self.b), use_not_equals=False).evaluate(prog)
 
     def transform(self, transformer):
         return transformer.transform_NotEquals(self)
@@ -264,12 +297,12 @@ class Less(Predicate):
         self.a = a
         self.b = b
 
-    def evaluate(self, prog):
+    def evaluate_node(self, prog):
         if self.a.is_int and self.b.is_int:
             return spot.formula('1').translate() if self.a.evaluate_int(prog) < self.b.evaluate_int(prog) else spot.formula('0').translate()
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
-        aut_less = prog.call(prog.context['less'], [val_a, val_b])
+        aut_less = prog.call('less', [val_a, val_b])
         result = spot.product(aut_a, aut_b)
         result = spot.product(aut_less, result)
 
@@ -293,7 +326,7 @@ class Greater(Predicate):
         self.a = a
         self.b = b
 
-    def evaluate(self, prog):
+    def evaluate_node(self, prog):
         return Less(self.b,self.a).evaluate(prog)
 
     def transform(self, transformer):
@@ -308,7 +341,7 @@ class LessEquals(Predicate):
         self.a = a
         self.b = b
 
-    def evaluate(self, prog):
+    def evaluate_node(self, prog):
         if self.a.is_int and self.b.is_int:
             return spot.formula('1').translate() if self.a.evaluate_int(prog) <= self.b.evaluate_int(prog) else spot.formula('0').translate()
         return Disjunction(Less(self.a,self.b),Equals(self.a,self.b)).evaluate(prog)
@@ -325,7 +358,7 @@ class GreaterEquals(Predicate):
         self.a = a
         self.b = b
 
-    def evaluate(self, prog):
+    def evaluate_node(self, prog):
         if self.a.is_int and self.b.is_int:
             return spot.formula('1').translate() if self.a.evaluate_int(prog) >= self.b.evaluate_int(prog) else spot.formula('0').translate()
         return Disjunction(Less(self.b,self.a),Equals(self.a,self.b)).evaluate(prog)
@@ -347,7 +380,7 @@ class Neg(UnaryExpression): # Should this be allowed?
     def show(self):
         return '(-{})'.format(self.a)
 
-    def evaluate(self, prog):
+    def evaluate_node(self, prog):
         if self.a.is_int:
             return IntConst(self.evaluate_int(prog)).evaluate(prog)
         raise AutomatonArithmeticError("Should not negate automaton in {}".format(self))

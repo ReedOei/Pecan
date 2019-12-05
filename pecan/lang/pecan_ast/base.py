@@ -29,13 +29,21 @@ class ASTNode:
         prog.eval_level += 1
         if prog.debug:
             start_time = time.time()
+            # print('{}Evaluating {}'.format(' ' * prog.eval_level, self))
         result = self.evaluate_node(prog)
         prog.eval_level -= 1
         if prog.debug:
+            if type(result) is tuple:
+                sn, en = result[0].num_states(), result[0].num_edges()
+            else:
+                sn, en = result.num_states(), result.num_edges()
             end_time = time.time()
-            print('{}{} has {} states and {} edges ({:.2f} seconds)'.format(' ' * prog.eval_level, self, result.num_states(), result.num_edges(), end_time - start_time))
+            print('{}{} has {} states and {} edges ({:.2f} seconds)'.format(' ' * prog.eval_level, self, sn, en, end_time - start_time))
 
-        return result
+        if type(result) is tuple:
+            return (spot.cleanup_acceptance(result[0]), result[1])
+        else:
+            return spot.cleanup_acceptance(result)
 
     def transform(self, transformer):
         return NotImplementedError('Transform not implemented for {}'.format(self.__class__.__name__))
