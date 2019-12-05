@@ -1,9 +1,5 @@
 import unittest
 
-import spot
-
-from pecan.lang.parser import pecan_parser
-
 from pecan import program
 
 class GeneralTest(unittest.TestCase):
