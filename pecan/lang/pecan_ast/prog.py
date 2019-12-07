@@ -246,7 +246,7 @@ class NamedPred(ASTNode):
         try:
             if self.body_evaluated is None:
                 # We postprocess here because we will do it every time we call anyway (in AutomatonTransformer)
-                self.body_evaluated = self.body.evaluate(prog).postprocess('BA')
+                self.body_evaluated = self.body.evaluate(prog) #.postprocess('BA')
 
             if arg_names is None:
                 return self.body_evaluated
@@ -271,7 +271,7 @@ class Program(ASTNode):
         self.restrictions = kwargs.get('restrictions', [{}])
         self.types = kwargs.get('types', {})
         self.parser = kwargs.get('parser', None) # This will be "filled in" in the main.py after we load a program
-        self.debug = kwargs.get('debug', False)
+        self.debug = kwargs.get('debug', 0)
         self.quiet = kwargs.get('quiet', False)
         self.eval_level = kwargs.get('eval_level', 0)
         self.result = kwargs.get('result', None)
@@ -318,7 +318,7 @@ class Program(ASTNode):
                 # Infer types for the body of the
                 self.preds[d.name] = self.type_inferer.reset().transform(d)
                 self.preds[d.name].evaluate(self)
-                if self.debug:
+                if self.debug > 0:
                     print(self.preds[d.name])
             else:
                 result = d.evaluate(self)

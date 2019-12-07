@@ -34,7 +34,7 @@ def load(pecan_file, *args, **kwargs):
 def from_source(source_code, *args, **kwargs):
     prog = pecan_parser.parse(source_code)
 
-    prog.debug = kwargs.get('debug', False)
+    prog.debug = kwargs.get('debug', 0)
     prog.quiet = kwargs.get('quiet', False)
     prog.search_paths = make_search_paths(kwargs.get('filename', None))
     prog.loader = load
@@ -51,7 +51,7 @@ def from_source(source_code, *args, **kwargs):
         stdlib_prog.evaluate()
         prog.include(stdlib_prog)
 
-    if prog.debug:
+    if prog.debug > 0:
         print('Search path: {}'.format(prog.search_paths))
 
     return prog

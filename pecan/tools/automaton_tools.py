@@ -8,7 +8,7 @@ import spot
 
 class AutomatonTransformer:
     def __init__(self, original_aut, formula_builder):
-        self.original_aut = original_aut.postprocess('BA') # Ensure that the automata we get is a Buchi (possible nondeterministic) automata
+        self.original_aut = original_aut.postprocess('BA', 'deterministic') # Ensure that the automata we get is a Buchi (possible nondeterministic) automata
         self.formula_builder = formula_builder
 
     def transform(self):
@@ -20,6 +20,10 @@ class AutomatonTransformer:
             aps[ap.ap_name()] = buddy.bdd_ithvar(new_aut.register_ap(ap.ap_name()))
 
         new_aut.set_buchi() # Set the acceptance condition to the normal Buchi acceptance condition
+
+        # Set the acceptance condition to be same as the input automata
+        # acc = self.original_aut.get_acceptance()
+        # new_aut.set_acceptance(acc.used_sets().max_set(), acc)
         new_aut.new_states(self.original_aut.num_states())
         new_aut.set_init_state(self.original_aut.get_init_state_number())
 

@@ -25,25 +25,50 @@ class ASTNode:
     def get_type(self):
         return self.type
 
+    def show_aut_stats(self, prog, aut, desc=None):
+        if prog.debug > 1:
+            sn, en, acc = aut.num_states(), aut.num_edges(), aut.get_acceptance()
+
+            if desc is None:
+                self.print_indented(prog, 'Automaton (acc: {}) has {} states and {} edges'.format(acc, sn, en))
+            else:
+                self.print_indented(prog, 'Automaton (acc: {}) has {} states and {} edges {}'.format(acc, sn, en, desc))
+
+    def print_indented(self, prog, s):
+        print('{}{}'.format(' ' * prog.eval_level, s))
+
+    def simplify(self, prog, aut):
+        # self.show_aut_stats(prog, aut, desc='before simplify')
+        # if aut.is_deterministic():
+        #     aut = spot.minimize_obligation(aut)
+        #     self.show_aut_stats(prog, aut, desc='after minimize_obligation')
+
+        # aut = aut.postprocess('BA')
+        # self.show_aut_stats(prog, aut, desc='after postprocess')
+
+        return aut
+
     def evaluate(self, prog):
         prog.eval_level += 1
-        if prog.debug:
+        if prog.debug > 0:
             start_time = time.time()
-            # print('{}Evaluating {}'.format(' ' * prog.eval_level, self))
+            # self.print_indented(prog, 'Evaluating {}'.format(self))
         result = self.evaluate_node(prog)
+        if type(result) is tuple:
+            result = (self.simplify(prog, result[0]), result[1])
+        else:
+            result = self.simplify(prog, result)
+
         prog.eval_level -= 1
-        if prog.debug:
+        if prog.debug > 0:
             if type(result) is tuple:
                 sn, en = result[0].num_states(), result[0].num_edges()
             else:
                 sn, en = result.num_states(), result.num_edges()
             end_time = time.time()
-            print('{}{} has {} states and {} edges ({:.2f} seconds)'.format(' ' * prog.eval_level, self, sn, en, end_time - start_time))
+            self.print_indented(prog, '{} has {} states and {} edges ({:.2f} seconds)'.format(self, sn, en, end_time - start_time))
 
-        if type(result) is tuple:
-            return (spot.cleanup_acceptance(result[0]), result[1])
-        else:
-            return spot.cleanup_acceptance(result)
+        return result
 
     def transform(self, transformer):
         return NotImplementedError('Transform not implemented for {}'.format(self.__class__.__name__))
