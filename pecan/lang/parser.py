@@ -28,26 +28,28 @@ pecan_grammar = """
     ?val_dict: "{" [_NEWLINE* kv_pair _NEWLINE* ("," _NEWLINE* kv_pair _NEWLINE*)*] "}"
     ?kv_pair: string ":" call
 
-    ?restriction: varlist ("are" | "is") var -> restrict_is
-                | varlist ("are" | "is") var "(" varlist ")" -> restrict_call
+    ?restriction: varlist ("are" | _IS) var -> restrict_is
+                | varlist ("are" | _IS) var "(" varlist ")" -> restrict_call
     varlist: var ("," var)*
 
+    _IS: "is" | "∈"
+
     ?pred_definition: var "(" formals ")" ":=" pred -> def_pred_standard
-                    | var "is" var [":=" pred] -> def_pred_is
-                    | var "is" var "(" formals ")" [":=" pred] -> def_pred_is_call
+                    | var _IS var [":=" pred] -> def_pred_is
+                    | var _IS var "(" formals ")" [":=" pred] -> def_pred_is_call
 
     formals: [formal ("," formal)*]
     ?formal: var
            | var "(" varlist ")" -> formal_call
-           | var "is" var -> formal_is
-           | var "is" var "(" varlist ")" -> formal_is_call
+           | var _IS var -> formal_is
+           | var _IS var "(" varlist ")" -> formal_is_call
 
     args: [arg ("," arg)*]
     ?arg: expr
 
     ?call: var "(" args ")" -> call_args
-         | var "is" var     -> call_is
-         | var "is" var "(" args ")" -> call_is_args
+         | var _IS var     -> call_is
+         | var _IS var "(" args ")" -> call_is_args
 
     ?pred: expr EQ expr                     -> equal
          | expr NE expr                     -> not_equal

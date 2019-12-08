@@ -1,8 +1,8 @@
-n, m, a, b, c are nat
+n, m, a, b, c ∈ nat
 
-purchashable(n) := n is nat & exists a. exists b. exists c. n = 6*a + 9*b + 20*c
-non_purchasable(n) := n is nat & !purchashable(n)
+purchashable(n) := n ∈ nat ∧ ∃a. ∃b. ∃c. n = 6*a + 9*b + 20*c
+non_purchasable(n) := n ∈ nat ∧ ¬purchashable(n)
 
-largest_non_purchasable(n) := non_purchasable(n) & forall m is non_purchasable. n >= m
+largest_non_purchasable(n) := non_purchasable(n) ∧ ∀m ∈ non_purchasable. n ≥ m
 #save_aut_img("largest_non_purchasable.svg", largest_non_purchasable)
 
