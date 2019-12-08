@@ -33,6 +33,9 @@ def main():
 
     args = parser.parse_args()
 
+    if args.debug is None:
+        args.debug = 0
+
     env = None
     if args.generate is not None:
         for pred in theorem_generator.gen_thms(args.generate):
