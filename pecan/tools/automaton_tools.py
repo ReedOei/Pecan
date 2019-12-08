@@ -8,7 +8,7 @@ import spot
 
 class AutomatonTransformer:
     def __init__(self, original_aut, formula_builder):
-        self.original_aut = original_aut.postprocess('BA', 'deterministic') # Ensure that the automata we get is a Buchi (possible nondeterministic) automata
+        self.original_aut = original_aut.postprocess('BA', 'small') # Ensure that the automata we get is a Buchi (possible nondeterministic) automata
         self.formula_builder = formula_builder
 
     def transform(self):
@@ -89,15 +89,24 @@ class FormulaToBdd:
             return self.build_bdd(formula.kind(), new_children)
 
 class Projection:
-    def __init__(self, aut, varis):
+    def __init__(self, aut, var_names):
         super().__init__()
         self.aut = aut
-        self.varis = varis
+        self.var_names = var_names
 
     def project(self):
-        for var in self.varis:
-            # print("projecting {}".format(var))
-            def build_projection_formula(formula):    # the same as build_exists_formula
+        # An alternate version that projects all the variables at once. Doesn't really seem to be any more efficient
+        # def build_projection_formula(formula):
+        #     conds = []
+        #     for vals in it.product([0,1], repeat=len(self.var_names)):
+        #         conds.append(Substitution({var: spot.formula(str(val)) for var, val in zip(self.var_names, vals)}).substitute(formula))
+
+        #     # The new edge condition should be:
+        #     # [0/y]cond | [1/y]cond
+        #     # where cond is the original condition. That is, the edge is taken if it holds with y being false or y being true.
+        #     return spot.formula_Or(conds)
+        for var in self.var_names:
+            def build_projection_formula(formula):
                 if_0 = Substitution({var: spot.formula('0')}).substitute(formula)
                 if_1 = Substitution({var: spot.formula('1')}).substitute(formula)
 
