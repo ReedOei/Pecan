@@ -10,6 +10,3 @@ cube(i, n) := square(i, n) & square(i + n, n)
 cubes_exist() := exists i. exists n. cube(i, n)
 #assert_prop(false, cubes_exist)
 
-overlapping_square(i, n) := n > 0 and T[i+1 ... i+n+1] = T[2+i+n ... 2+i+2*n] and T[i] = T[i+n+1] and T[i] = T[2+i+2*n]
-overlapping_squares_exist() := exists i. exists n. overlapping_square(i, n)
-#assert_prop(false, overlapping_squares_exist)
