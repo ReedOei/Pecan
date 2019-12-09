@@ -3,7 +3,9 @@
 
 import argparse
 import spot
+
 import colorama
+import readline
 
 import os
 
@@ -15,7 +17,7 @@ from pecan import program
 def run_repl(debug, env):
     while True:
         prog_str = input('> ')
-        prog = pecan_parser.parse(prog_str)
+        prog = program.from_source(prog_str)
 
         if debug:
             print(prog)

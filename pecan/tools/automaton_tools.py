@@ -19,8 +19,6 @@ class AutomatonTransformer:
         for ap in self.original_aut.ap():
             aps[ap.ap_name()] = buddy.bdd_ithvar(new_aut.register_ap(ap.ap_name()))
 
-        # new_aut.set_buchi() # Set the acceptance condition to the normal Buchi acceptance condition
-
         # Set the acceptance condition to be same as the input automata
         acc = self.original_aut.get_acceptance()
         new_aut.set_acceptance(acc.used_sets().max_set(), acc)
