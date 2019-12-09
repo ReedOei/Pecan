@@ -30,8 +30,8 @@ zero_add_refl() := forall i. i + 0 = i
 add_assoc_const() := forall k. k + (1 + 1) = (k + 1) + 1
 #assert_prop(true, add_assoc_const)
 
-add_assoc() := forall i. forall j. forall k. i + (j + k) = (i + j) + k
-// #assert_prop(true, add_assoc)
+add_assoc() := forall i. forall j. forall k. exists jk is zeckendorf. jk = j + k & exists ij is zeckendorf. ij = i + j & i + jk = ij + k
+#assert_prop(true, add_assoc)
 
 // The Fibonacci word (i.e., characteristic Sturmian word with slope = 1/phi)
 F(n) := sturmian(n)
