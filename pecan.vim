@@ -21,7 +21,7 @@ syntax match directiveOp '#'
 syntax match operator '+\|-\|=\|:=\|=>\|*\|/\|!\|\.\|>\|<\||\|&\|∧\|:\|∈\|≠\|¬\|⟺\|≤\|≥\|⇒\|⟹\|⇔\|∨'
 
 syntax match comment "//.*$"
-syntax keyword todo TODO
+syntax match todo "TODO"
 
 syntax match num '\<#\?[-+]\?\d\+\.\?\d*'
 
