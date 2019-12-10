@@ -140,12 +140,11 @@ class IntConst(IRExpression):
 
         b_const = VarRef('b').with_type(self.get_type())
 
-        if self.get_type() is not None:
-            prog.restrict(self.label, self.get_type().restrict(self.label))
-
-        # TODO: Add a hash method to Type (see: type_inference.py) so that the constant map works properly
         if (self.val, self.get_type()) in constants_map:
             return constants_map[(self.val, self.get_type())]
+
+        if self.get_type() is not None:
+            prog.restrict(self.label, self.get_type().restrict(self.label))
 
         if self.val == 0:
             # Constant 0 is defined as 000000... TODO: Maybe allow users to define their own 0
@@ -188,11 +187,15 @@ class IntConst(IRExpression):
     def show(self):
         return str(self.val)
 
-class Equals(IRPredicate):
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.val == other.val and self.get_type() == other.get_type()
+
+    def __hash__(self):
+        return hash(self.val)
+
+class Equals(BinaryIRPredicate):
     def __init__(self, a, b):
-        super().__init__()
-        self.a = a
-        self.b = b
+        super().__init__(a, b)
 
     def evaluate_node(self, prog):
         if self.a.is_int and self.b.is_int:
@@ -216,11 +219,9 @@ class Equals(IRPredicate):
     def __repr__(self):
         return '({} = {})'.format(self.a, self.b)
 
-class Less(IRPredicate):
+class Less(BinaryIRPredicate):
     def __init__(self, a, b):
-        super().__init__()
-        self.a = a
-        self.b = b
+        super().__init__(a, b)
 
     def evaluate_node(self, prog):
         if self.a.is_int and self.b.is_int:

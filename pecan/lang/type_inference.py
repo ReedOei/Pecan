@@ -16,6 +16,12 @@ class Type:
     def restrict(self, var):
         return None
 
+    def __eq__(self, other):
+        return other is not None and other.__class__ == self.__class__
+
+    def __hash__(self):
+        return 0 # There are no fields to hash
+
 class AnyType(Type):
     def __init__(self):
         super().__init__()
@@ -47,6 +53,12 @@ class RestrictionType(Type):
 
     def __repr__(self):
         return repr(self.restriction)
+
+    def __eq__(self, other):
+        return other is not None and other.__class__ == self.__class__ and self.restriction == other.restriction
+
+    def __hash__(self):
+        return hash(self.restriction)
 
 class TypeEnv:
     def __init__(self, prog):

@@ -111,6 +111,12 @@ class UnaryIRExpression(IRExpression):
         self.a = self.a.with_type(new_type)
         return super().with_type(new_type)
 
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.a == other.a and self.get_type() == other.get_type()
+
+    def __hash__(self):
+        return hash((self.a))
+
 class BinaryIRExpression(IRExpression):
     def __init__(self, a, b):
         super().__init__()
@@ -123,11 +129,38 @@ class BinaryIRExpression(IRExpression):
         self.b = self.b.with_type(new_type)
         return super().with_type(new_type)
 
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.a == other.a and self.b == other.b and self.get_type() == other.get_type()
+
+    def __hash__(self):
+        return hash((self.a, self.b))
+
 class IRPredicate(IRNode):
     def __init__(self):
         super().__init__()
 
-    # The evaluate function returns an automaton representing the expression
     def evaluate_node(self, prog):
-        return None # Should never be called on the base Predicate class
+        raise NotImplementedError
 
+class BinaryIRPredicate(IRPredicate):
+    def __init__(self, a, b):
+        super().__init__()
+        self.a = a
+        self.b = b
+
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.a == other.a and self.b == other.b
+
+    def __hash__(self):
+        return hash((self.a, self.b))
+
+class UnaryIRPredicate(IRPredicate):
+    def __init__(self, a):
+        super().__init__()
+        self.a = a
+
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.a == other.a
+
+    def __hash__(self):
+        return hash(self.a)

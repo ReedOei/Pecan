@@ -3,11 +3,9 @@
 
 from pecan.lang.ir import *
 
-class Conjunction(IRPredicate):
+class Conjunction(BinaryIRPredicate):
     def __init__(self, a, b):
-        super().__init__()
-        self.a = a
-        self.b = b
+        super().__init__(a, b)
 
     def evaluate_node(self, prog):
         return spot.product(self.a.evaluate(prog), self.b.evaluate(prog))
@@ -18,11 +16,9 @@ class Conjunction(IRPredicate):
     def __repr__(self):
         return '({} ∧ {})'.format(self.a, self.b)
 
-class Disjunction(IRPredicate):
+class Disjunction(BinaryIRPredicate):
     def __init__(self, a, b):
-        super().__init__()
-        self.a = a
-        self.b = b
+        super().__init__(a, b)
 
     def evaluate_node(self, prog):
         return spot.product_or(self.a.evaluate(prog), self.b.evaluate(prog))
@@ -33,10 +29,9 @@ class Disjunction(IRPredicate):
     def __repr__(self):
         return '({} ∨ {})'.format(self.a, self.b)
 
-class Complement(IRPredicate):
+class Complement(UnaryIRPredicate):
     def __init__(self, a, use_not_equals=True):
-        super().__init__()
-        self.a = a
+        super().__init__(a)
         self.use_not_equals = use_not_equals
 
     def evaluate_node(self, prog):
@@ -65,6 +60,12 @@ class FormulaTrue(IRPredicate):
     def __repr__(self):
         return '⊤'
 
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__
+
+    def __hash__(self):
+        return 0 # No fields to hash
+
 class FormulaFalse(IRPredicate):
     def __init__(self):
         super().__init__()
@@ -78,3 +79,8 @@ class FormulaFalse(IRPredicate):
     def __repr__(self):
         return '⊥'
 
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__
+
+    def __hash__(self):
+        return 0 # No fields to hash

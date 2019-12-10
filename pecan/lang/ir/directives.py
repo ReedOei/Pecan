@@ -28,6 +28,12 @@ class DirectiveSaveAut(IRNode):
     def __repr__(self):
         return '#save_aut({}, {})'.format(str(self.filename), self.pred_name)
 
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.filename == other.filename and self.pred_name == other.pred_name
+
+    def __hash__(self):
+        return hash((self.filename, self.pred_name))
+
 class DirectiveSaveAutImage(IRNode):
     def __init__(self, filename, pred_name):
         super().__init__()
@@ -51,6 +57,12 @@ class DirectiveSaveAutImage(IRNode):
     def __repr__(self):
         return '#save_aut_img({}, {})'.format(repr(self.filename), self.pred_name)
 
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.filename == other.filename and self.pred_name == other.pred_name
+
+    def __hash__(self):
+        return hash((self.filename, self.pred_name))
+
 class DirectiveContext(IRNode):
     def __init__(self, context_key, context_val):
         super().__init__()
@@ -67,6 +79,12 @@ class DirectiveContext(IRNode):
     def __repr__(self):
         return '#context({}, {})'.format(self.context_key, self.context_val)
 
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.context_key == other.context_key and self.context_val == other.context_val
+
+    def __hash__(self):
+        return hash((self.context_key, self.context_val))
+
 class DirectiveEndContext(IRNode):
     def __init__(self, context_key):
         super().__init__()
@@ -81,6 +99,12 @@ class DirectiveEndContext(IRNode):
 
     def __repr__(self):
         return '#end_context({})'.format(self.context_key)
+
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.context_key == other.context_key
+
+    def __hash__(self):
+        return hash(self.context_key)
 
 # Asserts that pred_name is truth_val: i.e., that pred_name is 'true' (always), 'false' (always), or 'sometimes' true
 class DirectiveAssertProp(IRNode):
@@ -120,6 +144,12 @@ class DirectiveAssertProp(IRNode):
     def __repr__(self):
         return '#assert_prop({}, {})'.format(self.truth_val, self.pred_name)
 
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.truth_val == other.truth_val and self.pred_name == other.pred_name
+
+    def __hash__(self):
+        return hash((self.truth_val, self.pred_name))
+
 class DirectiveLoadAut(IRNode):
     def __init__(self, filename, aut_format, pred):
         super().__init__()
@@ -147,6 +177,13 @@ class DirectiveLoadAut(IRNode):
     def __repr__(self):
         return '#load({}, {}, {})'.format(self.filename, self.aut_format, repr(self.pred))
 
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and \
+               self.filename == other.filename and self.aut_format == other.aut_format and self.pred == other.pred
+
+    def __hash__(self):
+        return hash((self.filename, self.aut_format, self.pred))
+
 class DirectiveImport(IRNode):
     def __init__(self, filename):
         super().__init__()
@@ -165,6 +202,13 @@ class DirectiveImport(IRNode):
     def __repr__(self):
         return '#import({})'.format(repr(self.filename))
 
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and \
+               self.filename == other.filename
+
+    def __hash__(self):
+        return hash(self.filename)
+
 class DirectiveForget(IRNode):
     def __init__(self, var_name):
         super().__init__()
@@ -179,6 +223,13 @@ class DirectiveForget(IRNode):
 
     def __repr__(self):
         return '#forget({})'.format(repr(self.var_name))
+
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and \
+               self.var_name == other.var_name
+
+    def __hash__(self):
+        return hash(self.var_name)
 
 class DirectiveType(IRNode):
     def __init__(self, pred_ref, val_dict):
@@ -196,12 +247,18 @@ class DirectiveType(IRNode):
     def __repr__(self):
         return '#type({}, {})'.format(self.pred_ref, self.val_dict)
 
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and \
+               self.pred_ref == other.pred_ref and self.val_dict == other.val_dict
+
+    def __hash__(self):
+        return hash((self.pred_ref, self.val_dict))
+
 class DirectiveShowWord(IRNode):
     def __init__(self, word_name, index_type, start_index, end_index):
         super().__init__()
         self.word_name = word_name
 
-        from pecan.lang.type_inference import RestrictionType
         self.index_type = index_type if index_type is not None else None
 
         self.start_index = start_index
@@ -239,4 +296,11 @@ class DirectiveShowWord(IRNode):
 
     def __repr__(self):
         return '#show_word({}, {}, {}, {})'.format(self.word_name, self.index_type, self.start_index, self.end_index)
+
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and \
+               self.word_name == other.word_name and self.index_type == other.index_type and self.start_index == other.start_index and self.end_index == other.end_index
+
+    def __hash__(self):
+        return hash((self.word_name, self.index_type, self.start_index, self.end_index))
 
