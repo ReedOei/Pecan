@@ -18,26 +18,22 @@ zeck_add(a, b, c) := exists alpha is all_ones2. add2(alpha, a, b, c)
     "less": lt2(any, any)
 })
 
-x, y are ostrowski(alpha)
+x, y, z are ostrowski(alpha)
 
 // These tests of arithmetic properties are relevant because they use bases other than binary
-add_comm_ostrowski() := forall alpha. forall x. forall y. x + y = y + x
-#assert_prop(true, add_comm_ostrowski)
-
-i, j, k, n are zeckendorf
-
-// These tests are relevant because they use zeckendorf, rather than binary, as we do test_arith.pn
-add_comm() := forall i. forall j. i + j = j + i
+add_comm() := forall alpha. forall x. forall y. x + y = y + x
 #assert_prop(true, add_comm)
 
-zero_add_refl() := forall i. i + 0 = i
+zero_add_refl() := forall alpha. forall x. x + 0 = x
 #assert_prop(true, zero_add_refl)
 
-add_assoc_const() := forall k. k + (1 + 1) = (k + 1) + 1
+add_assoc_const() := forall alpha. forall x. x + (1 + 1) = (x + 1) + 1
 #assert_prop(true, add_assoc_const)
 
-add_assoc() := forall i. forall j. forall k. exists jk is zeckendorf. jk = j + k & exists ij is zeckendorf. ij = i + j & i + jk = ij + k
-// #assert_prop(true, add_assoc)
+add_assoc() := forall alpha. forall x. forall y. forall z. exists yz is ostrowski(alpha). yz = y + z & exists xy is ostrowski(alpha). xy = x + y & x + yz = xy + z
+#assert_prop(true, add_assoc)
+
+i, j, k, n are zeckendorf
 
 // The Fibonacci word (i.e., characteristic Sturmian word with slope = 1/phi)
 F(n) := sturmian(n)

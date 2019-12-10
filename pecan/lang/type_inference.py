@@ -36,18 +36,17 @@ class RestrictionType(Type):
         super().__init__()
         self.restriction = restriction
 
-    # TODO: This should ideally be unnecessary (i.e., we should store restrictions so this is unnecessary)
     def get_restriction(self):
-        if type(self.restriction) is Call:
-            return self.restriction.with_args(self.restriction.args[1:])
-        else:
-            return self.restriction
+        return self.restriction
 
     def restrict(self, var):
-        return self.get_restriction().insert_first(var)
+        if type(self.restriction) is Call:
+            return self.restriction.with_args(self.restriction.args[1:]).insert_first(var)
+        else:
+            return self.restriction.insert_first(var)
 
     def __repr__(self):
-        return repr(self.get_restriction())
+        return repr(self.restriction)
 
 class TypeEnv:
     def __init__(self, prog):
@@ -104,7 +103,7 @@ class TypeEnv:
             if t_a.name != t_b.name or len(t_a.args) != len(t_b.args):
                 return None
 
-            for arg1, arg2 in zip(t_a.args, t_b.args):
+            for arg1, arg2 in zip(t_a.args[1:], t_b.args[1:]):
                 # These should all be strings or VarRefs # TODO: Make sure they're just VarRefs
                 arg1_name = arg1.var_name if type(arg1) is VarRef else arg1
                 arg2_name = arg2.var_name if type(arg2) is VarRef else arg2

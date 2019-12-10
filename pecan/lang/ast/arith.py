@@ -14,11 +14,7 @@ class Add(BinaryExpression):
         self.label = label
 
     def show(self):
-        # The operands should always have the same type, but in the interest of debugging, we should display when this is not the case
-        if self.a.get_type() == self.b.get_type():
-            return '({} + {})'.format(self.a.show(), self.b.show())
-        else:
-            return '({} + {})'.format(self.a, self.b)
+        return '({} + {})'.format(self.a.show(), self.b.show())
 
     def transform(self, transformer):
         return transformer.transform_Add(self)
