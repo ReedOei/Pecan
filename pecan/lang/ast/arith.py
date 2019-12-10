@@ -19,6 +19,10 @@ class Add(BinaryExpression):
     def transform(self, transformer):
         return transformer.transform_Add(self)
 
+    def evaluate_int(self, prog):
+        assert self.is_int
+        return self.a.evaluate_int(prog) + self.b.evaluate_int(prog)
+
 class Sub(BinaryExpression):
     def __init__(self, a, b):
         super().__init__(a, b)
@@ -28,6 +32,10 @@ class Sub(BinaryExpression):
 
     def transform(self, transformer):
         return transformer.transform_Sub(self)
+
+    def evaluate_int(self, prog):
+        assert self.is_int
+        return self.a.evaluate_int(prog) - self.b.evaluate_int(prog)
 
 class Mul(BinaryExpression):
     def __init__(self, a, b):

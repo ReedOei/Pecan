@@ -87,40 +87,6 @@ class Sub(BinaryIRExpression):
         assert self.is_int
         return self.a.evaluate_int(prog) - self.b.evaluate_int(prog)
 
-class Mul(BinaryIRExpression):
-    def __init__(self, a, b):
-        super().__init__(a, b)
-
-    def evaluate_node(self, prog):
-        if self.is_int:
-            return IntConst(self.evaluate_int(prog)).with_type(self.get_type()).evaluate(prog)
-
-        c = self.a.evaluate_int(prog)  # copy of a
-        if c == 0:
-            return IntConst(0).with_type(self.get_type()).evaluate(prog)
-
-        power = self.b
-        s = IntConst(0).with_type(self.get_type())
-        while True:
-            if c & 1 == 1:
-                s = Add(power,s).with_type(self.get_type())
-            c = c >> 1
-            if c <= 0:
-                break
-            power = Add(power, power).with_type(self.get_type())
-
-        return s.evaluate(prog)
-
-    def transform(self, transformer):
-        return transformer.transform_Mul(self)
-
-    def show(self):
-        return '({} * {})'.format(self.a, self.b)
-
-    def evaluate_int(self, prog):
-        assert self.is_int
-        return self.a.evaluate_int(prog) * self.b.evaluate_int(prog)
-
 
 #TODO:
 class Div(BinaryIRExpression):

@@ -2,6 +2,7 @@
 # -*- coding=utf-8 -*-
 
 from pecan.lang.optimizer.boolean import BooleanOptimizer
+from pecan.lang.optimizer.arithmetic import ArithmeticOptimizer
 
 from pecan.lang.ir import *
 
@@ -23,7 +24,16 @@ class Optimizer:
     def run_optimizations(self, node):
         if self.prog.debug > 2:
             print('Optimizing:', node)
-        new_node = BooleanOptimizer().transform(node)
+        optimization_pass = [ArithmeticOptimizer(), BooleanOptimizer()]
+        new_node = node
+
+        ast_changed = True # Default to true so we run at least once
+        while ast_changed:
+            ast_changed = False
+            for optimization in optimization_pass:
+                changed, new_node = optimization.optimize(new_node)
+                ast_changed |= changed
+
         if self.prog.debug > 2:
             print('Optimized node:', new_node)
         return new_node

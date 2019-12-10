@@ -80,7 +80,22 @@ class ASTToIR(AstTransformer):
         return ir.Sub(self.transform(node.a), self.transform(node.b))
 
     def transform_Mul(self, node):
-        return ir.Mul(self.transform(node.a), self.transform(node.b))
+        # We are guaranteed that node.a will be an integer, so we don't need to worry about transforming it
+        c = node.a.evaluate_int(prog)  # copy of a
+        if c == 0:
+            return ir.IntConst(0)
+
+        power = self.transform(node.b)
+        s = ir.IntConst(0)
+        while True:
+            if c & 1 == 1:
+                s = ir.Add(power, s)
+            c = c // 2
+            if c <= 0:
+                break
+            power = ir.Add(power, power)
+
+        return s.with_original_node(node)
 
     def transform_Div(self, node):
         return ir.Div(self.transform(node.a), self.transform(node.b))
