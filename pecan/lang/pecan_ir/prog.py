@@ -11,9 +11,9 @@ from lark import Lark, Transformer, v_args
 import spot
 
 from pecan.tools.automaton_tools import AutomatonTransformer, Substitution
-from pecan.lang.pecan_ast.base import *
+from pecan.lang.pecan_ir.base import *
 
-class VarRef(Expression):
+class VarRef(IRExpression):
     def __init__(self, var_name):
         super().__init__()
         self.var_name = var_name
@@ -32,11 +32,14 @@ class VarRef(Expression):
     def show(self):
         return str(self.var_name)
 
-class AutLiteral(Predicate):
+class AutLiteral(IRPredicate):
     def __init__(self, aut):
         super().__init__()
         self.aut = aut
         self.is_int = False
+
+    def evaluate(self, prog):
+        return self.aut
 
     def transform(self, transformer):
         return transformer.transform_AutLiteral(self)
@@ -47,7 +50,7 @@ class AutLiteral(Predicate):
     def __repr__(self):
         return 'AUTOMATON LITERAL' # TODO: Maybe improve this?
 
-class SpotFormula(Predicate):
+class SpotFormula(IRPredicate):
     def __init__(self, formula_str):
         super().__init__()
         self.formula_str = formula_str
@@ -130,7 +133,7 @@ class Match:
     def __repr__(self):
         return '{}({})'.format(self.pred_name, ', '.join(map(repr, self.pred_args)))
 
-class Call(Predicate):
+class Call(IRPredicate):
     def __init__(self, name, args):
         super().__init__()
         self.name = name
@@ -160,13 +163,37 @@ class Call(Predicate):
                 actual_args.append(arg)
         return actual_args
 
+    def evaluate_node(self, prog):
+        # We may need to compute some values for the args
+        arg_preds = []
+        final_args = []
+        for arg in self.actual_args():
+            # If it's not just a name, we need to actually do something
+            if type(arg) is not str:
+                new_var = prog.fresh_name()
+                # For some reason we need to import again here?
+                from pecan.lang.pecan_ir.arith import Equals
+                arg_preds.append((Equals(arg, VarRef(new_var)), new_var))
+                final_args.append(new_var)
+            else:
+                final_args.append(arg)
+
+        from pecan.lang.pecan_ir.bool import Conjunction
+        from pecan.lang.pecan_ir.quant import Exists
+
+        final_pred = AutLiteral(prog.call(self.name, final_args))
+        for pred, var_name in arg_preds:
+            final_pred = Exists(var_name, Conjunction(pred, final_pred))
+
+        return final_pred.evaluate(prog)
+
     def transform(self, transformer):
         return transformer.transform_Call(self)
 
     def __repr__(self):
         return '{}({})'.format(self.name, ', '.join(map(repr, self.args)))
 
-class NamedPred(ASTNode):
+class NamedPred(IRNode):
     def __init__(self, name, args, body, restriction_env=None):
         super().__init__()
         self.name = name
@@ -219,7 +246,7 @@ class NamedPred(ASTNode):
         try:
             if self.body_evaluated is None:
                 # We postprocess here because we will do it every time we call anyway (in AutomatonTransformer)
-                self.body_evaluated = self.body.evaluate(prog) #.postprocess('BA')
+                self.body_evaluated = self.body.evaluate(prog).postprocess('BA')
 
             if arg_names is None:
                 return self.body_evaluated
@@ -233,7 +260,7 @@ class NamedPred(ASTNode):
     def __repr__(self):
         return '{}({}) := {}'.format(self.name, ', '.join(self.args), self.body)
 
-class Program(ASTNode):
+class Program(IRNode):
     def __init__(self, defs, *args, **kwargs):
         super().__init__()
 
@@ -250,6 +277,9 @@ class Program(ASTNode):
         self.search_paths = kwargs.get('search_paths', [])
         self.fresh_counter = kwargs.get('fresh_counter', 0)
         self.loader = kwargs.get('loader', None)
+
+        from pecan.lang.type_inference import TypeInferer
+        self.type_inferer = TypeInferer(self)
 
     def copy_defaults(self, other_prog):
         self.context = other_prog.context
@@ -289,8 +319,7 @@ class Program(ASTNode):
 
         for d in self.defs:
             if type(d) is NamedPred:
-                # Infer types for the body of the
-                self.preds[d.name] = d
+                self.preds[d.name] = self.type_inferer.reset().transform(d)
                 self.preds[d.name].evaluate(self)
                 if self.debug > 0:
                     print(self.preds[d.name])
@@ -354,7 +383,7 @@ class Program(ASTNode):
                 if pred_name in self.preds:
                     return self.preds[pred_name].call(self, args)
                 else:
-                    raise Exception(f'Predicate {pred_name} not found (known predicates: {self.preds.keys()}!')
+                    raise Exception(f'Predicate {pred_name}({args}) not found (known predicates: {self.preds.keys()}!')
             else:
                 return self.dynamic_call(pred_name, args)
         except Exception as e:
@@ -473,8 +502,7 @@ class Result:
         else:
             print(f'{Fore.RED}{self.msg}{Style.RESET_ALL}')
 
-
-class Restriction(ASTNode):
+class Restriction(IRNode):
     def __init__(self, var_names, pred):
         super().__init__()
         self.var_names = []

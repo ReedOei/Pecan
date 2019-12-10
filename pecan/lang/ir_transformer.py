@@ -1,9 +1,9 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from pecan.lang.pecan_ast import *
+from pecan.lang.pecan_ir import *
 
-class AstTransformer:
+class IRTransformer:
     def __init__(self):
         pass
 
@@ -21,12 +21,6 @@ class AstTransformer:
 
     def transform_Complement(self, node):
         return Complement(self.transform(node.a))
-
-    def transform_Iff(self, node):
-        return Iff(self.transform(node.a), self.transform(node.b))
-
-    def transform_Implies(self, node):
-        return Implies(self.transform(node.a), self.transform(node.b))
 
     def transform_FormulaTrue(self, node):
         return node
@@ -151,4 +145,5 @@ class AstTransformer:
 
     def transform_Restriction(self, node):
         return Restriction(node.var_names, self.transform(node.pred))
+
 

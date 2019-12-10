@@ -9,17 +9,15 @@ import readline
 
 import os
 
-from pecan.lang.parser import pecan_parser
-from pecan.lang.pecan_ast import Program
 import pecan.tools.theorem_generator as theorem_generator
 from pecan import program
 
-def run_repl(debug, env):
+def run_repl(env):
     while True:
         prog_str = input('> ')
         prog = program.from_source(prog_str)
 
-        if debug:
+        if env.debug:
             print(prog)
 
         env = prog.evaluate(env)
@@ -44,9 +42,6 @@ def main():
             print(pred)
     elif args.file is not None:
         prog = program.load(args.file, quiet=args.quiet, debug=args.debug, load_stdlib=args.load_stdlib)
-        if args.debug:
-            print('Parsed program:')
-            print(prog)
         env = prog.evaluate()
     elif not args.interactive:
         parser.print_help()
@@ -56,7 +51,7 @@ def main():
             prog = program.from_source('', quiet=args.quiet, debug=args.debug, load_stdlib=args.load_stdlib)
             env = prog.evaluate()
 
-        run_repl(args.debug, env)
+        run_repl(env)
 
 if __name__ == '__main__':
     colorama.init()

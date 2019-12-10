@@ -1,8 +1,8 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from pecan.lang.ast_transformer import AstTransformer
-from pecan.lang.pecan_ast import *
+from pecan.lang.ir_transformer import IRTransformer
+from pecan.lang.pecan_ir import *
 
 from pecan.tools.automaton_tools import TruthValue
 
@@ -117,8 +117,10 @@ class TypeEnv:
             # Unification didn't easily succeed, so drop down to actually using some theorem proving power to check
             # if the types are compatible
             temp_var = VarRef(self.prog.fresh_name())
-            tval1 = TruthValue(Implies(t_a.insert_first(temp_var), t_b.insert_first(temp_var))).truth_value(self.prog)
-            tval2 = TruthValue(Implies(t_b.insert_first(temp_var), t_a.insert_first(temp_var))).truth_value(self.prog)
+            # TODO: Abstract out a subtyping checker thing here
+            # TODO: Can probably optimize this by using spot's ability to check containment so we don't need to recompute/complement as much
+            tval1 = TruthValue(Disjunction(Complement(t_a.insert_first(temp_var)), t_b.insert_first(temp_var))).truth_value(self.prog)
+            tval2 = TruthValue(Disjunction(Complement(t_b.insert_first(temp_var)), t_a.insert_first(temp_var))).truth_value(self.prog)
 
             if tval1 == 'true' or tval2 == 'true':
                 return t_a
@@ -144,7 +146,7 @@ class TypeEnv:
     def remove(self, var_name):
         self.type_env.pop(var_name)
 
-class TypeInferer(AstTransformer):
+class TypeInferer(IRTransformer):
     def __init__(self, prog: Program):
         super().__init__()
         self.prog = prog
@@ -257,3 +259,4 @@ class TypeInferer(AstTransformer):
         # TODO: Handle the arg restrictions giving us additional type information
         new_args = [self.transform(arg) for arg in node.args]
         return Call(node.name, new_args)
+
