@@ -74,19 +74,19 @@ class ASTToIR(AstTransformer):
         return ir.DirectiveShowWord(self.transform(node.word_name), self.transform_decl_type(node.index_type), node.start_index, node.end_index)
 
     def transform_Add(self, node):
-        return ir.Add(self.transform(node.a), self.transform(node.b)).with_type(self.transform_decl_type(node.get_type()))
+        return ir.Add(self.transform(node.a), self.transform(node.b))
 
     def transform_Sub(self, node):
-        return ir.Sub(self.transform(node.a), self.transform(node.b)).with_type(self.transform_decl_type(node.get_type()))
+        return ir.Sub(self.transform(node.a), self.transform(node.b))
 
     def transform_Mul(self, node):
-        return ir.Mul(self.transform(node.a), self.transform(node.b)).with_type(self.transform_decl_type(node.get_type()))
+        return ir.Mul(self.transform(node.a), self.transform(node.b))
 
     def transform_Div(self, node):
-        return ir.Div(self.transform(node.a), self.transform(node.b)).with_type(self.transform_decl_type(node.get_type()))
+        return ir.Div(self.transform(node.a), self.transform(node.b))
 
     def transform_IntConst(self, node):
-        return ir.IntConst(node.val).with_type(self.transform_decl_type(node.get_type()))
+        return ir.IntConst(node.val)
 
     def transform_Equals(self, node):
         return ir.Equals(self.transform(node.a), self.transform(node.b))
@@ -139,7 +139,7 @@ class ASTToIR(AstTransformer):
             return ir.Exists(self.transform(node.var), self.transform(node.pred)).with_original_node(node)
 
     def transform_VarRef(self, node: VarRef):
-        return ir.VarRef(node.var_name).with_type(self.transform_decl_type(node.get_type()))
+        return ir.VarRef(node.var_name)
 
     def transform_AutLiteral(self, node):
         return ir.AutLiteral(node.aut)
