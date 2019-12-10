@@ -43,3 +43,6 @@ class GeneralTest(unittest.TestCase):
     def test_scope(self):
         return self.run_file('examples/test_scope.pn')
 
+    def test_chicken_mcnugget(self):
+        return self.run_file('examples/chicken_mcnugget.pn')
+

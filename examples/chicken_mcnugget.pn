@@ -4,5 +4,8 @@ purchasable(n) := n ∈ nat ∧ ∃a. ∃b. ∃c. n = 6*a + 9*b + 20*c
 non_purchasable(n) := n ∈ nat ∧ ¬purchasable(n)
 
 largest_non_purchasable(n) := non_purchasable(n) ∧ ∀m ∈ non_purchasable. n ≥ m
-#save_aut_img("largest_non_purchasable.svg", largest_non_purchasable)
+// #save_aut_img("largest_non_purchasable.svg", largest_non_purchasable)
+
+thm() := forall n. largest_non_purchasable(n) => n = 43
+#assert_prop(true, thm)
 
