@@ -210,7 +210,12 @@ class DirectiveShowWord(IRNode):
     def evaluate(self, prog):
         from pecan.lang.ir.words import EqualsCompareIndex, Index
         from pecan.lang.ir.arith import IntConst
-        index_expr = lambda idx_val: EqualsCompareIndex(True, Index(self.word_name, IntConst(idx_val).with_type(self.index_type)), FormulaTrue())
+        from pecan.lang.typed_ir_lowering import TypedIRLowering
+
+        lowerer = TypedIRLowering()
+
+        # TODO: Eventually, optimize this. Or add procedures and just eliminate it altogether
+        index_expr = lambda idx_val: lowerer.transform(EqualsCompareIndex(True, Index(self.word_name, IntConst(idx_val).with_type(self.index_type)), FormulaTrue()))
 
         for idx in range(self.start_index, self.end_index + 1):
             if TruthValue(index_expr(idx)).truth_value(prog) == 'true':
