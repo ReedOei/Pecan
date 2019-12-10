@@ -3,7 +3,7 @@
 
 from pecan.lang.optimizer.boolean import BooleanOptimizer
 
-from pecan.lang.pecan_ir import *
+from pecan.lang.ir import *
 
 class Optimizer:
     def __init__(self, prog):

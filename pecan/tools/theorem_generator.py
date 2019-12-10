@@ -3,7 +3,7 @@ import string
 
 import spot
 
-from pecan.lang.pecan_ast import *
+from pecan.lang.ast import *
 from pecan import program
 
 def truth_val(prog, pred):

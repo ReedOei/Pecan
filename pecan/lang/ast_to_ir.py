@@ -1,8 +1,8 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from pecan.lang.pecan_ast import *
-import pecan.lang.pecan_ir as ir
+from pecan.lang.ast import *
+import pecan.lang.ir as ir
 
 from pecan.lang.ast_transformer import AstTransformer
 from pecan.lang.type_inference import *
@@ -154,7 +154,7 @@ class ASTToIR(AstTransformer):
         return ir.NamedPred(node.name, [self.transform(arg) for arg in node.args], self.transform(node.body), restriction_env=node.restriction_env)
 
     def transform_Program(self, node):
-        # TODO: While `copy_defaults` will work here because of duck typing (node is a pecan_ast.prog.Program, not a pecan_ir.prog.Program), we should make come up with a better solution maybe?
+        # TODO: While `copy_defaults` will work here because of duck typing (node is an ast.prog.Program, not an ir.prog.Program), we should make come up with a better solution maybe?
         self.prog = ir.Program([]).copy_defaults(node)
         self.prog.defs = [self.transform(d) for d in node.defs]
         self.prog.restrictions = [{self.transform(k): list(map(self.transform, v)) for k, v in restrictions.items()} for restrictions in node.restrictions]

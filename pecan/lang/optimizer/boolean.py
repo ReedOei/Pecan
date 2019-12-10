@@ -3,7 +3,7 @@
 
 from pecan.lang.ir_transformer import IRTransformer
 
-from pecan.lang.pecan_ir import *
+from pecan.lang.ir import *
 
 class BooleanOptimizer(IRTransformer):
     def transform_Complement(self, node):

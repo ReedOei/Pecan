@@ -7,7 +7,7 @@ import spot
 
 from pecan.tools.automaton_tools import TruthValue
 from pecan.tools.convert_hoa import convert_aut
-from pecan.lang.pecan_ast import *
+from pecan.lang.ast import *
 
 class Directive(ASTNode):
     def __init__(self, name):

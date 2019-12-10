@@ -1,7 +1,7 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from pecan.lang.pecan_ast import *
+from pecan.lang.ast import *
 
 class AstTransformer:
     def __init__(self):

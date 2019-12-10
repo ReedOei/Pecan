@@ -1,7 +1,7 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from pecan.lang.pecan_ir import *
+from pecan.lang.ir import *
 
 class IRTransformer:
     def __init__(self):

@@ -7,7 +7,7 @@ import spot
 
 from pecan.tools.automaton_tools import TruthValue
 from pecan.tools.convert_hoa import convert_aut
-from pecan.lang.pecan_ir import *
+from pecan.lang.ir import *
 
 class DirectiveSaveAut(IRNode):
     def __init__(self, filename, pred_name):
@@ -208,8 +208,8 @@ class DirectiveShowWord(IRNode):
         self.end_index = end_index
 
     def evaluate(self, prog):
-        from pecan.lang.pecan_ir.words import EqualsCompareIndex, Index
-        from pecan.lang.pecan_ir.arith import IntConst
+        from pecan.lang.ir.words import EqualsCompareIndex, Index
+        from pecan.lang.ir.arith import IntConst
         index_expr = lambda idx_val: EqualsCompareIndex(True, Index(self.word_name, IntConst(idx_val).with_type(self.index_type)), FormulaTrue())
 
         for idx in range(self.start_index, self.end_index + 1):

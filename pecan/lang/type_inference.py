@@ -2,7 +2,7 @@
 # -*- coding=utf-8 -*-
 
 from pecan.lang.ir_transformer import IRTransformer
-from pecan.lang.pecan_ir import *
+from pecan.lang.ir import *
 
 from pecan.tools.automaton_tools import TruthValue
 

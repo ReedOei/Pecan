@@ -11,7 +11,7 @@ from lark import Lark, Transformer, v_args
 import spot
 
 from pecan.tools.automaton_tools import AutomatonTransformer, Substitution
-from pecan.lang.pecan_ir.base import *
+from pecan.lang.ir.base import *
 
 class VarRef(IRExpression):
     def __init__(self, var_name):
@@ -172,14 +172,14 @@ class Call(IRPredicate):
             if type(arg) is not str:
                 new_var = prog.fresh_name()
                 # For some reason we need to import again here?
-                from pecan.lang.pecan_ir.arith import Equals
+                from pecan.lang.ir.arith import Equals
                 arg_preds.append((Equals(arg, VarRef(new_var)), new_var))
                 final_args.append(new_var)
             else:
                 final_args.append(arg)
 
-        from pecan.lang.pecan_ir.bool import Conjunction
-        from pecan.lang.pecan_ir.quant import Exists
+        from pecan.lang.ir.bool import Conjunction
+        from pecan.lang.ir.quant import Exists
 
         final_pred = AutLiteral(prog.call(self.name, final_args))
         for pred, var_name in arg_preds:

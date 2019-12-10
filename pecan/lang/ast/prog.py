@@ -11,7 +11,7 @@ from lark import Lark, Transformer, v_args
 import spot
 
 from pecan.tools.automaton_tools import AutomatonTransformer, Substitution
-from pecan.lang.pecan_ast.base import *
+from pecan.lang.ast.base import *
 
 class VarRef(Expression):
     def __init__(self, var_name):

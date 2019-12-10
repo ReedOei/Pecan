@@ -4,7 +4,7 @@
 import spot
 
 from pecan.tools.automaton_tools import Substitution, AutomatonTransformer, Projection
-from pecan.lang.pecan_ast import *
+from pecan.lang.ast import *
 
 class Add(BinaryExpression):
     def __init__(self, a, b):
