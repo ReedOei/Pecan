@@ -111,7 +111,7 @@ class ASTToIR(AstTransformer):
         return ir.Disjunction(ir.Less(new_b, new_a), ir.Equals(new_a, new_b))
 
     def transform_Neg(self, node):
-        return ir.Neg(self.transform(node.a)).with_type(self.transform_decl_type(node.get_type()))
+        return ir.Sub(IntConst(0), self.transform(node.a))
 
     def transform_Index(self, node):
         return ir.Index(node.var_name, self.transform(node.index_expr))

@@ -307,27 +307,6 @@ class Less(IRPredicate):
     def __repr__(self):
         return '({} < {})'.format(self.a, self.b)
 
-class Neg(UnaryIRExpression): # Should this be allowed?
-    def __init__(self, a):
-        super().__init__(a)
-        self.a = a
-
-    def transform(self, transformer):
-        return transformer.transform_Neg(self)
-
-    def show(self):
-        return '(-{})'.format(self.a)
-
-    def evaluate_node(self, prog):
-        if self.a.is_int:
-            return IntConst(self.evaluate_int(prog)).evaluate(prog)
-        raise AutomatonArithmeticError("Should not negate automaton in {}".format(self))
-        # return Sub(IntConst(0),self.a).evaluate(prog)
-
-    def evaluate_int(self, prog):
-        assert self.is_int
-        return -self.a.evaluate_int(prog)
-
 class AutomatonArithmeticError(Exception):
     pass
 

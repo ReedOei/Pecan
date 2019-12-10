@@ -213,11 +213,6 @@ class TypeInferer(IRTransformer):
         res_type = self.type_env.unify(a, b)
         return Less(a.with_type(res_type), b.with_type(res_type))
 
-    def transform_Neg(self, node: Neg):
-        a = self.transform(node.a)
-        res_type = a.get_type()
-        return Neg(a).with_type(res_type)
-
     def transform_Exists(self, node: Exists):
         if node.cond is None:
             if len(self.prog.get_restrictions(node.var.var_name)) == 0:

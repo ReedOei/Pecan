@@ -10,6 +10,13 @@ class BooleanOptimizer(IRTransformer):
         if type(node.a) is Complement:
             # !(!P) is equivalent to P
             return self.transform(node.a.a)
+
+        # DeMorgan's Laws: Pushing complements down seems to help
+        elif type(node.a) is Conjunction:
+            return self.transform(Disjunction(Complement(node.a.a), Complement(node.a.b)))
+        elif type(node.a) is Disjunction:
+            return self.transform(Conjunction(Complement(node.a.a), Complement(node.a.b)))
+
         else:
             return Complement(self.transform(node.a))
 
