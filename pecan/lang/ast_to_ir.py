@@ -30,12 +30,12 @@ class ASTToIR(AstTransformer):
     def transform_Iff(self, node):
         new_a = self.transform(node.a)
         new_b = self.transform(node.b)
-        return ir.Conjunction(ir.Disjunction(ir.Complement(new_a), new_b), ir.Disjunction(ir.Complement(new_b), new_a))
+        return ir.Conjunction(ir.Disjunction(ir.Complement(new_a), new_b), ir.Disjunction(ir.Complement(new_b), new_a)).with_original_node(node)
 
     def transform_Implies(self, node):
         new_a = self.transform(node.a)
         new_b = self.transform(node.b)
-        return ir.Disjunction(ir.Complement(new_a), new_b)
+        return ir.Disjunction(ir.Complement(new_a), new_b).with_original_node(node)
 
     def transform_FormulaTrue(self, node):
         return ir.FormulaTrue()
@@ -74,25 +74,25 @@ class ASTToIR(AstTransformer):
         return ir.DirectiveShowWord(self.transform(node.word_name), self.transform_decl_type(node.index_type), node.start_index, node.end_index)
 
     def transform_Add(self, node):
-        return ir.Add(self.transform(node.a), self.transform(node.b), param=node.param).with_type(self.transform_decl_type(node.get_type()))
+        return ir.Add(self.transform(node.a), self.transform(node.b)).with_type(self.transform_decl_type(node.get_type()))
 
     def transform_Sub(self, node):
-        return ir.Sub(self.transform(node.a), self.transform(node.b), param=node.param).with_type(self.transform_decl_type(node.get_type()))
+        return ir.Sub(self.transform(node.a), self.transform(node.b)).with_type(self.transform_decl_type(node.get_type()))
 
     def transform_Mul(self, node):
-        return ir.Mul(self.transform(node.a), self.transform(node.b), param=node.param).with_type(self.transform_decl_type(node.get_type()))
+        return ir.Mul(self.transform(node.a), self.transform(node.b)).with_type(self.transform_decl_type(node.get_type()))
 
     def transform_Div(self, node):
-        return ir.Div(self.transform(node.a), self.transform(node.b), param=node.param).with_type(self.transform_decl_type(node.get_type()))
+        return ir.Div(self.transform(node.a), self.transform(node.b)).with_type(self.transform_decl_type(node.get_type()))
 
     def transform_IntConst(self, node):
-        return ir.IntConst(node.val, param=node.param).with_type(self.transform_decl_type(node.get_type()))
+        return ir.IntConst(node.val).with_type(self.transform_decl_type(node.get_type()))
 
     def transform_Equals(self, node):
         return ir.Equals(self.transform(node.a), self.transform(node.b))
 
     def transform_NotEquals(self, node):
-        return ir.NotEquals(self.transform(node.a), self.transform(node.b))
+        return ir.Complement(ir.Equals(self.transform(node.a), self.transform(node.b))).with_original_node(node)
 
     def transform_Less(self, node):
         return ir.Less(self.transform(node.a), self.transform(node.b))
@@ -128,15 +128,15 @@ class ASTToIR(AstTransformer):
     def transform_Forall(self, node: Forall):
         # TODO: Make a `get_cond` method for this
         if node.cond is not None:
-            return ir.Complement(ir.Exists(self.transform(node.cond), ir.Complement(self.transform(node.pred))))
+            return ir.Complement(ir.Exists(self.transform(node.cond), ir.Complement(self.transform(node.pred)))).with_original_node(node)
         else:
-            return ir.Complement(ir.Exists(self.transform(node.var), ir.Complement(self.transform(node.pred))))
+            return ir.Complement(ir.Exists(self.transform(node.var), ir.Complement(self.transform(node.pred)))).with_original_node(node)
 
     def transform_Exists(self, node: Exists):
         if node.cond is not None:
-            return ir.Exists(self.transform(node.cond), self.transform(node.pred))
+            return ir.Exists(self.transform(node.cond), self.transform(node.pred)).with_original_node(node)
         else:
-            return ir.Exists(self.transform(node.var), self.transform(node.pred))
+            return ir.Exists(self.transform(node.var), self.transform(node.pred)).with_original_node(node)
 
     def transform_VarRef(self, node: VarRef):
         return ir.VarRef(node.var_name).with_type(self.transform_decl_type(node.get_type()))

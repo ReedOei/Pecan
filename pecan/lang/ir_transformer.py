@@ -11,7 +11,7 @@ class IRTransformer:
         if type(node) is str:
             return node
         else:
-            return node.transform(self)
+            return node.transform(self).with_original_node(node.get_original_node())
 
     def transform_Conjunction(self, node):
         return Conjunction(self.transform(node.a), self.transform(node.b))
@@ -59,25 +59,22 @@ class IRTransformer:
         return node
 
     def transform_Add(self, node):
-        return Add(self.transform(node.a), self.transform(node.b), param=node.param).with_type(node.get_type())
+        return Add(self.transform(node.a), self.transform(node.b)).with_type(node.get_type())
 
     def transform_Sub(self, node):
-        return Sub(self.transform(node.a), self.transform(node.b), param=node.param).with_type(node.get_type())
+        return Sub(self.transform(node.a), self.transform(node.b)).with_type(node.get_type())
 
     def transform_Mul(self, node):
-        return Mul(self.transform(node.a), self.transform(node.b), param=node.param).with_type(node.get_type())
+        return Mul(self.transform(node.a), self.transform(node.b)).with_type(node.get_type())
 
     def transform_Div(self, node):
-        return Div(self.transform(node.a), self.transform(node.b), param=node.param).with_type(node.get_type())
+        return Div(self.transform(node.a), self.transform(node.b)).with_type(node.get_type())
 
     def transform_IntConst(self, node):
         return node
 
     def transform_Equals(self, node):
         return Equals(self.transform(node.a), self.transform(node.b))
-
-    def transform_NotEquals(self, node):
-        return NotEquals(self.transform(node.a), self.transform(node.b))
 
     def transform_Less(self, node):
         return Less(self.transform(node.a), self.transform(node.b))

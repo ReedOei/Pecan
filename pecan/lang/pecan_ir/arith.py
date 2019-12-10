@@ -9,9 +9,8 @@ from pecan.lang.pecan_ir import *
 #TODO: memoize same expressions
 #TODO: Problem: can't change automaton for constants if definition of less_than or addition is changed in one run of Pecan.
 class Add(BinaryIRExpression):
-    def __init__(self, a, b, param=None):
+    def __init__(self, a, b):
         super().__init__(a, b)
-        self.param = param
 
     def change_label(self, label): # for changing label to __constant#
         self.label = label
@@ -53,9 +52,8 @@ class Add(BinaryIRExpression):
         return self.a.evaluate_int(prog) + self.b.evaluate_int(prog)
 
 class Sub(BinaryIRExpression):
-    def __init__(self, a, b, param=None):
+    def __init__(self, a, b):
         super().__init__(a, b)
-        self.param = param
 
     def __repr__(self):
         return '({} - {})'.format(self.a, self.b)
@@ -90,9 +88,8 @@ class Sub(BinaryIRExpression):
         return self.a.evaluate_int(prog) - self.b.evaluate_int(prog)
 
 class Mul(BinaryIRExpression):
-    def __init__(self, a, b, param=None):
+    def __init__(self, a, b):
         super().__init__(a, b)
-        self.param = param
 
     def evaluate_node(self, prog):
         if self.is_int:
@@ -127,9 +124,8 @@ class Mul(BinaryIRExpression):
 
 #TODO:
 class Div(BinaryIRExpression):
-    def __init__(self, a, b, param=None):
+    def __init__(self, a, b):
         super().__init__(a, b)
-        self.param = param
         if not self.is_int:
             raise NotImplementedError("Division with automaton hasn't been implemented, sorry. {}".format(self))
         if not self.b.is_int:
@@ -166,11 +162,10 @@ class Div(BinaryIRExpression):
 
 constants_map = {}
 class IntConst(IRExpression):
-    def __init__(self, val, param=None):
+    def __init__(self, val):
         super().__init__()
         self.val = val
         self.label = "__constant{}".format(self.val)
-        self.param = param
 
     def evaluate_node(self,prog):
         zero_const_var = VarRef("__constant0").with_type(self.get_type())
@@ -254,29 +249,6 @@ class Equals(IRPredicate):
 
     def __repr__(self):
         return '({} = {})'.format(self.a, self.b)
-
-class NotEquals(IRPredicate):
-    def __init__(self, a, b):
-        super().__init__()
-        self.a = a
-        self.b = b
-
-    def evaluate_node(self, prog):
-        if self.a.is_int and self.b.is_int:
-            return spot.formula('1').translate() if self.a.evaluate_int(prog) != self.b.evaluate_int(prog) else spot.formula('0').translate()
-
-        # TODO: The following is more efficient than complementation, but only works if we have "less" defined for the arguments
-        # try:
-        #     return Disjunction(Less(self.a, self.b), Greater(self.a, self.b)).evaluate(prog)
-        # except Exception as e: # TODO: Add a predicate not found exception type and only catch that
-        #     print('hi')
-        return Complement(Equals(self.a, self.b), use_not_equals=False).evaluate(prog)
-
-    def transform(self, transformer):
-        return transformer.transform_NotEquals(self)
-
-    def __repr__(self):
-        return '({} ≠ {})'.format(self.a, self.b)
 
 class Less(IRPredicate):
     def __init__(self, a, b):

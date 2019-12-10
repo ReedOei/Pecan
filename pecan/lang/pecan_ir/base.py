@@ -11,6 +11,11 @@ class IRNode:
         self.label = "__pecan{}".format(IRExpression.id)
         IRExpression.id += 1
         self.type = None
+        self.original_node = None
+
+    def with_original_node(self, original_node):
+        self.original_node = original_node
+        return self
 
     def with_type(self, new_type):
         self.type = new_type
@@ -42,6 +47,15 @@ class IRNode:
 
         return aut
 
+    def get_original_node(self):
+        return self.original_node
+
+    def get_display_node(self, prog):
+        if prog.debug > 3:
+            return self
+        else:
+            return self.original_node or self
+
     def evaluate(self, prog):
         prog.eval_level += 1
         if prog.debug > 0:
@@ -60,7 +74,7 @@ class IRNode:
             else:
                 sn, en = result.num_states(), result.num_edges()
             end_time = time.time()
-            self.print_indented(prog, '{} has {} states and {} edges ({:.2f} seconds)'.format(self, sn, en, end_time - start_time))
+            self.print_indented(prog, '{} has {} states and {} edges ({:.2f} seconds)'.format(self.get_display_node(prog), sn, en, end_time - start_time))
 
         return result
 

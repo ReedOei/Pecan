@@ -160,25 +160,25 @@ class TypeInferer(IRTransformer):
         a = self.transform(node.a)
         b = self.transform(node.b)
         res_type = self.type_env.unify(a, b)
-        return Add(a, b, param=node.param).with_type(res_type)
+        return Add(a, b).with_type(res_type)
 
     def transform_Sub(self, node: Sub):
         a = self.transform(node.a)
         b = self.transform(node.b)
         res_type = self.type_env.unify(a, b)
-        return Sub(a, b, param=node.param).with_type(res_type)
+        return Sub(a, b).with_type(res_type)
 
     def transform_Mul(self, node: Mul):
         a = self.transform(node.a)
         b = self.transform(node.b)
         res_type = self.type_env.unify(a, b)
-        return Mul(a, b, param=node.param).with_type(res_type)
+        return Mul(a, b).with_type(res_type)
 
     def transform_Div(self, node: Div):
         a = self.transform(node.a)
         b = self.transform(node.b)
         res_type = self.type_env.unify(a, b)
-        return Div(a, b, param=node.param).with_type(res_type)
+        return Div(a, b).with_type(res_type)
 
     def transform_IntConst(self, node: IntConst):
         return node.with_type(InferredType())
@@ -200,12 +200,6 @@ class TypeInferer(IRTransformer):
         b = self.transform(node.b)
         res_type = self.type_env.unify(a, b)
         return Equals(a.with_type(res_type), b.with_type(res_type))
-
-    def transform_NotEquals(self, node: NotEquals):
-        a = self.transform(node.a)
-        b = self.transform(node.b)
-        res_type = self.type_env.unify(a, b)
-        return NotEquals(a.with_type(res_type), b.with_type(res_type))
 
     def transform_Less(self, node: Less):
         a = self.transform(node.a)

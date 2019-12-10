@@ -7,9 +7,8 @@ from pecan.tools.automaton_tools import Substitution, AutomatonTransformer, Proj
 from pecan.lang.pecan_ast import *
 
 class Add(BinaryExpression):
-    def __init__(self, a, b, param=None):
+    def __init__(self, a, b):
         super().__init__(a, b)
-        self.param = param
 
     def change_label(self, label): # for changing label to __constant#
         self.label = label
@@ -25,9 +24,8 @@ class Add(BinaryExpression):
         return transformer.transform_Add(self)
 
 class Sub(BinaryExpression):
-    def __init__(self, a, b, param=None):
+    def __init__(self, a, b):
         super().__init__(a, b)
-        self.param = param
 
     def __repr__(self):
         return '({} - {})'.format(self.a, self.b)
@@ -36,9 +34,8 @@ class Sub(BinaryExpression):
         return transformer.transform_Sub(self)
 
 class Mul(BinaryExpression):
-    def __init__(self, a, b, param=None):
+    def __init__(self, a, b):
         super().__init__(a, b)
-        self.param = param
         if not self.a.is_int and not self.b.is_int:
             raise AutomatonArithmeticError("At least one argument of multiplication must be an constant integer in {}".format(self))
         # We assumed above that a was the int, but it might not be; if it wasn't, just swap the two
@@ -58,9 +55,8 @@ class Mul(BinaryExpression):
 
 #TODO:
 class Div(BinaryExpression):
-    def __init__(self, a, b, param=None):
+    def __init__(self, a, b):
         super().__init__(a, b)
-        self.param = param
         if not self.is_int:
             raise NotImplementedError("Division with automaton hasn't been implemented, sorry. {}".format(self))
         if not self.b.is_int:
@@ -75,11 +71,10 @@ class Div(BinaryExpression):
 constants_map = {}
 class IntConst(Expression):
     # Constant 0 is defined as 000000...
-    def __init__(self, val, param=None):
+    def __init__(self, val):
         super().__init__()
         self.val = val
         self.label = "__constant{}".format(self.val)
-        self.param = param
 
     def transform(self, transformer):
         return transformer.transform_IntConst(self)
