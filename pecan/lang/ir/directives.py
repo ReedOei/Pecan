@@ -214,6 +214,9 @@ class DirectiveShowWord(IRNode):
 
         lowerer = TypedIRLowering()
 
+        # We are going to introduce new variables, via constants, and they'll need a scope to live in
+        prog.enter_scope()
+
         # TODO: Eventually, optimize this. Or add procedures and just eliminate it altogether
         index_expr = lambda idx_val: lowerer.transform(EqualsCompareIndex(True, Index(self.word_name, IntConst(idx_val).with_type(self.index_type)), FormulaTrue()))
 
@@ -226,6 +229,8 @@ class DirectiveShowWord(IRNode):
                 sys.stdout.flush()
 
         sys.stdout.write('\n')
+
+        prog.exit_scope()
 
         return None
 

@@ -333,6 +333,10 @@ class Program(IRNode):
             elif type(d) is DirectiveType:
                 d.evaluate(self)
 
+        # Clear all restrictions. All relevant restrictions will be held inside the restriction_env of the relevant predicates.
+        # Having them also in our restrictions list just leads to double restricting, which is a waste of computation time
+        self.restrictions.clear()
+
         return self
 
     def evaluate(self, old_env=None):
@@ -396,7 +400,7 @@ class Program(IRNode):
         self.restrictions.append(dict(new_restrictions))
 
     def exit_scope(self):
-        if len(self.restrictions) <= 1:
+        if len(self.restrictions) <= 0:
             raise Exception('Cannot exit the last scope!')
         else:
             self.restrictions.pop(-1)
