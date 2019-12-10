@@ -75,9 +75,11 @@ add_assoc is true.
 The `PECAN_PATH` environment variable controls which paths are searched for files when importing/loading automata.
 It should be a colon-separated or semicolon-separated list of paths, depending on your operating system (Linux/MacOs uses `:`, Windows uses `;`).
 
+## Editor Setup
+
+Currently, the only "supported" editor is Vim, via a syntax file (`pecan.vim`) in this repository.
+
 ## Todo
 
 - Plotting?
-- Documentation
-- Implement a linter to check for basic mistakes in the AST (calls like `f(x is nat)` should be disallowed)
 
