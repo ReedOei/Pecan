@@ -100,35 +100,36 @@ class TypeEnv:
         if type(t_a) is VarRef and type(t_b) is VarRef and t_a.var_name == t_b.var_name:
             return t_a
         elif type(t_a) is Call and type(t_b) is Call:
-            if t_a.name != t_b.name or len(t_a.args) != len(t_b.args):
-                return None
-
-            for arg1, arg2 in zip(t_a.args[1:], t_b.args[1:]):
-                # These should all be strings or VarRefs # TODO: Make sure they're just VarRefs
-                arg1_name = arg1.var_name if type(arg1) is VarRef else arg1
-                arg2_name = arg2.var_name if type(arg2) is VarRef else arg2
-
-                if arg1_name != arg2_name:
+            if t_a.name == t_b.name:
+                if len(t_a.args) != len(t_b.args):
                     return None
 
-            return t_a
-        else:
-            # Unification didn't easily succeed, so drop down to actually using some theorem proving power to check
-            # if the types are compatible
-            temp_var = VarRef(self.prog.fresh_name())
-            # TODO: Abstract out a subtyping checker thing here
-            # TODO: Can probably optimize this by using spot's ability to check containment so we don't need to recompute/complement as much
-            tval1 = TruthValue(Disjunction(Complement(t_a.insert_first(temp_var)), t_b.insert_first(temp_var))).truth_value(self.prog)
-            tval2 = TruthValue(Disjunction(Complement(t_b.insert_first(temp_var)), t_a.insert_first(temp_var))).truth_value(self.prog)
+                for arg1, arg2 in zip(t_a.args[1:], t_b.args[1:]):
+                    # These should all be strings or VarRefs # TODO: Make sure they're just VarRefs
+                    arg1_name = arg1.var_name if type(arg1) is VarRef else arg1
+                    arg2_name = arg2.var_name if type(arg2) is VarRef else arg2
 
-            if tval1 == 'true' or tval2 == 'true':
-                return t_a
-            elif tval1 == 'true':
-                return t_b
-            elif tval2 == 'true':
+                    if arg1_name != arg2_name:
+                        return None
+
                 return t_a
             else:
-                return None
+                # Unification didn't easily succeed, so drop down to actually using some theorem proving power to check
+                # if the types are compatible
+                temp_var = VarRef(self.prog.fresh_name())
+                # TODO: Abstract out a subtyping checker thing here
+                # TODO: Can probably optimize this by using spot's ability to check containment so we don't need to recompute/complement as much
+                tval1 = TruthValue(Disjunction(Complement(t_a.subs_first(temp_var)), t_b.subs_first(temp_var))).truth_value(self.prog)
+                tval2 = TruthValue(Disjunction(Complement(t_b.subs_first(temp_var)), t_a.subs_first(temp_var))).truth_value(self.prog)
+
+                if tval1 == 'true' or tval2 == 'true':
+                    return t_a
+                elif tval1 == 'true':
+                    return t_b
+                elif tval2 == 'true':
+                    return t_a
+                else:
+                    return None
 
     def try_unify_type(self, a, t_a, b, t_b) -> Type:
         old_unification = dict(self.unification)

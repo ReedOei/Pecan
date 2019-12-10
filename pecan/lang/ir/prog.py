@@ -154,6 +154,9 @@ class Call(IRPredicate):
     def insert_first(self, new_arg):
         return Call(self.name, [new_arg] + self.actual_args())
 
+    def subs_first(self, new_arg):
+        return self.with_args([new_arg] + self.args[1:])
+
     def actual_args(self):
         actual_args = []
         for arg in self.args:
