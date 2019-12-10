@@ -210,39 +210,10 @@ class TypeInferer(IRTransformer):
         res_type = self.type_env.unify(a, b)
         return Less(a.with_type(res_type), b.with_type(res_type))
 
-    def transform_Greater(self, node: Greater):
-        a = self.transform(node.a)
-        b = self.transform(node.b)
-        res_type = self.type_env.unify(a, b)
-        return Greater(a.with_type(res_type), b.with_type(res_type))
-
-    def transform_LessEquals(self, node: LessEquals):
-        a = self.transform(node.a)
-        b = self.transform(node.b)
-        res_type = self.type_env.unify(a, b)
-        return LessEquals(a.with_type(res_type), b.with_type(res_type))
-
-    def transform_GreaterEquals(self, node: GreaterEquals):
-        a = self.transform(node.a)
-        b = self.transform(node.b)
-        res_type = self.type_env.unify(a, b)
-        return GreaterEquals(a.with_type(res_type), b.with_type(res_type))
-
     def transform_Neg(self, node: Neg):
         a = self.transform(node.a)
         res_type = a.get_type()
         return Neg(a).with_type(res_type)
-
-    def transform_Forall(self, node: Forall):
-        if node.cond is None:
-            if len(self.prog.get_restrictions(node.var.var_name)) == 0:
-                self.type_env[node.var.var_name] = AnyType()
-        else:
-            self.type_env[node.var.var_name] = RestrictionType(node.cond)
-        val = super().transform_Forall(node)
-        if node.var.var_name in self.type_env:
-            self.type_env.remove(node.var.var_name)
-        return val
 
     def transform_Exists(self, node: Exists):
         if node.cond is None:

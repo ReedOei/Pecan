@@ -16,30 +16,6 @@ def extract_var_cond(var_pred):
     else:
         return to_ref(var_pred), None
 
-class Forall(IRPredicate):
-    def __init__(self, var_pred, pred):
-        super().__init__()
-        self.var, self.cond = extract_var_cond(var_pred)
-        self.pred = pred
-
-    def evaluate_node(self, prog):
-        return Complement(Exists(self.var, Complement(self.with_cond(self.pred)))).evaluate(prog)
-
-    def with_cond(self, pred):
-        if self.cond is not None:
-            return Disjunction(Complement(self.cond), pred)
-        else:
-            return pred
-
-    def transform(self, transformer):
-        return transformer.transform_Forall(self)
-
-    def __repr__(self):
-        if self.cond is None:
-            return '(∀{} ({}))'.format(self.var, self.pred)
-        else:
-            return '(∀{} {})'.format(self.cond, self.pred)
-
 class Exists(IRPredicate):
     def __init__(self, var_pred, pred):
         super().__init__()

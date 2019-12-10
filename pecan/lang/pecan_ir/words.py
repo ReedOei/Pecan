@@ -83,7 +83,7 @@ class EqualsCompareRange(IRPredicate):
         # Only do bounds check on the first index, because we've verified the bounds are the same
         bounds_checks = self.index_a.bounds_check(idx_var)
         equality_check = EqualsCompareIndex(True, self.index_a.index_expr(idx_var), self.index_b.index_expr(idx_var))
-        all_equal = Forall(idx_var, Disjunction(Complement(bounds_checks), equality_check))
+        all_equal = Complement(Exists(idx_var, Conjunction(bounds_checks, Complement(equality_check))))
         base_pred = Conjunction(same_range, all_equal)
 
         if self.is_equals:

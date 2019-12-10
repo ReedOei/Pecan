@@ -94,13 +94,17 @@ class ASTToIR(AstTransformer):
         return ir.Less(self.transform(node.a), self.transform(node.b))
 
     def transform_Greater(self, node):
-        return ir.Greater(self.transform(node.a), self.transform(node.b))
+        return ir.Less(self.transform(node.b), self.transform(node.a))
 
     def transform_LessEquals(self, node):
-        return ir.LessEquals(self.transform(node.a), self.transform(node.b))
+        new_a = self.transform(node.a)
+        new_b = self.transform(node.b)
+        return ir.Disjunction(ir.Less(new_a, new_b), ir.Equals(new_a, new_b))
 
     def transform_GreaterEquals(self, node):
-        return ir.GreaterEquals(self.transform(node.a), self.transform(node.b))
+        new_a = self.transform(node.a)
+        new_b = self.transform(node.b)
+        return ir.Disjunction(ir.Less(new_b, new_a), ir.Equals(new_a, new_b))
 
     def transform_Neg(self, node):
         return ir.Neg(self.transform(node.a)).with_type(self.transform_decl_type(node.get_type()))
@@ -120,9 +124,9 @@ class ASTToIR(AstTransformer):
     def transform_Forall(self, node: Forall):
         # TODO: Make a `get_cond` method for this
         if node.cond is not None:
-            return ir.Forall(self.transform(node.cond), self.transform(node.pred))
+            return ir.Complement(ir.Exists(self.transform(node.cond), ir.Complement(self.transform(node.pred))))
         else:
-            return ir.Forall(self.transform(node.var), self.transform(node.pred))
+            return ir.Complement(ir.Exists(self.transform(node.var), ir.Complement(self.transform(node.pred))))
 
     def transform_Exists(self, node: Exists):
         if node.cond is not None:

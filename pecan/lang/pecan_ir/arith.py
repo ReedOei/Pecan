@@ -192,7 +192,8 @@ class IntConst(IRExpression):
             # Constant 0 is defined as 000000... TODO: Maybe allow users to define their own 0
             constants_map[(self.val, self.get_type())] = (spot.formula('G(~__constant0)').translate(), "__constant0")
         elif self.val == 1:
-            formula_1 = Conjunction(Less(zero_const, one_const_var), Forall(self.get_type().restrict(b_const), Disjunction(Complement(Less(zero_const, b_const)), LessEquals(one_const_var, b_const))))
+            leq = Disjunction(Less(one_const_var, b_const), Equals(one_const_var, b_const))
+            formula_1 = Conjunction(Less(zero_const, one_const_var), Complement(Exists(self.get_type().restrict(b_const), Complement(Disjunction(Complement(Less(zero_const, b_const)), leq)))))
 
             if self.get_type().get_restriction() is not None:
                 formula_1 = Conjunction(self.get_type().restrict(one_const_var), formula_1)
@@ -307,55 +308,6 @@ class Less(IRPredicate):
 
     def __repr__(self):
         return '({} < {})'.format(self.a, self.b)
-
-class Greater(IRPredicate):
-    def __init__(self, a, b):
-        super().__init__()
-        self.a = a
-        self.b = b
-
-    def evaluate_node(self, prog):
-        return Less(self.b,self.a).evaluate(prog)
-
-    def transform(self, transformer):
-        return transformer.transform_Greater(self)
-
-    def __repr__(self):
-        return '({} > {})'.format(self.a, self.b)
-
-class LessEquals(IRPredicate):
-    def __init__(self, a, b):
-        super().__init__()
-        self.a = a
-        self.b = b
-
-    def evaluate_node(self, prog):
-        if self.a.is_int and self.b.is_int:
-            return spot.formula('1').translate() if self.a.evaluate_int(prog) <= self.b.evaluate_int(prog) else spot.formula('0').translate()
-        return Disjunction(Less(self.a,self.b),Equals(self.a,self.b)).evaluate(prog)
-
-    def transform(self, transformer):
-        return transformer.transform_LessEquals(self)
-
-    def __repr__(self):
-        return '({} ≤ {})'.format(self.a, self.b)
-
-class GreaterEquals(IRPredicate):
-    def __init__(self, a, b):
-        super().__init__()
-        self.a = a
-        self.b = b
-
-    def evaluate_node(self, prog):
-        if self.a.is_int and self.b.is_int:
-            return spot.formula('1').translate() if self.a.evaluate_int(prog) >= self.b.evaluate_int(prog) else spot.formula('0').translate()
-        return Disjunction(Less(self.b,self.a),Equals(self.a,self.b)).evaluate(prog)
-
-    def transform(self, transformer):
-        return transformer.transform_GreaterEquals(self)
-
-    def __repr__(self):
-        return '({} ≥ {})'.format(self.a, self.b)
 
 class Neg(UnaryIRExpression): # Should this be allowed?
     def __init__(self, a):

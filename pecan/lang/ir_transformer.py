@@ -82,15 +82,6 @@ class IRTransformer:
     def transform_Less(self, node):
         return Less(self.transform(node.a), self.transform(node.b))
 
-    def transform_Greater(self, node):
-        return Greater(self.transform(node.a), self.transform(node.b))
-
-    def transform_LessEquals(self, node):
-        return LessEquals(self.transform(node.a), self.transform(node.b))
-
-    def transform_GreaterEquals(self, node):
-        return GreaterEquals(self.transform(node.a), self.transform(node.b))
-
     def transform_Neg(self, node):
         return Neg(self.transform(node.a)).with_type(node.get_type())
 
@@ -105,12 +96,6 @@ class IRTransformer:
 
     def transform_EqualsCompareRange(self, node):
         return EqualsCompareRange(node.is_equals, self.transform(node.index_a), self.transform(node.index_b))
-
-    def transform_Forall(self, node: Forall):
-        if node.cond is not None:
-            return Forall(node.cond, self.transform(node.pred))
-        else:
-            return Forall(node.var, self.transform(node.pred))
 
     def transform_Exists(self, node: Exists):
         if node.cond is not None:

@@ -6,6 +6,7 @@ import os
 from pecan.lang.parser import pecan_parser
 from pecan.lang.type_inference import TypeInferer
 from pecan.lang.ast_to_ir import ASTToIR
+from pecan.lang.optimizer.optimizer import Optimizer
 
 PECAN_PATH_VAR = 'PECAN_PATH'
 
@@ -63,6 +64,8 @@ def from_source(source_code, *args, **kwargs):
     if prog.debug > 1:
         print('Program IR:')
         print(prog)
+
+    prog = Optimizer(prog).optimize()
 
     return prog
 
