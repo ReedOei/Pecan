@@ -6,6 +6,7 @@ import os
 from pecan.lang.parser import pecan_parser
 from pecan.lang.type_inference import TypeInferer
 from pecan.lang.ast_to_ir import ASTToIR
+from pecan.lang.typed_ir_lowering import TypedIRLowering
 from pecan.lang.optimizer.optimizer import Optimizer
 
 PECAN_PATH_VAR = 'PECAN_PATH'
@@ -47,6 +48,9 @@ def from_source(source_code, *args, **kwargs):
 
     prog = ASTToIR().transform(prog)
 
+    if prog.debug > 0:
+        print('Search path: {}'.format(prog.search_paths))
+
     # Load the standard library
     if kwargs.get('load_stdlib', True):
         kwargs_copy = dict(kwargs)
@@ -58,8 +62,9 @@ def from_source(source_code, *args, **kwargs):
         stdlib_prog.evaluate()
         prog.include(stdlib_prog)
 
-    if prog.debug > 0:
-        print('Search path: {}'.format(prog.search_paths))
+    prog = Optimizer(prog).optimize()
+    prog = prog.run_type_inference()
+    prog = TypedIRLowering().transform(prog)
 
     if prog.debug > 1:
         print('Program IR:')

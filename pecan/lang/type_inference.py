@@ -213,7 +213,7 @@ class TypeInferer(IRTransformer):
         return val
 
     def transform_Call(self, node: Call):
-        # TODO: Handle the arg restrictions giving us additional type information
+        # TODO: Handle the arg restrictions which can give us additional type information
         new_args = [self.transform(arg) for arg in node.args]
         return Call(node.name, new_args)
 

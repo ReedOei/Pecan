@@ -5,7 +5,7 @@ from pecan.lang.ir import *
 
 class IRTransformer:
     def __init__(self):
-        pass
+        self.current_program = None
 
     def transform(self, node):
         if type(node) is str:
@@ -110,14 +110,17 @@ class IRTransformer:
         return Call(node.name, [self.transform(arg) for arg in node.args])
 
     def transform_NamedPred(self, node):
-        return NamedPred(node.name, [self.transform(arg) for arg in node.args], self.transform(node.body), restriction_env=node.restriction_env)
+        return NamedPred(node.name, [self.transform(arg) for arg in node.args], self.transform(node.body), restriction_env=node.restriction_env, body_evaluated=node.body_evaluated)
 
     def transform_Program(self, node):
-        new_defs = [self.transform(d) for d in node.defs]
-        new_restrictions = [{k: list(map(self.transform, v)) for k, v in restrictions.items()} for restrictions in node.restrictions]
-        new_types = dict([self.transform_type(k, v) for k, v in node.types.items()])
-
-        return Program(new_defs, restrictions=new_restrictions, types=new_types).copy_defaults(node)
+        self.current_program = Program([]).copy_defaults(node)
+        self.current_program.defs = [self.transform(d) for d in node.defs]
+        self.current_program.restrictions = [{k: list(map(self.transform, v)) for k, v in restrictions.items()} for restrictions in node.restrictions]
+        self.current_program.types = dict([self.transform_type(k, v) for k, v in node.types.items()])
+        self.current_program.preds = {k: self.transform(d) for k, d in node.preds.items()}
+        new_program = self.current_program
+        self.current_program = None
+        return new_program
 
     def transform_type(self, pred_ref, val_dict):
         return (pred_ref, val_dict)

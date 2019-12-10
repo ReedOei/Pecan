@@ -197,7 +197,7 @@ class Call(IRPredicate):
         return '{}({})'.format(self.name, ', '.join(map(repr, self.args)))
 
 class NamedPred(IRNode):
-    def __init__(self, name, args, body, restriction_env=None):
+    def __init__(self, name, args, body, restriction_env=None, body_evaluated=None):
         super().__init__()
         self.name = name
 
@@ -217,7 +217,7 @@ class NamedPred(IRNode):
         self.restriction_env = restriction_env or {}
 
         self.body = body
-        self.body_evaluated = None
+        self.body_evaluated = body_evaluated
 
     def evaluate(self, prog):
         # Here we keep track of all restrictions that were in scope when we are evaluated;
@@ -261,7 +261,10 @@ class NamedPred(IRNode):
             prog.exit_scope()
 
     def __repr__(self):
-        return '{}({}) := {}'.format(self.name, ', '.join(self.args), self.body)
+        if self.body_evaluated is None:
+            return '{}({}) := {}'.format(self.name, ', '.join(self.args), self.body)
+        else:
+            return '{}({}) := {} (evaluated)'.format(self.name, ', '.join(self.args), self.body)
 
 class Program(IRNode):
     def __init__(self, defs, *args, **kwargs):
@@ -313,7 +316,28 @@ class Program(IRNode):
         # TODO: Merge this will the __pecan thing in ASTNode
         return f'__var{self.fresh_counter}'
 
+    def run_type_inference(self):
+        from pecan.lang.ir.directives import DirectiveType, DirectiveForget
+
+        for i, d in enumerate(self.defs):
+            if type(d) is NamedPred:
+                self.defs[i] = self.type_inferer.reset().transform(d)
+                self.preds[d.name] = self.defs[i]
+                self.preds[d.name].evaluate(self)
+                if self.debug > 0:
+                    print(self.preds[d.name])
+            elif type(d) is Restriction:
+                d.evaluate(self)
+            elif type(d) is DirectiveForget:
+                d.evaluate(self)
+            elif type(d) is DirectiveType:
+                d.evaluate(self)
+
+        return self
+
     def evaluate(self, old_env=None):
+        from pecan.lang.ir.directives import DirectiveType, DirectiveForget
+
         if old_env is not None:
             self.include(old_env)
 
@@ -321,11 +345,16 @@ class Program(IRNode):
         msgs = []
 
         for d in self.defs:
+            # Ignore these constructs because we should have run them earlier in run_type_inference
             if type(d) is NamedPred:
-                self.preds[d.name] = self.type_inferer.reset().transform(d)
-                self.preds[d.name].evaluate(self)
-                if self.debug > 0:
-                    print(self.preds[d.name])
+                pass
+            elif type(d) is Restriction:
+                pass
+            elif type(d) is DirectiveType:
+                pass
+            elif type(d) is DirectiveForget:
+                pass
+
             else:
                 result = d.evaluate(self)
                 if result is not None and type(result) is Result:
