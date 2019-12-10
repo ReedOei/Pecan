@@ -505,14 +505,7 @@ class Result:
 class Restriction(IRNode):
     def __init__(self, var_names, pred):
         super().__init__()
-        self.var_names = []
-        for var_name in var_names if isinstance(var_names, list) else [var_names]:
-            if type(var_name) is str:
-                self.var_names.append(var_name)
-            elif type(var_name) is VarRef:
-                self.var_names.append(var_name.var_name)
-            else:
-                raise Exception("Argument '{}' is not a valid var name (string or VarRef)".format(var_name))
+        self.var_names = var_names
         self.pred = pred
 
     def evaluate(self, prog):

@@ -12,9 +12,6 @@ class Index(Predicate):
         self.index_expr = index_expr
         self.is_int = False
 
-    def evaluate_node(self, prog):
-        return Call(self.var_name, [self.index_expr]).evaluate(prog)
-
     def transform(self, transformer):
         return transformer.transform_Index(self)
 
@@ -59,13 +56,6 @@ class EqualsCompareIndex(Predicate):
         else:
             raise Exception('Unexpected index expression on RHS: {} = {}'.format(index_a, index_b))
 
-    def evaluate_node(self, prog):
-        base_pred = Iff(self.index_a, self.index_b)
-        if self.is_equals:
-            return base_pred.evaluate(prog)
-        else:
-            return Complement(base_pred).evaluate(prog)
-
     def transform(self, transformer):
         return transformer.transform_EqualsCompareIndex(self)
 
@@ -81,27 +71,6 @@ class EqualsCompareRange(Predicate):
         self.is_equals = is_equals
         self.index_a = index_a
         self.index_b = index_b
-
-    def evaluate_node(self, prog):
-        idx_var = VarRef(prog.fresh_name())
-
-        # We want to make sure that the two words that we are comparing are the same length;
-        # Ordinarily, you'd probably use subtraction, but addition is safer because subtraction
-        # on natural numbers can be very weird if we go negative
-        same_range = Equals(Add(self.index_a.end, self.index_b.start).with_type(self.index_a.end.get_type()),
-                            Add(self.index_b.end, self.index_a.start).with_type(self.index_a.end.get_type()))
-
-        # bounds_checks = Conjunction(self.index_a.bounds_check(idx_var), self.index_b.bounds_check(idx_var))
-        # Only do bounds check on the first index, because we've verified the bounds are the same
-        bounds_checks = self.index_a.bounds_check(idx_var)
-        equality_check = EqualsCompareIndex(True, self.index_a.index_expr(idx_var), self.index_b.index_expr(idx_var))
-        all_equal = Forall(idx_var, Implies(bounds_checks, equality_check))
-        base_pred = Conjunction(same_range, all_equal)
-
-        if self.is_equals:
-            return base_pred.evaluate(prog)
-        else:
-            return Complement(base_pred).evaluate(prog)
 
     def transform(self, transformer):
         return transformer.transform_EqualsCompareRange(self)

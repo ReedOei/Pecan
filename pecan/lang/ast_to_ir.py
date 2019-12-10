@@ -8,6 +8,10 @@ from pecan.lang.ast_transformer import AstTransformer
 from pecan.lang.type_inference import *
 
 class ASTToIR(AstTransformer):
+    def __init__(self):
+        super().__init__()
+        self.prog = None # This will be set when we are transforming programs
+
     def transform_decl_type(self, t):
         if type(t) is RestrictionType:
             return RestrictionType(self.transform(t.restriction))
@@ -150,12 +154,14 @@ class ASTToIR(AstTransformer):
         return ir.NamedPred(node.name, [self.transform(arg) for arg in node.args], self.transform(node.body), restriction_env=node.restriction_env)
 
     def transform_Program(self, node):
-        new_defs = [self.transform(d) for d in node.defs]
-        new_restrictions = [{self.transform(k): list(map(self.transform, v)) for k, v in restrictions.items()} for restrictions in node.restrictions]
-        new_types = dict([self.transform_type(k, v) for k, v in node.types.items()])
-
         # TODO: While `copy_defaults` will work here because of duck typing (node is a pecan_ast.prog.Program, not a pecan_ir.prog.Program), we should make come up with a better solution maybe?
-        return ir.Program(new_defs, restrictions=new_restrictions, types=new_types).copy_defaults(node)
+        self.prog = ir.Program([]).copy_defaults(node)
+        self.prog.defs = [self.transform(d) for d in node.defs]
+        self.prog.restrictions = [{self.transform(k): list(map(self.transform, v)) for k, v in restrictions.items()} for restrictions in node.restrictions]
+        self.prog.types = dict([self.transform_type(k, v) for k, v in node.types.items()])
+        new_prog = self.prog
+        self.prog = None
+        return new_prog
 
     def transform_type(self, pred_ref, val_dict):
         return (self.transform(pred_ref), {self.transform(k): self.transform(v) for k, v in val_dict.items()})

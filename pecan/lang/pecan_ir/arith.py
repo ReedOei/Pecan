@@ -93,8 +93,6 @@ class Mul(BinaryIRExpression):
     def __init__(self, a, b, param=None):
         super().__init__(a, b)
         self.param = param
-        if not self.a.is_int:
-            raise AutomatonArithmeticError("First argument of multiplication must be an integer in {}".format(self))
 
     def evaluate_node(self, prog):
         if self.is_int:

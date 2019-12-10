@@ -184,13 +184,16 @@ class TypeInferer(IRTransformer):
         return node.with_type(InferredType())
 
     def transform_VarRef(self, node: VarRef):
-        restrictions = self.prog.get_restrictions(node.var_name)
-        if not node.var_name in self.type_env:
-            if len(restrictions) == 0:
-                self.type_env[node.var_name] = AnyType()
-            else:
-                self.type_env[node.var_name] = RestrictionType(restrictions[-1]) # For now just use the last restriction
-        return VarRef(node.var_name).with_type(self.type_env[node.var_name])
+        if node.get_type() is not None:
+            return node
+        else:
+            restrictions = self.prog.get_restrictions(node.var_name)
+            if not node.var_name in self.type_env:
+                if len(restrictions) == 0:
+                    self.type_env[node.var_name] = AnyType()
+                else:
+                    self.type_env[node.var_name] = RestrictionType(restrictions[-1]) # For now just use the last restriction
+            return VarRef(node.var_name).with_type(self.type_env[node.var_name])
 
     def transform_Equals(self, node: Equals):
         a = self.transform(node.a)

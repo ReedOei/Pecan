@@ -131,4 +131,3 @@ class IRTransformer:
     def transform_Restriction(self, node):
         return Restriction(node.var_names, self.transform(node.pred))
 
-
