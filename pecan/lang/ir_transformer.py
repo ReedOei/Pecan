@@ -1,9 +1,9 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from pecan.lang.pecan_ast import *
+from pecan.lang.pecan_ir import *
 
-class AstTransformer:
+class IRTransformer:
     def __init__(self):
         pass
 
@@ -11,7 +11,7 @@ class AstTransformer:
         if type(node) is str:
             return node
         else:
-            return node.transform(self)
+            return node.transform(self).with_original_node(node.get_original_node())
 
     def transform_Conjunction(self, node):
         return Conjunction(self.transform(node.a), self.transform(node.b))
@@ -21,12 +21,6 @@ class AstTransformer:
 
     def transform_Complement(self, node):
         return Complement(self.transform(node.a))
-
-    def transform_Iff(self, node):
-        return Iff(self.transform(node.a), self.transform(node.b))
-
-    def transform_Implies(self, node):
-        return Implies(self.transform(node.a), self.transform(node.b))
 
     def transform_FormulaTrue(self, node):
         return node
@@ -65,16 +59,16 @@ class AstTransformer:
         return node
 
     def transform_Add(self, node):
-        return Add(self.transform(node.a), self.transform(node.b), param=node.param).with_type(node.get_type())
+        return Add(self.transform(node.a), self.transform(node.b)).with_type(node.get_type())
 
     def transform_Sub(self, node):
-        return Sub(self.transform(node.a), self.transform(node.b), param=node.param).with_type(node.get_type())
+        return Sub(self.transform(node.a), self.transform(node.b)).with_type(node.get_type())
 
     def transform_Mul(self, node):
-        return Mul(self.transform(node.a), self.transform(node.b), param=node.param).with_type(node.get_type())
+        return Mul(self.transform(node.a), self.transform(node.b)).with_type(node.get_type())
 
     def transform_Div(self, node):
-        return Div(self.transform(node.a), self.transform(node.b), param=node.param).with_type(node.get_type())
+        return Div(self.transform(node.a), self.transform(node.b)).with_type(node.get_type())
 
     def transform_IntConst(self, node):
         return node
@@ -82,20 +76,8 @@ class AstTransformer:
     def transform_Equals(self, node):
         return Equals(self.transform(node.a), self.transform(node.b))
 
-    def transform_NotEquals(self, node):
-        return NotEquals(self.transform(node.a), self.transform(node.b))
-
     def transform_Less(self, node):
         return Less(self.transform(node.a), self.transform(node.b))
-
-    def transform_Greater(self, node):
-        return Greater(self.transform(node.a), self.transform(node.b))
-
-    def transform_LessEquals(self, node):
-        return LessEquals(self.transform(node.a), self.transform(node.b))
-
-    def transform_GreaterEquals(self, node):
-        return GreaterEquals(self.transform(node.a), self.transform(node.b))
 
     def transform_Neg(self, node):
         return Neg(self.transform(node.a)).with_type(node.get_type())
@@ -111,12 +93,6 @@ class AstTransformer:
 
     def transform_EqualsCompareRange(self, node):
         return EqualsCompareRange(node.is_equals, self.transform(node.index_a), self.transform(node.index_b))
-
-    def transform_Forall(self, node: Forall):
-        if node.cond is not None:
-            return Forall(node.cond, self.transform(node.pred))
-        else:
-            return Forall(node.var, self.transform(node.pred))
 
     def transform_Exists(self, node: Exists):
         if node.cond is not None:

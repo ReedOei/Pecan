@@ -23,13 +23,6 @@ class DirectiveSaveAut(Directive):
         self.filename = filename[1:-1]
         self.pred_name = pred_name
 
-    def evaluate(self, prog):
-        if not prog.quiet:
-            print(f'[INFO] Saving {self.pred_name} as {self.filename}')
-
-        prog.call(self.pred_name).postprocess('BA').save(self.filename)
-        return None
-
     def transform(self, transformer):
         return transformer.transform_DirectiveSaveAut(self)
 
@@ -41,17 +34,6 @@ class DirectiveSaveAutImage(Directive):
         super().__init__('save_aut_img')
         self.filename = filename[1:-1]
         self.pred_name = pred_name
-
-    def evaluate(self, prog):
-        if not prog.quiet:
-            # TODO: Support formats other than SVG?
-            print(f'[INFO] Saving {self.pred_name} as an SVG in {self.filename}')
-
-        evaluated = prog.call(self.pred_name).postprocess('BA')
-        with open(self.filename, 'w') as f:
-            f.write(evaluated.show().data) # Write the raw svg data into the file
-
-        return None
 
     def transform(self, transformer):
         return transformer.transform_DirectiveSaveAutImage(self)
@@ -65,10 +47,6 @@ class DirectiveContext(Directive):
         self.context_key = context_key[1:-1]
         self.context_val = context_val[1:-1]
 
-    def evaluate(self, prog):
-        prog.context[self.context_key] = self.context_val
-        return None
-
     def transform(self, transformer):
         return transformer.transform_DirectiveContext(self)
 
@@ -79,10 +57,6 @@ class DirectiveEndContext(Directive):
     def __init__(self, context_key):
         super().__init__('end_context')
         self.context_key = context_key[1:-1]
-
-    def evaluate(self, prog):
-        prog.context.pop(self.context_key)
-        return None
 
     def transform(self, transformer):
         return transformer.transform_DirectiveEndContext(self)
@@ -97,33 +71,8 @@ class DirectiveAssertProp(Directive):
         self.truth_val = truth_val
         self.pred_name = pred_name
 
-    def pred_truth_value(self, prog):
-        return TruthValue(Call(self.pred_name, [])).truth_value(prog)
-
-    def evaluate(self, prog):
-        if not prog.quiet:
-            print(f'[INFO] Checking if {self.pred_name} is {self.display_truth_val()}.')
-
-        pred_truth_value = self.pred_truth_value(prog)
-
-        if pred_truth_value == self.truth_val:
-            result = Result(f'{self.pred_name} is {self.display_truth_val()}.', True)
-        else:
-            result = Result(f'{self.pred_name} is not {self.display_truth_val()}.', False)
-
-        if not prog.quiet:
-            result.print_result()
-
-        return result
-
     def transform(self, transformer):
         return transformer.transform_DirectiveAssertProp(self)
-
-    def display_truth_val(self):
-        if self.truth_val == 'sometimes':
-            return 'sometimes true'
-        else:
-            return self.truth_val # 'true' or 'false'
 
     def __repr__(self):
         return '#assert_prop({}, {})'.format(self.truth_val, self.pred_name)
@@ -134,20 +83,6 @@ class DirectiveLoadAut(Directive):
         self.filename = filename[1:-1]
         self.aut_format = aut_format[1:-1] # Remove the quotes at the beginning and end # TODO: Do this better
         self.pred = pred
-
-    def evaluate(self, prog):
-        if self.aut_format == 'hoa':
-            realpath = prog.locate_file(self.filename)
-            aut = spot.automaton(realpath)
-            prog.preds[self.pred.name] = NamedPred(self.pred.name, self.pred.args, AutLiteral(aut))
-        elif self.aut_format == 'pecan':
-            realpath = prog.locate_file(self.filename)
-            aut = convert_aut(realpath, self.pred.args)
-            prog.preds[self.pred.name] = NamedPred(self.pred.name, self.pred.args, AutLiteral(aut))
-        else:
-            raise Exception('Unknown format: {}'.format(self.aut_format))
-
-        return None
 
     def transform(self, transformer):
         return transformer.transform_DirectiveLoadAut(self)
@@ -160,13 +95,6 @@ class DirectiveImport(Directive):
         super().__init__('import')
         self.filename = filename[1:-1]
 
-    def evaluate(self, prog):
-        realpath = prog.locate_file(self.filename)
-        new_prog = prog.loader(realpath, debug=prog.debug, quiet=prog.quiet)
-        new_prog.evaluate()
-        prog.include(new_prog)
-        return None
-
     def transform(self, transformer):
         return transformer.transform_DirectiveImport(self)
 
@@ -177,10 +105,6 @@ class DirectiveForget(Directive):
     def __init__(self, var_name):
         super().__init__('forget')
         self.var_name = var_name
-
-    def evaluate(self, prog):
-        prog.forget(self.var_name)
-        return None
 
     def transform(self, transformer):
         return transformer.transform_DirectiveForget(self)
@@ -198,10 +122,6 @@ class DirectiveType(Directive):
 
         self.val_dict = val_dict
 
-    def evaluate(self, prog):
-        prog.declare_type(self.pred_ref, self.val_dict)
-        return None
-
     def transform(self, transformer):
         return transformer.transform_DirectiveType(self)
 
@@ -218,23 +138,6 @@ class DirectiveShowWord(Directive):
 
         self.start_index = start_index.evaluate_int(None)
         self.end_index = end_index.evaluate_int(None)
-
-    def evaluate(self, prog):
-        from pecan.lang.pecan_ast.words import EqualsCompareIndex, Index
-        from pecan.lang.pecan_ast.arith import IntConst
-        index_expr = lambda idx_val: EqualsCompareIndex(True, Index(self.word_name, IntConst(idx_val).with_type(self.index_type)), IntConst(1))
-
-        for idx in range(self.start_index, self.end_index + 1):
-            if TruthValue(index_expr(idx)).truth_value(prog) == 'true':
-                sys.stdout.write('1')
-                sys.stdout.flush()
-            else:
-                sys.stdout.write('0')
-                sys.stdout.flush()
-
-        sys.stdout.write('\n')
-
-        return None
 
     def transform(self, transformer):
         return transformer.transform_DirectiveShowWord(self)

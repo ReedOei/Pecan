@@ -146,10 +146,10 @@ class PecanTransformer(Transformer):
         return list(args)
 
     def restrict_is(self, varlist, var_ref):
-        return Restriction(varlist, Call(var_ref, []).insert_first)
+        return Restriction(varlist, Call(var_ref, []))
 
     def restrict_call(self, varlist, call_name, call_arg_vars):
-        return Restriction(varlist, Call(call_name, call_arg_vars).insert_first)
+        return Restriction(varlist, Call(call_name, call_arg_vars))
 
     def formal_is(self, var_name, call_name):
         return Call(call_name, [var_name])
@@ -178,9 +178,9 @@ class PecanTransformer(Transformer):
 
     def restrict_many(self, args, pred):
         if type(pred) is VarRef: # If we do something like `x,y,z are nat`
-            return Restriction(args, Call(pred.var_name, []).insert_first) # '' is a dummy value because it'll get replaced
+            return Restriction(args, Call(pred.var_name, [])) # '' is a dummy value because it'll get replaced
         else:
-            return Restriction(args, pred.insert_first)
+            return Restriction(args, pred)
 
     def directive_save_aut(self, filename, pred_name):
         return DirectiveSaveAut(filename, pred_name)

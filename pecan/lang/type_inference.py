@@ -1,8 +1,8 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from pecan.lang.ast_transformer import AstTransformer
-from pecan.lang.pecan_ast import *
+from pecan.lang.ir_transformer import IRTransformer
+from pecan.lang.pecan_ir import *
 
 from pecan.tools.automaton_tools import TruthValue
 
@@ -117,8 +117,10 @@ class TypeEnv:
             # Unification didn't easily succeed, so drop down to actually using some theorem proving power to check
             # if the types are compatible
             temp_var = VarRef(self.prog.fresh_name())
-            tval1 = TruthValue(Implies(t_a.insert_first(temp_var), t_b.insert_first(temp_var))).truth_value(self.prog)
-            tval2 = TruthValue(Implies(t_b.insert_first(temp_var), t_a.insert_first(temp_var))).truth_value(self.prog)
+            # TODO: Abstract out a subtyping checker thing here
+            # TODO: Can probably optimize this by using spot's ability to check containment so we don't need to recompute/complement as much
+            tval1 = TruthValue(Disjunction(Complement(t_a.insert_first(temp_var)), t_b.insert_first(temp_var))).truth_value(self.prog)
+            tval2 = TruthValue(Disjunction(Complement(t_b.insert_first(temp_var)), t_a.insert_first(temp_var))).truth_value(self.prog)
 
             if tval1 == 'true' or tval2 == 'true':
                 return t_a
@@ -144,7 +146,7 @@ class TypeEnv:
     def remove(self, var_name):
         self.type_env.pop(var_name)
 
-class TypeInferer(AstTransformer):
+class TypeInferer(IRTransformer):
     def __init__(self, prog: Program):
         super().__init__()
         self.prog = prog
@@ -158,37 +160,40 @@ class TypeInferer(AstTransformer):
         a = self.transform(node.a)
         b = self.transform(node.b)
         res_type = self.type_env.unify(a, b)
-        return Add(a, b, param=node.param).with_type(res_type)
+        return Add(a, b).with_type(res_type)
 
     def transform_Sub(self, node: Sub):
         a = self.transform(node.a)
         b = self.transform(node.b)
         res_type = self.type_env.unify(a, b)
-        return Sub(a, b, param=node.param).with_type(res_type)
+        return Sub(a, b).with_type(res_type)
 
     def transform_Mul(self, node: Mul):
         a = self.transform(node.a)
         b = self.transform(node.b)
         res_type = self.type_env.unify(a, b)
-        return Mul(a, b, param=node.param).with_type(res_type)
+        return Mul(a, b).with_type(res_type)
 
     def transform_Div(self, node: Div):
         a = self.transform(node.a)
         b = self.transform(node.b)
         res_type = self.type_env.unify(a, b)
-        return Div(a, b, param=node.param).with_type(res_type)
+        return Div(a, b).with_type(res_type)
 
     def transform_IntConst(self, node: IntConst):
         return node.with_type(InferredType())
 
     def transform_VarRef(self, node: VarRef):
-        restrictions = self.prog.get_restrictions(node.var_name)
-        if not node.var_name in self.type_env:
-            if len(restrictions) == 0:
-                self.type_env[node.var_name] = AnyType()
-            else:
-                self.type_env[node.var_name] = RestrictionType(restrictions[-1]) # For now just use the last restriction
-        return VarRef(node.var_name).with_type(self.type_env[node.var_name])
+        if node.get_type() is not None:
+            return node
+        else:
+            restrictions = self.prog.get_restrictions(node.var_name)
+            if not node.var_name in self.type_env:
+                if len(restrictions) == 0:
+                    self.type_env[node.var_name] = AnyType()
+                else:
+                    self.type_env[node.var_name] = RestrictionType(restrictions[-1]) # For now just use the last restriction
+            return VarRef(node.var_name).with_type(self.type_env[node.var_name])
 
     def transform_Equals(self, node: Equals):
         a = self.transform(node.a)
@@ -196,51 +201,11 @@ class TypeInferer(AstTransformer):
         res_type = self.type_env.unify(a, b)
         return Equals(a.with_type(res_type), b.with_type(res_type))
 
-    def transform_NotEquals(self, node: NotEquals):
-        a = self.transform(node.a)
-        b = self.transform(node.b)
-        res_type = self.type_env.unify(a, b)
-        return NotEquals(a.with_type(res_type), b.with_type(res_type))
-
     def transform_Less(self, node: Less):
         a = self.transform(node.a)
         b = self.transform(node.b)
         res_type = self.type_env.unify(a, b)
         return Less(a.with_type(res_type), b.with_type(res_type))
-
-    def transform_Greater(self, node: Greater):
-        a = self.transform(node.a)
-        b = self.transform(node.b)
-        res_type = self.type_env.unify(a, b)
-        return Greater(a.with_type(res_type), b.with_type(res_type))
-
-    def transform_LessEquals(self, node: LessEquals):
-        a = self.transform(node.a)
-        b = self.transform(node.b)
-        res_type = self.type_env.unify(a, b)
-        return LessEquals(a.with_type(res_type), b.with_type(res_type))
-
-    def transform_GreaterEquals(self, node: GreaterEquals):
-        a = self.transform(node.a)
-        b = self.transform(node.b)
-        res_type = self.type_env.unify(a, b)
-        return GreaterEquals(a.with_type(res_type), b.with_type(res_type))
-
-    def transform_Neg(self, node: Neg):
-        a = self.transform(node.a)
-        res_type = a.get_type()
-        return Neg(a).with_type(res_type)
-
-    def transform_Forall(self, node: Forall):
-        if node.cond is None:
-            if len(self.prog.get_restrictions(node.var.var_name)) == 0:
-                self.type_env[node.var.var_name] = AnyType()
-        else:
-            self.type_env[node.var.var_name] = RestrictionType(node.cond)
-        val = super().transform_Forall(node)
-        if node.var.var_name in self.type_env:
-            self.type_env.remove(node.var.var_name)
-        return val
 
     def transform_Exists(self, node: Exists):
         if node.cond is None:
@@ -257,3 +222,4 @@ class TypeInferer(AstTransformer):
         # TODO: Handle the arg restrictions giving us additional type information
         new_args = [self.transform(arg) for arg in node.args]
         return Call(node.name, new_args)
+

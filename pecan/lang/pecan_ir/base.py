@@ -1,21 +1,21 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from colorama import Fore, Style
-
-import time
-import os
-from functools import reduce
-
 import spot
+import time
 
-class ASTNode:
+class IRNode:
     id = 0
     def __init__(self):
         #TODO: detect used labels and avoid those
-        self.label = "__pecan{}".format(Expression.id)
-        Expression.id += 1
+        self.label = "__pecan{}".format(IRExpression.id)
+        IRExpression.id += 1
         self.type = None
+        self.original_node = None
+
+    def with_original_node(self, original_node):
+        self.original_node = original_node
+        return self
 
     def with_type(self, new_type):
         self.type = new_type
@@ -47,6 +47,15 @@ class ASTNode:
 
         return aut
 
+    def get_original_node(self):
+        return self.original_node
+
+    def get_display_node(self, prog):
+        if prog.debug > 3:
+            return self
+        else:
+            return self.original_node or self
+
     def evaluate(self, prog):
         prog.eval_level += 1
         if prog.debug > 0:
@@ -65,7 +74,7 @@ class ASTNode:
             else:
                 sn, en = result.num_states(), result.num_edges()
             end_time = time.time()
-            self.print_indented(prog, '{} has {} states and {} edges ({:.2f} seconds)'.format(self, sn, en, end_time - start_time))
+            self.print_indented(prog, '{} has {} states and {} edges ({:.2f} seconds)'.format(self.get_display_node(prog), sn, en, end_time - start_time))
 
         return result
 
@@ -75,7 +84,7 @@ class ASTNode:
     def evaluate_node(self, prog):
         raise NotImplementedError
 
-class Expression(ASTNode):
+class IRExpression(IRNode):
     def __init__(self):
         super().__init__()
         self.is_int = True
@@ -93,7 +102,7 @@ class Expression(ASTNode):
         else:
             return f'{self.show()} : {self.get_type()}'
 
-class UnaryExpression(Expression):
+class UnaryIRExpression(IRExpression):
     def __init__(self, a):
         super().__init__()
         self.a = a
@@ -102,7 +111,7 @@ class UnaryExpression(Expression):
         self.a = self.a.with_type(new_type)
         return super().with_type(new_type)
 
-class BinaryExpression(Expression):
+class BinaryIRExpression(IRExpression):
     def __init__(self, a, b):
         super().__init__()
         self.a = a
@@ -114,7 +123,7 @@ class BinaryExpression(Expression):
         self.b = self.b.with_type(new_type)
         return super().with_type(new_type)
 
-class Predicate(ASTNode):
+class IRPredicate(IRNode):
     def __init__(self):
         super().__init__()
 
