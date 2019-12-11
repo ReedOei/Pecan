@@ -37,7 +37,7 @@ class AutomatonTransformer:
         return new_aut
 
     def create_edge_condition(self, aut, new_formula):
-        return FormulaToBdd(aut, new_formula).translate()
+        return formula_to_bdd(aut, new_formula)
 
 class Substitution:
     def __init__(self, subs):
@@ -49,40 +49,32 @@ class Substitution:
         else:
             return formula.map(self.substitute)
 
-class FormulaToBdd:
-    def __init__(self, aut, formula):
-        self.aut = aut
-        self.formula = formula
+def build_bdd(kind, children):
+    if kind == spot.op_And:
+        return reduce(lambda a, b: a & b, children)
+    elif kind == spot.op_Or:
+        return reduce(lambda a, b: a | b, children)
+    elif kind == spot.op_Not:
+        return buddy.bdd_not(children[0])  # TODO: Put error check in here
+    elif kind == spot.op_tt:
+        return buddy.bddtrue
+    elif kind == spot.op_ff:
+        return buddy.bddfalse
+    else:
+        raise Exception('Unhandled formula kind: {}'.format(kind))
 
-    def translate(self):
-        return self.run_translation(self.formula)
+def formula_to_bdd(aut, formula):
+    if formula._is(spot.op_ap): # op_ap is 'atomic proposition' (i.e., variable)
+        return buddy.bdd_ithvar(aut.register_ap(formula.ap_name()))
+    else:
+        new_children = []
+        for i in range(formula.size()):
+            new_child = formula_to_bdd(aut, formula[i])
 
-    def build_bdd(self, kind, children):
-        if kind == spot.op_And:
-            return reduce(lambda a, b: a & b, children)
-        elif kind == spot.op_Or:
-            return reduce(lambda a, b: a | b, children)
-        elif kind == spot.op_Not:
-            return buddy.bdd_not(children[0]) # TODO: Put error check in here
-        elif kind == spot.op_tt:
-            return buddy.bddtrue
-        elif kind == spot.op_ff:
-            return buddy.bddfalse
-        else:
-            raise Exception('Unhandled formula kind: {}'.format(kind))
+            if new_child is not None:
+                new_children.append(new_child)
 
-    def run_translation(self, formula):
-        if formula._is(spot.op_ap): # op_ap is 'atomic proposition' (i.e., variable)
-            return buddy.bdd_ithvar(self.aut.register_ap(formula.ap_name()))
-        else:
-            new_children = []
-            for i in range(formula.size()):
-                new_child = self.run_translation(formula[i])
-
-                if new_child is not None:
-                    new_children.append(new_child)
-
-            return self.build_bdd(formula.kind(), new_children)
+        return build_bdd(formula.kind(), new_children)
 
 class Projection:
     def __init__(self, aut, var_names):
