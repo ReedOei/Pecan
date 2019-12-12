@@ -25,8 +25,7 @@ def run_repl(env):
 
             prog = program.from_source(prog_str)
 
-            if env.debug > 0:
-                print(prog)
+            settings.log(0, prog)
 
             env = prog.evaluate(env)
         except KeyboardInterrupt:
