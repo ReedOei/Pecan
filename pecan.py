@@ -14,13 +14,23 @@ from pecan import program
 
 def run_repl(env):
     while True:
-        prog_str = input('> ')
-        prog = program.from_source(prog_str)
+        try:
+            prog_str = input('> ')
 
-        if env.debug:
-            print(prog)
+            if prog_str.strip().lower() == 'exit':
+                break
 
-        env = prog.evaluate(env)
+            prog = program.from_source(prog_str)
+
+            if env.debug > 0:
+                print(prog)
+
+            env = prog.evaluate(env)
+        except KeyboardInterrupt:
+            print('') # newline to go "below" the prompt
+            print("Use 'exit' to exit Pecan.")
+        except EOFError:
+            break
 
 def main():
     parser = argparse.ArgumentParser(description='An automated theorem prover for Büchi Automata')
