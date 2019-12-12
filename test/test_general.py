@@ -1,10 +1,12 @@
 import unittest
 
 from pecan import program
+from pecan.settings import settings
 
 class GeneralTest(unittest.TestCase):
     def run_file(self, filename):
-        prog = program.load(filename, quiet=True)
+        settings.set_quiet(True)
+        prog = program.load(filename)
         self.assertTrue(prog.evaluate().result.succeeded())
 
     def test_load_pred(self):

@@ -13,6 +13,8 @@ import spot
 import pecan.tools.theorem_generator as theorem_generator
 from pecan import program
 
+from pecan.settings import settings
+
 def run_repl(env):
     while True:
         try:
@@ -51,21 +53,27 @@ def main():
     args = parser.parse_args()
 
     if args.debug is None:
-        args.debug = 0
+        settings.set_debug_level(0)
+    else:
+        settings.set_debug_level(args.debug)
+
+    settings.set_quiet(args.quiet)
+    settings.set_opt_level(0 if args.no_opt else 1)
+    settings.set_load_stdlib(args.load_stdlib)
 
     env = None
     if args.generate is not None:
         for pred in theorem_generator.gen_thms(args.generate):
             print(pred)
     elif args.file is not None:
-        prog = program.load(args.file, quiet=args.quiet, debug=args.debug, load_stdlib=args.load_stdlib, no_opt=args.no_opt)
+        prog = program.load(args.file)
         env = prog.evaluate()
     elif not args.interactive:
         parser.print_help()
 
     if args.interactive:
         if env is None:
-            prog = program.from_source('', quiet=args.quiet, debug=args.debug, load_stdlib=args.load_stdlib, no_opt=args.no_opt)
+            prog = program.from_source('')
             env = prog.evaluate()
 
         run_repl(env)

@@ -7,6 +7,8 @@ from pecan.lang.optimizer.cse import CSEOptimizer
 
 from pecan.lang.ir import *
 
+from pecan.settings import settings
+
 class UntypedOptimizer:
     def __init__(self, prog):
         self.prog = prog
@@ -16,15 +18,11 @@ class UntypedOptimizer:
             if type(d) is NamedPred:
                 self.prog.defs[i] = NamedPred(d.name, d.args, self.run_optimizations(d.body), restriction_env=d.restriction_env)
 
-        if self.prog.debug > 1:
-            print('Optimized program:')
-            print(self.prog)
-
         return self.prog
 
     def run_optimizations(self, node):
-        if self.prog.debug > 2:
-            print('Optimizing:', node)
+        settings.log(2, f'Optimizing: {node}')
+
         optimization_pass = [ArithmeticOptimizer(self), BooleanOptimizer(self)]
         new_node = node
 
@@ -36,8 +34,8 @@ class UntypedOptimizer:
                 ast_changed |= changed
             break
 
-        if self.prog.debug > 2:
-            print('Optimized node:', new_node)
+        settings.log(2, f'Optimized node: {new_node}')
+
         return new_node
 
 class Optimizer:
@@ -49,15 +47,11 @@ class Optimizer:
             if type(d) is NamedPred:
                 self.prog.defs[i] = NamedPred(d.name, d.args, self.run_optimizations(d.body), restriction_env=d.restriction_env)
 
-        if self.prog.debug > 1:
-            print('Optimized program:')
-            print(self.prog)
-
         return self.prog
 
     def run_optimizations(self, node):
-        if self.prog.debug > 2:
-            print('Optimizing:', node)
+        settings.log(2, f'Optimizing: {node}')
+
         optimization_pass = [ArithmeticOptimizer(self), BooleanOptimizer(self), CSEOptimizer(self)]
         new_node = node
 
@@ -69,7 +63,7 @@ class Optimizer:
                 ast_changed |= changed
             break
 
-        if self.prog.debug > 2:
-            print('Optimized node:', new_node)
+        settings.log(2, f'Optimized node: {new_node}')
+
         return new_node
 

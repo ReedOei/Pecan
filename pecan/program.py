@@ -9,7 +9,7 @@ from pecan.lang.ast_to_ir import ASTToIR
 from pecan.lang.typed_ir_lowering import TypedIRLowering
 from pecan.lang.optimizer.optimizer import UntypedOptimizer, Optimizer
 
-PECAN_PATH_VAR = 'PECAN_PATH'
+from pecan.settings import settings
 
 def make_search_paths(filename=None):
     own_path = os.path.dirname(os.path.realpath(__file__))
@@ -23,8 +23,7 @@ def make_search_paths(filename=None):
     if filename is not None:
         search_paths.append(os.path.dirname(filename))
 
-    if PECAN_PATH_VAR in os.environ:
-        search_paths.extend(os.getenv(PECAN_PATH_VAR).split(os.pathsep))
+    search_paths.extend(settings.get_pecan_path())
 
     return search_paths
 
@@ -36,44 +35,45 @@ def load(pecan_file, *args, **kwargs):
 def from_source(source_code, *args, **kwargs):
     prog = pecan_parser.parse(source_code)
 
-    prog.debug = kwargs.get('debug', 0)
+    settings.log(0, 'Parsed program:')
+    settings.log(0, prog)
 
-    if prog.debug > 0:
-        print('Parsed program:')
-        print(prog)
-
-    prog.quiet = kwargs.get('quiet', False)
     prog.search_paths = make_search_paths(kwargs.get('filename', None))
     prog.loader = load
 
     prog = ASTToIR().transform(prog)
 
-    if prog.debug > 0:
-        print('Search path: {}'.format(prog.search_paths))
+    settings.log(0, 'Search path: {}'.format(prog.search_paths))
 
     # Load the standard library
-    if kwargs.get('load_stdlib', True):
-        kwargs_copy = dict(kwargs)
-        # Don't load stdlib again (prevent infinite loop)
-        kwargs_copy['load_stdlib'] = False
-        kwargs_copy['quiet'] = kwargs.get('quiet_stdlib', kwargs.get('quiet', False))
+    if settings.should_load_stdlib():
+        before = settings.should_load_stdlib()
+        try:
+            settings.set_load_stdlib(False) # Don't want to load stdlib while loading stdlib
 
-        stdlib_prog = load(prog.locate_file('std.pn'), *args, **kwargs_copy)
-        stdlib_prog.evaluate()
-        prog.include(stdlib_prog)
+            stdlib_prog = load(prog.locate_file('std.pn'), *args, **kwargs)
+            stdlib_prog.evaluate()
+            prog.include(stdlib_prog)
+        finally:
+            settings.set_load_stdlib(before)
 
-    if not kwargs.get('no_opt', False):
+    if settings.opt_enabled():
         prog = UntypedOptimizer(prog).optimize()
+
+        settings.log(1, '(Untyped) Optimized program:')
+        settings.log(1, prog)
 
     prog = prog.run_type_inference()
     prog = TypedIRLowering().transform(prog)
 
-    if not kwargs.get('no_opt', False):
+    settings.log(1, 'Program IR:')
+    settings.log(1, prog)
+
+    if settings.opt_enabled():
         prog = Optimizer(prog).optimize()
 
-    if prog.debug > 1:
-        print('Program IR:')
-        print(prog)
+        settings.log(1, '(Typed) Optimized program:')
+        settings.log(1, prog)
 
     return prog
 

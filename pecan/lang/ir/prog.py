@@ -12,6 +12,7 @@ import spot
 
 from pecan.tools.automaton_tools import AutomatonTransformer, Substitution
 from pecan.lang.ir.base import *
+from pecan.settings import settings
 
 class VarRef(IRExpression):
     def __init__(self, var_name):
@@ -292,8 +293,6 @@ class Program(IRNode):
         self.restrictions = kwargs.get('restrictions', [{}])
         self.types = kwargs.get('types', {})
         self.parser = kwargs.get('parser', None) # This will be "filled in" in the main.py after we load a program
-        self.debug = kwargs.get('debug', 0)
-        self.quiet = kwargs.get('quiet', False)
         self.eval_level = kwargs.get('eval_level', 0)
         self.result = kwargs.get('result', None)
         self.search_paths = kwargs.get('search_paths', [])
@@ -306,8 +305,6 @@ class Program(IRNode):
     def copy_defaults(self, other_prog):
         self.context = other_prog.context
         self.parser = other_prog.parser
-        self.debug = other_prog.debug
-        self.quiet = other_prog.quiet
         self.eval_level = other_prog.eval_level
         self.result = other_prog.result
         self.search_paths = other_prog.search_paths
@@ -340,8 +337,7 @@ class Program(IRNode):
                 self.defs[i] = self.type_inferer.reset().transform(d).with_parent(self)
                 self.preds[d.name] = self.defs[i]
                 self.preds[d.name].evaluate(self)
-                if self.debug > 0:
-                    print(self.preds[d.name])
+                settings.log(0, self.preds[d.name])
             elif type(d) is Restriction:
                 d.evaluate(self)
             elif type(d) is DirectiveForget:
@@ -365,15 +361,13 @@ class Program(IRNode):
         msgs = []
 
         for d in self.defs:
-            if self.debug > 0:
-                print(d)
+            settings.log(0, d)
 
             # Ignore these constructs because we should have run them earlier in run_type_inference
             if type(d) is NamedPred:
                 # If we already computed it, it doesn't matter if we replace it with a more efficient version
                 if self.preds[d.name].body_evaluated is None:
                     self.preds[d.name] = d
-                pass
             elif type(d) is Restriction:
                 pass
             elif type(d) is DirectiveType:
@@ -554,11 +548,11 @@ class Result:
     def message(self):
         return self.msg
 
-    def print_result(self):
+    def result_str(self):
         if self.succeeded():
-            print(f'{Fore.GREEN}{self.msg}{Style.RESET_ALL}')
+            return f'{Fore.GREEN}{self.msg}{Style.RESET_ALL}'
         else:
-            print(f'{Fore.RED}{self.msg}{Style.RESET_ALL}')
+            return f'{Fore.RED}{self.msg}{Style.RESET_ALL}'
 
 class Restriction(IRNode):
     def __init__(self, var_names, pred):

@@ -9,6 +9,8 @@ from pecan.tools.automaton_tools import TruthValue
 from pecan.tools.convert_hoa import convert_aut
 from pecan.lang.ir import *
 
+from pecan.settings import settings
+
 class DirectiveSaveAut(IRNode):
     def __init__(self, filename, pred_name):
         super().__init__()
@@ -16,8 +18,7 @@ class DirectiveSaveAut(IRNode):
         self.pred_name = pred_name
 
     def evaluate(self, prog):
-        if not prog.quiet:
-            print(f'[INFO] Saving {self.pred_name} as {self.filename}')
+        settings.log(f'[INFO] Saving {self.pred_name} as {self.filename}')
 
         prog.call(self.pred_name).postprocess('BA').save(self.filename)
         return None
@@ -41,9 +42,8 @@ class DirectiveSaveAutImage(IRNode):
         self.pred_name = pred_name
 
     def evaluate(self, prog):
-        if not prog.quiet:
-            # TODO: Support formats other than SVG?
-            print(f'[INFO] Saving {self.pred_name} as an SVG in {self.filename}')
+        # TODO: Support formats other than SVG?
+        settings.log(f'[INFO] Saving {self.pred_name} as an SVG in {self.filename}')
 
         evaluated = prog.call(self.pred_name).postprocess('BA')
         with open(self.filename, 'w') as f:
@@ -117,8 +117,7 @@ class DirectiveAssertProp(IRNode):
         return TruthValue(Call(self.pred_name, [])).truth_value(prog)
 
     def evaluate(self, prog):
-        if not prog.quiet:
-            print(f'[INFO] Checking if {self.pred_name} is {self.display_truth_val()}.')
+        settings.log(f'[INFO] Checking if {self.pred_name} is {self.display_truth_val()}.')
 
         pred_truth_value = self.pred_truth_value(prog)
 
@@ -127,8 +126,7 @@ class DirectiveAssertProp(IRNode):
         else:
             result = Result(f'{self.pred_name} is not {self.display_truth_val()}.', False)
 
-        if not prog.quiet:
-            result.print_result()
+        settings.log(result.result_str())
 
         return result
 

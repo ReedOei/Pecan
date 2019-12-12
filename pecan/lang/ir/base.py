@@ -4,6 +4,8 @@
 import spot
 import time
 
+from pecan.settings import settings
+
 class IRNode:
     id = 0
     def __init__(self):
@@ -33,16 +35,15 @@ class IRNode:
         return self.type
 
     def show_aut_stats(self, prog, aut, desc=None):
-        if prog.debug > 1:
-            sn, en, acc = aut.num_states(), aut.num_edges(), aut.get_acceptance()
+        sn, en, acc = aut.num_states(), aut.num_edges(), aut.get_acceptance()
 
-            if desc is None:
-                self.print_indented(prog, 'Automaton (acc: {}) has {} states and {} edges'.format(acc, sn, en))
-            else:
-                self.print_indented(prog, 'Automaton (acc: {}) has {} states and {} edges {}'.format(acc, sn, en, desc))
+        if desc is None:
+            settings.log(1, self.indented(prog, 'Automaton (acc: {}) has {} states and {} edges'.format(acc, sn, en)))
+        else:
+            settings.log(1, self.indented(prog, 'Automaton (acc: {}) has {} states and {} edges {}'.format(acc, sn, en, desc)))
 
-    def print_indented(self, prog, s):
-        print('{}{}'.format(' ' * prog.eval_level, s))
+    def indented(self, prog, s):
+        return '{}{}'.format(' ' * prog.eval_level, s)
 
     def simplify(self, prog, aut):
         # self.show_aut_stats(prog, aut, desc='before simplify')
@@ -59,16 +60,16 @@ class IRNode:
         return self.original_node
 
     def get_display_node(self, prog):
-        if prog.debug > 3:
+        if settings.get_debug_level() > 3:
             return self
         else:
             return self.original_node or self
 
     def evaluate(self, prog):
         prog.eval_level += 1
-        if prog.debug > 0:
+        if settings.get_debug_level() > 0:
             start_time = time.time()
-            # self.print_indented(prog, 'Evaluating {}'.format(self))
+            # settings.log(0, self.indented(prog, 'Evaluating {}'.format(self))
         result = self.evaluate_node(prog)
         if type(result) is tuple:
             result = (self.simplify(prog, result[0]), result[1])
@@ -76,13 +77,13 @@ class IRNode:
             result = self.simplify(prog, result)
 
         prog.eval_level -= 1
-        if prog.debug > 0:
+        if settings.get_debug_level() > 0:
             if type(result) is tuple:
                 sn, en = result[0].num_states(), result[0].num_edges()
             else:
                 sn, en = result.num_states(), result.num_edges()
             end_time = time.time()
-            self.print_indented(prog, '{} has {} states and {} edges ({:.2f} seconds)'.format(self.get_display_node(prog), sn, en, end_time - start_time))
+            settings.log(0, self.indented(prog, '{} has {} states and {} edges ({:.2f} seconds)'.format(self.get_display_node(prog), sn, en, end_time - start_time)))
 
         return result
 

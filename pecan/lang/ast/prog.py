@@ -197,8 +197,6 @@ class Program(ASTNode):
         self.restrictions = kwargs.get('restrictions', [{}])
         self.types = kwargs.get('types', {})
         self.parser = kwargs.get('parser', None) # This will be "filled in" in the main.py after we load a program
-        self.debug = kwargs.get('debug', 0)
-        self.quiet = kwargs.get('quiet', False)
         self.eval_level = kwargs.get('eval_level', 0)
         self.result = kwargs.get('result', None)
         self.search_paths = kwargs.get('search_paths', [])
@@ -208,8 +206,6 @@ class Program(ASTNode):
     def copy_defaults(self, other_prog):
         self.context = other_prog.context
         self.parser = other_prog.parser
-        self.debug = other_prog.debug
-        self.quiet = other_prog.quiet
         self.eval_level = other_prog.eval_level
         self.result = other_prog.result
         self.search_paths = other_prog.search_paths
