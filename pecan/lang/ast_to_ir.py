@@ -5,16 +5,16 @@ from pecan.lang.ast import *
 import pecan.lang.ir as ir
 
 from pecan.lang.ast_transformer import AstTransformer
-from pecan.lang.type_inference import *
+from pecan.lang.type_inference import RestrictionType
 
 def to_ref(var_ref):
-    if type(var_ref) is VarRef:
-        return var_ref
+    if type(var_ref) is ir.VarRef:
+        return ir.VarRef(var_ref.var_name)
     else:
-        return VarRef(var_ref)
+        return var_ref
 
 def extract_var_cond(var_pred):
-    if type(var_pred) is Call:
+    if type(var_pred) is ir.Call:
         return to_ref(var_pred.args[0]), var_pred
     else:
         return to_ref(var_pred), None
@@ -25,8 +25,8 @@ class ASTToIR(AstTransformer):
         self.prog = None # This will be set when we are transforming programs
 
     def transform_decl_type(self, t):
-        if type(t) is RestrictionType:
-            return RestrictionType(self.transform(t.restriction))
+        if type(t) is Call:
+            return RestrictionType(self.transform(t))
         else:
             return t
 
@@ -80,7 +80,7 @@ class ASTToIR(AstTransformer):
         return ir.DirectiveForget(node.var_name)
 
     def transform_DirectiveType(self, node):
-        return ir.DirectiveType(self.transform(node.pred_ref), {self.transform(k): self.transform(v) for k, v, in node.val_dict.items()})
+        return ir.DirectiveType(self.transform_decl_type(node.pred_ref), {self.transform(k): self.transform(v) for k, v, in node.val_dict.items()})
 
     def transform_DirectiveShowWord(self, node):
         return ir.DirectiveShowWord(self.transform(node.word_name), self.transform_decl_type(node.index_type), node.start_index, node.end_index)
@@ -93,7 +93,7 @@ class ASTToIR(AstTransformer):
 
     def transform_Mul(self, node):
         if node.is_int:
-            return IntConst(node.evaluate_int(self.prog))
+            return ir.IntConst(node.evaluate_int(self.prog))
 
         # We are guaranteed that node.a will be an integer, so we don't need to worry about transforming it
         c = node.a.evaluate_int(prog)  # copy of a
@@ -206,5 +206,5 @@ class ASTToIR(AstTransformer):
         return (self.transform(pred_ref), {self.transform(k): self.transform(v) for k, v in val_dict.items()})
 
     def transform_Restriction(self, node):
-        return ir.Restriction(node.var_names, self.transform(node.pred))
+        return ir.Restriction(list(map(self.transform, node.restrict_vars)), self.transform(node.pred))
 

@@ -120,24 +120,13 @@ class Match:
 
         return Match(self.pred_name, new_args)
 
-    def actual_args(self):
-        actual_args = []
-        for arg in self.pred_args:
-            if type(arg) is VarRef:
-                actual_args.append(arg.var_name)
-            elif type(arg) is str:
-                actual_args.append(arg)
-            else:
-                raise Exception("Argument '{}' is not: string or VarRef!".format(arg))
-        return actual_args
-
     def call_with(self, pred_name, unification, rest_args):
         if self.match_any:
             raise Exception(f'Predicate not found: {pred_name}')
         i = 0
         final_args = []
-        for arg in self.actual_args():
-            if arg == 'any':
+        for arg in self.pred_args:
+            if arg.var_name == 'any':
                 if i >= len(rest_args):
                     # TODO: We should check this in the linter probably
                     raise Exception(f'Not enough arguments to call {self}: {rest_args}')
@@ -145,7 +134,7 @@ class Match:
                 final_args.append(rest_args[i])
                 i += 1
             else:
-                final_args.append(unification.get(arg, arg))
+                final_args.append(VarRef(unification.get(arg.var_name, arg.var_name)))
 
         return Call(self.pred_name, final_args)
 
@@ -156,7 +145,7 @@ class Call(IRPredicate):
     def __init__(self, name, args):
         super().__init__()
         self.name = name
-        self.args = [arg.with_parent(self) if isinstance(arg, IRNode) else arg for arg in args]
+        self.args = [arg.with_parent(self) for arg in args]
 
     def arity(self):
         return len(self.args)
@@ -168,31 +157,22 @@ class Call(IRPredicate):
         return Call(self.name, new_args)
 
     def insert_first(self, new_arg):
-        return Call(self.name, [new_arg] + self.actual_args())
+        return Call(self.name, [new_arg] + self.args)
 
     def subs_first(self, new_arg):
         return self.with_args([new_arg] + self.args[1:])
-
-    def actual_args(self):
-        actual_args = []
-        for arg in self.args:
-            if type(arg) is VarRef:
-                actual_args.append(arg.var_name)
-            else:
-                actual_args.append(arg)
-        return actual_args
 
     def evaluate_node(self, prog):
         # We may need to compute some values for the args
         arg_preds = []
         final_args = []
-        for arg in self.actual_args():
-            # If it's not just a name, we need to actually do something
-            if type(arg) is not str:
-                new_var = prog.fresh_name()
+        for arg in self.args:
+            # If it's not just a variable, we need to actually do something
+            if type(arg) is not VarRef:
+                new_var = VarRef(prog.fresh_name())
                 # For some reason we need to import again here?
                 from pecan.lang.ir.arith import Equals
-                arg_preds.append((Equals(arg, VarRef(new_var)), new_var))
+                arg_preds.append((Equals(arg, new_var), new_var))
                 final_args.append(new_var)
             else:
                 final_args.append(arg)
@@ -201,8 +181,8 @@ class Call(IRPredicate):
         from pecan.lang.ir.quant import Exists
 
         final_pred = AutLiteral(prog.call(self.name, final_args))
-        for pred, var_name in arg_preds:
-            final_pred = Exists(VarRef(var_name), None, Conjunction(pred, final_pred))
+        for pred, var in arg_preds:
+            final_pred = Exists(var, None, Conjunction(pred, final_pred))
 
         return final_pred.evaluate(prog)
 
@@ -221,12 +201,10 @@ class NamedPred(IRNode):
         self.arg_restrictions = []
         for arg in args:
             if type(arg) is VarRef:
-                self.args.append(arg.var_name)
-            elif type(arg) is str:
                 self.args.append(arg)
             elif type(arg) is Call:
                 self.args.append(arg.args[0])
-                self.arg_restrictions.append(Restriction([arg.args[0]], arg.insert_first).with_parent(self))
+                self.arg_restrictions.append(Restriction([arg.args[0]], arg).with_parent(self))
             else:
                 raise Exception("Argument '{}' is not: string, VarRef, or a Call!".format(arg))
 
@@ -269,7 +247,7 @@ class NamedPred(IRNode):
         if arg_names is None or len(arg_names) == 0:
             result = self.body_evaluated
         else:
-            subs_dict = {str(arg): spot.formula_ap(str(name)) for arg, name in zip(self.args, arg_names)}
+            subs_dict = {arg.var_name: spot.formula_ap(name.var_name) for arg, name in zip(self.args, arg_names)}
             substitution = Substitution(subs_dict)
             result = AutomatonTransformer(self.body_evaluated, substitution.substitute).transform()
 
@@ -279,9 +257,9 @@ class NamedPred(IRNode):
 
     def __repr__(self):
         if self.body_evaluated is None:
-            return '{}({}) := {}'.format(self.name, ', '.join(self.args), self.body)
+            return '{}({}) := {}'.format(self.name, ', '.join(map(repr, self.args)), self.body)
         else:
-            return '{}({}) := {} (evaluated)'.format(self.name, ', '.join(self.args), self.body)
+            return '{}({}) := {} (evaluated)'.format(self.name, ', '.join(map(repr, self.args)), self.body)
 
 class Program(IRNode):
     def __init__(self, defs, *args, **kwargs):
@@ -453,9 +431,7 @@ class Program(IRNode):
 
     def unify_type(self, t1, t2, unification):
         if type(t1) is VarRef and type(t2) is VarRef:
-            return self.unify_type(t1.var_name, t2.var_name, unification)
-        elif type(t1) is str and type(t2) is str:
-            return self.unify_with(t1, t2, unification)
+            return self.unify_with(t1.var_name, t2.var_name, unification)
         elif type(t1) is Call and type(t2) is Call:
             if t1.name != t2.name or len(t1.args) != len(t2.args):
                 return False
@@ -486,13 +462,13 @@ class Program(IRNode):
             raise Exception(f'Predicate {pred_name} not found (known predicates: {self.preds.keys()}!')
 
     def lookup_call(self, pred_name, arg, unification):
-        restrictions = self.get_restrictions(arg)
+        restrictions = self.get_restrictions(arg.var_name)
 
         # For now, use the restriction in the most local scope that we can find a match for
         # TODO: Improve this?
         for restriction in restrictions[::-1]:
             for t in self.types:
-                if self.try_unify_type(restriction, t.insert_first(arg), unification):
+                if self.try_unify_type(restriction, t.restrict(arg), unification):
                     if pred_name == restriction.name:
                         return restriction.match()
                     elif pred_name in self.types[t]:
@@ -555,18 +531,18 @@ class Result:
             return f'{Fore.RED}{self.msg}{Style.RESET_ALL}'
 
 class Restriction(IRNode):
-    def __init__(self, var_names, pred):
+    def __init__(self, restrict_vars, pred):
         super().__init__()
-        self.var_names = var_names
+        self.restrict_vars = restrict_vars
         self.pred = pred.with_parent(self)
 
     def evaluate(self, prog):
-        for var_name in self.var_names:
-            prog.restrict(var_name, self.pred.insert_first(var_name))
+        for var in self.restrict_vars:
+            prog.restrict(var.var_name, self.pred.insert_first(var))
 
     def transform(self, transformer):
         return transformer.transform_Restriction(self)
 
     def __repr__(self):
-        return '{} are {}'.format(', '.join(self.var_names), self.pred.insert_first('*')) # TODO: Improve this
+        return '{} are {}'.format(', '.join(map(str, self.restrict_vars)), self.pred.insert_first(VarRef('*'))) # TODO: Improve this
 

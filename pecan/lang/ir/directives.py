@@ -162,7 +162,7 @@ class DirectiveLoadAut(IRNode):
             prog.preds[self.pred.name] = NamedPred(self.pred.name, self.pred.args, AutLiteral(aut))
         elif self.aut_format == 'pecan':
             realpath = prog.locate_file(self.filename)
-            aut = convert_aut(realpath, self.pred.args)
+            aut = convert_aut(realpath, [v.var_name for v in self.pred.args])
             prog.preds[self.pred.name] = NamedPred(self.pred.name, self.pred.args, AutLiteral(aut))
         else:
             raise Exception('Unknown format: {}'.format(self.aut_format))
@@ -232,7 +232,7 @@ class DirectiveForget(IRNode):
 class DirectiveType(IRNode):
     def __init__(self, pred_ref, val_dict):
         super().__init__()
-        self.pred_ref = pred_ref.with_parent(self)
+        self.pred_ref = pred_ref
         self.val_dict = {k: v.with_parent(self) for k, v in val_dict.items()}
 
     def evaluate(self, prog):

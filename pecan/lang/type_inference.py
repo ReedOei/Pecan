@@ -38,7 +38,7 @@ class InferredType(Type):
         return 'inferred'
 
 class RestrictionType(Type):
-    def __init__(self, restriction):
+    def __init__(self, restriction: Call):
         super().__init__()
         self.restriction = restriction
 
@@ -117,11 +117,7 @@ class TypeEnv:
                     return None
 
                 for arg1, arg2 in zip(t_a.args[1:], t_b.args[1:]):
-                    # These should all be strings or VarRefs # TODO: Make sure they're just VarRefs
-                    arg1_name = arg1.var_name if type(arg1) is VarRef else arg1
-                    arg2_name = arg2.var_name if type(arg2) is VarRef else arg2
-
-                    if arg1_name != arg2_name:
+                    if arg1.var_name != arg2.var_name:
                         return None
 
                 return t_a

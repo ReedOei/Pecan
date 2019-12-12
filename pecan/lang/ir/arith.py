@@ -30,9 +30,9 @@ class Add(BinaryIRExpression):
         (aut_b, val_b) = self.b.evaluate(prog)
 
         if self.get_type() is not None:
-            prog.restrict(self.label, self.get_type().restrict(self.label))
+            prog.restrict(self.label, self.get_type().restrict(VarRef(self.label)))
 
-        aut_add = prog.call('adder', [val_a, val_b, self.label])
+        aut_add = prog.call('adder', [VarRef(val_a), VarRef(val_b), VarRef(self.label)])
         result = spot.product(aut_b, aut_a)
         result = spot.product(aut_add, result)
 
@@ -66,9 +66,9 @@ class Sub(BinaryIRExpression):
         (aut_b, val_b) = self.b.evaluate(prog)
 
         if self.get_type() is not None:
-            prog.restrict(self.label, self.get_type().restrict(self.label))
+            prog.restrict(self.label, self.get_type().restrict(VarRef(self.label)))
 
-        aut_sub = prog.call('adder', [self.label, val_b, val_a])
+        aut_sub = prog.call('adder', [VarRef(self.label), VarRef(val_b), VarRef(val_a)])
         result = spot.product(aut_b, aut_a)
         result = spot.product(aut_sub, result)
 
@@ -145,7 +145,7 @@ class IntConst(IRExpression):
             return constants_map[(self.val, self.get_type())]
 
         if self.get_type() is not None:
-            prog.restrict(self.label, self.get_type().restrict(self.label))
+            prog.restrict(self.label, self.get_type().restrict(VarRef(self.label)))
 
         if self.val == 0:
             # Constant 0 is defined as 000000... TODO: Maybe allow users to define their own 0
@@ -227,7 +227,7 @@ class Less(BinaryIRPredicate):
             return spot.formula('1').translate() if self.a.evaluate_int(prog) < self.b.evaluate_int(prog) else spot.formula('0').translate()
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
-        aut_less = prog.call('less', [val_a, val_b])
+        aut_less = prog.call('less', [VarRef(val_a), VarRef(val_b)])
         result = spot.product(aut_a, aut_b)
         result = spot.product(aut_less, result)
 

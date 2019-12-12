@@ -125,5 +125,5 @@ class IRTransformer:
         return (pred_ref, val_dict)
 
     def transform_Restriction(self, node):
-        return Restriction(node.var_names, self.transform(node.pred))
+        return Restriction(list(map(self.transform, node.restrict_vars)), self.transform(node.pred))
 

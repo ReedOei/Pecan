@@ -39,10 +39,10 @@ pecan_grammar = """
                     | var _IS var "(" formals ")" [":=" pred] -> def_pred_is_call
 
     formals: [formal ("," formal)*]
-    ?formal: var
-           | var "(" varlist ")" -> formal_call
-           | var _IS var -> formal_is
-           | var _IS var "(" varlist ")" -> formal_is_call
+    formal: var -> formal_var
+          | var "(" varlist ")" -> formal_call
+          | var _IS var -> formal_is
+          | var _IS var "(" varlist ")" -> formal_is_call
 
     args: [arg ("," arg)*]
     ?arg: expr
@@ -94,7 +94,7 @@ pecan_grammar = """
 
     int: INT -> const
 
-    ?var: VAR -> var_tok
+    var: VAR -> var_tok
 
     ?string: ESCAPED_STRING -> escaped_str
 
@@ -135,7 +135,7 @@ pecan_grammar = """
 class PecanTransformer(Transformer):
     var_tok = str
     escaped_str = str
-    varlist = lambda self, *vals: list(vals)
+    varlist = lambda self, *vals: list(map(VarRef, list(vals)))
     args = lambda self, *args: list(args)
     directive = Directive
     directive_assert_prop = DirectiveAssertProp
@@ -152,22 +152,25 @@ class PecanTransformer(Transformer):
         return Restriction(varlist, Call(call_name, call_arg_vars))
 
     def formal_is(self, var_name, call_name):
-        return Call(call_name, [var_name])
+        return Call(call_name, [VarRef(var_name)])
 
     def formal_is_call(self, var_name, call_name, call_args):
-        return Call(call_name, [var_name] + call_args)
+        return Call(call_name, [VarRef(var_name)] + call_args)
 
     def formal_call(self, call_name, call_args):
         return Call(call_name, call_args)
+
+    def formal_var(self, var_name):
+        return VarRef(var_name)
 
     def call_args(self, call_name, args):
         return Call(call_name, args)
 
     def call_is(self, var_name, call_name):
-        return Call(call_name, [var_name])
+        return Call(call_name, [VarRef(var_name)])
 
     def call_is_args(self, var_name, call_name, args):
-        return Call(call_name, [var_name] + args)
+        return Call(call_name, [VarRef(var_name)] + args)
 
     def val_dict(self, *pairs):
         return dict(pairs)
@@ -227,15 +230,15 @@ class PecanTransformer(Transformer):
     # TODO: Fix?
     def def_pred_is(self, var_name, pred_name, body=None):
         if body is None:
-            return self.restrict_is([var_name], pred_name)
+            return self.restrict_is([VarRef(var_name)], pred_name)
         else:
-            return NamedPred(pred_name, [var_name], body)
+            return NamedPred(pred_name, [VarRef(var_name)], body)
 
     def def_pred_is_call(self, var_name, pred_name, pred_args, body=None):
         if body is None:
-            return self.restrict_call([var_name], pred_name, pred_args)
+            return self.restrict_call([VarRef(var_name)], pred_name, pred_args)
         else:
-            return NamedPred(pred_name, [var_name] + pred_args, body)
+            return NamedPred(pred_name, [VarRef(var_name)] + pred_args, body)
 
     def var(self, letter, *args):
         return letter + ''.join(args)
@@ -351,9 +354,6 @@ class PecanTransformer(Transformer):
 
     def exists(self, quant, var_name, pred):
         return Exists(var_name, pred)
-
-    def call_args(self, name, args):
-        return Call(name, args)
 
     def var_ref(self, name):
         return VarRef(str(name))

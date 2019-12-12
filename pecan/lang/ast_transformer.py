@@ -150,5 +150,5 @@ class AstTransformer:
         return (pred_ref, val_dict)
 
     def transform_Restriction(self, node):
-        return Restriction(node.var_names, self.transform(node.pred))
+        return Restriction(list(map(self.transform, node.var_names)), self.transform(node.pred))
 

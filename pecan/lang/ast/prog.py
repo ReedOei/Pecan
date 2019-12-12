@@ -19,9 +19,6 @@ class VarRef(Expression):
         self.var_name = var_name
         self.is_int = False
 
-    def insert_first(self, arg_name):
-        return Call(self.var_name, [arg_name])
-
     def transform(self, transformer):
         return transformer.transform_VarRef(self)
 
@@ -54,107 +51,17 @@ class SpotFormula(Predicate):
     def __repr__(self):
         return 'LTL({})'.format(self.formula_str)
 
-class Match:
-    def __init__(self, pred_name=None, pred_args=None, match_any=False):
-        if pred_args is None:
-            pred_args = []
-
-        self.pred_name = pred_name
-        self.pred_args = pred_args
-        self.match_any = match_any
-
-    def arity(self):
-        return len(self.pred_args)
-
-    def unify(self, other):
-        if other.match_any:
-            return self
-        if self.match_any:
-            return other
-
-        new_args = []
-        if self.pred_name != other.pred_name or self.arity() != other.arity():
-            raise Exception(f'Could not unify {self} and {other}')
-
-        for arg1, arg2 in zip(self.pred_args, other.pred_args):
-            if arg1 == 'any' and arg2 == 'any':
-                new_args.append('any')
-            elif arg1 == 'any' and arg2 != 'any':
-                new_args.append(arg2)
-            elif arg1 != 'any' and arg2 == 'any':
-                new_args.append(arg1)
-            else:
-                if arg1 == arg2:
-                    new_args.append(arg1)
-                else:
-                    raise Exception(f'Could not unify {self} and {other}: cannot unify {arg1} and {arg2}')
-
-        return Match(self.pred_name, new_args)
-
-    def actual_args(self):
-        actual_args = []
-        for arg in self.pred_args:
-            if type(arg) is VarRef:
-                actual_args.append(arg.var_name)
-            elif type(arg) is str:
-                actual_args.append(arg)
-            else:
-                raise Exception("Argument '{}' is not: string or VarRef!".format(arg))
-        return actual_args
-
-    def call_with(self, pred_name, unification, rest_args):
-        if self.match_any:
-            raise Exception(f'Predicate not found: {pred_name}')
-        i = 0
-        final_args = []
-        for arg in self.actual_args():
-            if arg == 'any':
-                if i >= len(rest_args):
-                    # TODO: We should check this in the linter probably
-                    raise Exception(f'Not enough arguments to call {self}: {rest_args}')
-
-                final_args.append(rest_args[i])
-                i += 1
-            else:
-                final_args.append(unification.get(arg, arg))
-
-        return Call(self.pred_name, final_args)
-
-    def __repr__(self):
-        return '{}({})'.format(self.pred_name, ', '.join(map(repr, self.pred_args)))
-
 class Call(Predicate):
     def __init__(self, name, args):
         super().__init__()
         self.name = name
-        self.args = args if isinstance(args, list) else [args]
-
-    def arity(self):
-        return len(self.args)
-
-    def match(self):
-        return Match(self.name, self.args)
-
-    def with_args(self, new_args):
-        if len(new_args) == 0:
-            return VarRef(self.name)
-        else:
-            return Call(self.name, new_args)
-
-    def insert_first(self, new_arg):
-        return Call(self.name, [new_arg] + self.actual_args())
-
-    def actual_args(self):
-        actual_args = []
-        for arg in self.args:
-            if type(arg) is VarRef:
-                actual_args.append(arg.var_name)
-            else:
-                actual_args.append(arg)
-        return actual_args
+        self.args = args
 
     def transform(self, transformer):
         return transformer.transform_Call(self)
+
+    def insert_first(self, new_arg):
+        return Call(self.name, [new_arg] + self.args)
 
     def __repr__(self):
         return '{}({})'.format(self.name, ', '.join(map(repr, self.args)))
@@ -168,14 +75,12 @@ class NamedPred(ASTNode):
         self.arg_restrictions = []
         for arg in args:
             if type(arg) is VarRef:
-                self.args.append(arg.var_name)
-            elif type(arg) is str:
                 self.args.append(arg)
             elif type(arg) is Call:
                 self.args.append(arg.args[0])
-                self.arg_restrictions.append(Restriction([arg.args[0]], arg.insert_first))
+                self.arg_restrictions.append(Restriction([arg.args[0]], arg))
             else:
-                raise Exception("Argument '{}' is not: string, VarRef, or a Call!".format(arg))
+                raise Exception("Argument '{}' is not: VarRef, or Call!".format(arg))
 
         self.restriction_env = restriction_env or {}
 
@@ -185,7 +90,7 @@ class NamedPred(ASTNode):
         return transformer.transform_NamedPred(self)
 
     def __repr__(self):
-        return '{}({}) := {}'.format(self.name, ', '.join(self.args), self.body)
+        return '{}({}) := {}'.format(self.name, ','.join(map(repr, self.args)), self.body)
 
 class Program(ASTNode):
     def __init__(self, defs, *args, **kwargs):
@@ -220,14 +125,12 @@ class Program(ASTNode):
         return repr(self.defs)
 
 class Restriction(ASTNode):
-    def __init__(self, var_names, pred):
+    def __init__(self, restrict_vars, pred):
         super().__init__()
-        self.var_names = []
-        for var_name in var_names if isinstance(var_names, list) else [var_names]:
-            if type(var_name) is str:
-                self.var_names.append(var_name)
-            elif type(var_name) is VarRef:
-                self.var_names.append(var_name.var_name)
+        self.restrict_vars = []
+        for var in restrict_vars:
+            if type(var) is VarRef:
+                self.restrict_vars.append(var)
             else:
                 raise Exception("Argument '{}' is not a valid var name (string or VarRef)".format(var_name))
         self.pred = pred
@@ -236,5 +139,5 @@ class Restriction(ASTNode):
         return transformer.transform_Restriction(self)
 
     def __repr__(self):
-        return '{} are {}'.format(', '.join(self.var_names), self.pred.insert_first('*')) # TODO: Improve this
+        return '{} are {}'.format(', '.join(map(repr, self.restrict_vars)), self.pred.insert_first(VarRef('*'))) # TODO: Improve this
 

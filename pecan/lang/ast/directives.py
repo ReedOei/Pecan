@@ -115,10 +115,13 @@ class DirectiveForget(Directive):
 class DirectiveType(Directive):
     def __init__(self, pred_ref, val_dict):
         super().__init__('type')
-        if type(pred_ref) is str:
-            self.pred_ref = Call(pred_ref, [])
+
+        if type(pred_ref) is VarRef:
+            self.pred_ref = Call(pred_ref.var_name, [VarRef('*')])
+        elif type(pred_ref) is Call:
+            self.pred_ref = Call(pred_ref.name, [VarRef('*')] + pred_ref.args)
         else:
-            self.pred_ref = pred_ref
+            raise Exception('Pred ref {} is not a VarRef or Call'.format(pred_ref))
 
         self.val_dict = val_dict
 
@@ -133,8 +136,11 @@ class DirectiveShowWord(Directive):
         super().__init__('show_word')
         self.word_name = word_name
 
-        from pecan.lang.type_inference import RestrictionType
-        self.index_type = RestrictionType(Call(index_type, [])) if index_type is not None else None
+        if index_type is not None:
+            if type(index_type) is VarRef:
+                self.index_type = Call(index_type.var_name, [])
+            else:
+                self.index_type = index_type
 
         self.start_index = start_index.evaluate_int(None)
         self.end_index = end_index.evaluate_int(None)
