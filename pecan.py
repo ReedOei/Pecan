@@ -2,12 +2,13 @@
 # -*- coding=utf-8 -*-
 
 import argparse
-import spot
-
 import colorama
 import readline
-
 import os
+
+from lark import UnexpectedToken
+
+import spot
 
 import pecan.tools.theorem_generator as theorem_generator
 from pecan import program
@@ -30,7 +31,12 @@ def run_repl(env):
             print('') # newline to go "below" the prompt
             print("Use 'exit' to exit Pecan.")
         except EOFError:
+            print('')
             break
+        except UnexpectedToken as e:
+            print(e)
+        except Exception as e:
+            print('An exception occurred:', e)
 
 def main():
     parser = argparse.ArgumentParser(description='An automated theorem prover for Büchi Automata')
