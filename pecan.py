@@ -28,6 +28,7 @@ def main():
     parser.add_argument('-i', '--interactive', help='Run Pecan in interactive mode (REPL)', required=False, action='store_true')
     parser.add_argument('-d', '--debug', help='Output debugging information', required=False, action='count')
     parser.add_argument('-q', '--quiet', help='Quiet mode', required=False, action='store_true')
+    parser.add_argument('--no_opt', help='Turns off optimizations', required=False, action='store_true')
     parser.add_argument('--load_stdlib', help='Loads the standard library (from library/std.pn in your Pecan installation)', required=False, action='store_false')
     parser.add_argument('--generate', help='Enumerate true statements, argument is how many variables to use', type=int, required=False)
 
@@ -41,14 +42,14 @@ def main():
         for pred in theorem_generator.gen_thms(args.generate):
             print(pred)
     elif args.file is not None:
-        prog = program.load(args.file, quiet=args.quiet, debug=args.debug, load_stdlib=args.load_stdlib)
+        prog = program.load(args.file, quiet=args.quiet, debug=args.debug, load_stdlib=args.load_stdlib, no_opt=args.no_opt)
         env = prog.evaluate()
     elif not args.interactive:
         parser.print_help()
 
     if args.interactive:
         if env is None:
-            prog = program.from_source('', quiet=args.quiet, debug=args.debug, load_stdlib=args.load_stdlib)
+            prog = program.from_source('', quiet=args.quiet, debug=args.debug, load_stdlib=args.load_stdlib, no_opt=args.no_opt)
             env = prog.evaluate()
 
         run_repl(env)

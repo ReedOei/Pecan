@@ -155,7 +155,7 @@ class DirectiveLoadAut(IRNode):
         super().__init__()
         self.filename = filename
         self.aut_format = aut_format
-        self.pred = pred
+        self.pred = pred.with_parent(self)
 
     def evaluate(self, prog):
         if self.aut_format == 'hoa':
@@ -234,8 +234,8 @@ class DirectiveForget(IRNode):
 class DirectiveType(IRNode):
     def __init__(self, pred_ref, val_dict):
         super().__init__()
-        self.pred_ref = pred_ref
-        self.val_dict = val_dict
+        self.pred_ref = pred_ref.with_parent(self)
+        self.val_dict = {k: v.with_parent(self) for k, v in val_dict.items()}
 
     def evaluate(self, prog):
         prog.declare_type(self.pred_ref, self.val_dict)

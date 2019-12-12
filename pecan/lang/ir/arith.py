@@ -23,8 +23,8 @@ class Add(BinaryIRExpression):
             return '({} + {})'.format(self.a, self.b)
 
     def evaluate_node(self, prog):
-        # if self.is_int:
-        #     return IntConst(self.evaluate_int(prog)).with_type(self.get_type()).evaluate(prog)
+        if self.is_int:
+            return IntConst(self.evaluate_int(prog)).with_type(self.get_type()).evaluate(prog)
 
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
@@ -103,6 +103,7 @@ class Div(BinaryIRExpression):
     def evaluate_node(self, prog):
         if self.is_int:
             return IntConst(self.evaluate_int(prog)).with_type(self.get_type()).evaluate(prog)
+
         assert False
         b = self.b.evaluate_int(prog)
         if b == 1:
@@ -151,10 +152,8 @@ class IntConst(IRExpression):
             constants_map[(self.val, self.get_type())] = (spot.formula('G(~__constant0)').translate(), "__constant0")
         elif self.val == 1:
             leq = Disjunction(Less(one_const_var, b_const), Equals(one_const_var, b_const))
-            formula_1 = Conjunction(Less(zero_const, one_const_var), Complement(Exists(self.get_type().restrict(b_const), Complement(Disjunction(Complement(Less(zero_const, b_const)), leq)))))
-
-            if self.get_type().get_restriction() is not None:
-                formula_1 = Conjunction(self.get_type().restrict(one_const_var), formula_1)
+            b_in_0_1 = Conjunction(Less(zero_const, b_const), Less(b_const, one_const_var))
+            formula_1 = Conjunction(Less(zero_const, one_const_var), Complement(Exists(b_const, self.get_type().restrict(b_const), b_in_0_1)))
 
             constants_map[(self.val, self.get_type())] = (formula_1.evaluate(prog).postprocess('BA'), one_const_var.var_name)
         else:

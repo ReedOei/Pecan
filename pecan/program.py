@@ -7,7 +7,7 @@ from pecan.lang.parser import pecan_parser
 from pecan.lang.type_inference import TypeInferer
 from pecan.lang.ast_to_ir import ASTToIR
 from pecan.lang.typed_ir_lowering import TypedIRLowering
-from pecan.lang.optimizer.optimizer import Optimizer
+from pecan.lang.optimizer.optimizer import UntypedOptimizer, Optimizer
 
 PECAN_PATH_VAR = 'PECAN_PATH'
 
@@ -62,15 +62,18 @@ def from_source(source_code, *args, **kwargs):
         stdlib_prog.evaluate()
         prog.include(stdlib_prog)
 
-    prog = Optimizer(prog).optimize()
+    if not kwargs.get('no_opt', False):
+        prog = UntypedOptimizer(prog).optimize()
+
     prog = prog.run_type_inference()
     prog = TypedIRLowering().transform(prog)
+
+    if not kwargs.get('no_opt', False):
+        prog = Optimizer(prog).optimize()
 
     if prog.debug > 1:
         print('Program IR:')
         print(prog)
-
-    prog = Optimizer(prog).optimize()
 
     return prog
 

@@ -7,6 +7,18 @@ import pecan.lang.ir as ir
 from pecan.lang.ast_transformer import AstTransformer
 from pecan.lang.type_inference import *
 
+def to_ref(var_ref):
+    if type(var_ref) is VarRef:
+        return var_ref
+    else:
+        return VarRef(var_ref)
+
+def extract_var_cond(var_pred):
+    if type(var_pred) is Call:
+        return to_ref(var_pred.args[0]), var_pred
+    else:
+        return to_ref(var_pred), None
+
 class ASTToIR(AstTransformer):
     def __init__(self):
         super().__init__()
@@ -80,6 +92,9 @@ class ASTToIR(AstTransformer):
         return ir.Sub(self.transform(node.a), self.transform(node.b))
 
     def transform_Mul(self, node):
+        if node.is_int:
+            return IntConst(node.evaluate_int(self.prog))
+
         # We are guaranteed that node.a will be an integer, so we don't need to worry about transforming it
         c = node.a.evaluate_int(prog)  # copy of a
         if c == 0:
@@ -141,17 +156,26 @@ class ASTToIR(AstTransformer):
         return ir.EqualsCompareRange(node.is_equals, self.transform(node.index_a), self.transform(node.index_b))
 
     def transform_Forall(self, node: Forall):
-        # TODO: Make a `get_cond` method for this
         if node.cond is not None:
-            return ir.Complement(ir.Exists(self.transform(node.cond), ir.Complement(self.transform(node.pred)))).with_original_node(node)
+            var, cond = extract_var_cond(self.transform(node.cond))
         else:
-            return ir.Complement(ir.Exists(self.transform(node.var), ir.Complement(self.transform(node.pred)))).with_original_node(node)
+            var, cond = extract_var_cond(self.transform(node.var))
+
+        if cond is not None:
+            return ir.Complement(ir.Exists(var, cond, ir.Complement(self.transform(node.pred)))).with_original_node(node)
+        else:
+            return ir.Complement(ir.Exists(var, None, ir.Complement(self.transform(node.pred)))).with_original_node(node)
 
     def transform_Exists(self, node: Exists):
         if node.cond is not None:
-            return ir.Exists(self.transform(node.cond), self.transform(node.pred)).with_original_node(node)
+            var, cond = extract_var_cond(self.transform(node.cond))
         else:
-            return ir.Exists(self.transform(node.var), self.transform(node.pred)).with_original_node(node)
+            var, cond = extract_var_cond(self.transform(node.var))
+
+        if cond is not None:
+            return ir.Exists(var, cond, self.transform(node.pred)).with_original_node(node)
+        else:
+            return ir.Exists(var, None, self.transform(node.pred)).with_original_node(node)
 
     def transform_VarRef(self, node: VarRef):
         return ir.VarRef(node.var_name)

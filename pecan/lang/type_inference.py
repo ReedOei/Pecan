@@ -52,7 +52,7 @@ class RestrictionType(Type):
             return self.restriction.insert_first(var)
 
     def __repr__(self):
-        return repr(self.restriction)
+        return repr(self.restriction.with_args(self.restriction.args[1:]))
 
     def __eq__(self, other):
         return other is not None and other.__class__ == self.__class__ and self.restriction == other.restriction

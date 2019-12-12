@@ -8,7 +8,9 @@ class IRTransformer:
         self.current_program = None
 
     def transform(self, node):
-        if type(node) is str:
+        if node is None:
+            return None
+        elif type(node) is str:
             return node
         else:
             return node.transform(self).with_original_node(node.get_original_node())
@@ -92,10 +94,7 @@ class IRTransformer:
         return EqualsCompareRange(node.is_equals, self.transform(node.index_a), self.transform(node.index_b))
 
     def transform_Exists(self, node: Exists):
-        if node.cond is not None:
-            return Exists(node.cond, self.transform(node.pred))
-        else:
-            return Exists(node.var, self.transform(node.pred))
+        return Exists(self.transform(node.var), self.transform(node.cond), self.transform(node.pred))
 
     def transform_VarRef(self, node: VarRef):
         return node

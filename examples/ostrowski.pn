@@ -22,7 +22,7 @@ x, y, z are ostrowski(alpha)
 
 // These tests of arithmetic properties are relevant because they use bases other than binary
 add_comm() := forall alpha. forall x. forall y. x + y = y + x
-#assert_prop(true, add_comm)
+// #assert_prop(true, add_comm)
 
 zero_add_refl() := forall alpha. forall x. x + 0 = x
 #assert_prop(true, zero_add_refl)
@@ -30,7 +30,7 @@ zero_add_refl() := forall alpha. forall x. x + 0 = x
 add_assoc_const() := forall alpha. forall x. x + (1 + 1) = (x + 1) + 1
 #assert_prop(true, add_assoc_const)
 
-add_assoc() := forall alpha. forall x. forall y. forall z. exists yz is ostrowski(alpha). yz = y + z & exists xy is ostrowski(alpha). xy = x + y & x + yz = xy + z
+add_assoc() := forall alpha. forall x. forall y. forall z. x + (y + z) = (x + y) + z
 #assert_prop(true, add_assoc)
 
 i, j, k, n are zeckendorf

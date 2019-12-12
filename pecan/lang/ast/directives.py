@@ -134,7 +134,7 @@ class DirectiveShowWord(Directive):
         self.word_name = word_name
 
         from pecan.lang.type_inference import RestrictionType
-        self.index_type = RestrictionType(VarRef(index_type)) if index_type is not None else None
+        self.index_type = RestrictionType(Call(index_type, [])) if index_type is not None else None
 
         self.start_index = start_index.evaluate_int(None)
         self.end_index = end_index.evaluate_int(None)

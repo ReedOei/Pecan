@@ -12,6 +12,14 @@ class IRNode:
         IRExpression.id += 1
         self.type = None
         self.original_node = None
+        self.parent = None
+
+    def with_parent(self, parent):
+        self.parent = parent
+        return self
+
+    def get_parent(self):
+        return self.parent
 
     def with_original_node(self, original_node):
         self.original_node = original_node
@@ -38,7 +46,7 @@ class IRNode:
 
     def simplify(self, prog, aut):
         # self.show_aut_stats(prog, aut, desc='before simplify')
-        # if aut.is_deterministic():
+        #o if aut.is_deterministic():
         #     aut = spot.minimize_obligation(aut)
         #     self.show_aut_stats(prog, aut, desc='after minimize_obligation')
 
@@ -105,7 +113,7 @@ class IRExpression(IRNode):
 class UnaryIRExpression(IRExpression):
     def __init__(self, a):
         super().__init__()
-        self.a = a
+        self.a = a.with_parent(self)
 
     def with_type(self, new_type):
         self.a = self.a.with_type(new_type)
@@ -115,13 +123,13 @@ class UnaryIRExpression(IRExpression):
         return other is not None and type(other) is self.__class__ and self.a == other.a and self.get_type() == other.get_type()
 
     def __hash__(self):
-        return hash((self.a))
+        return hash((self.a, self.get_type()))
 
 class BinaryIRExpression(IRExpression):
     def __init__(self, a, b):
         super().__init__()
-        self.a = a
-        self.b = b
+        self.a = a.with_parent(self)
+        self.b = b.with_parent(self)
         self.is_int = a.is_int and b.is_int
 
     def with_type(self, new_type):
@@ -133,7 +141,7 @@ class BinaryIRExpression(IRExpression):
         return other is not None and type(other) is self.__class__ and self.a == other.a and self.b == other.b and self.get_type() == other.get_type()
 
     def __hash__(self):
-        return hash((self.a, self.b))
+        return hash((self.a, self.b, self.get_type()))
 
 class IRPredicate(IRNode):
     def __init__(self):
@@ -145,8 +153,8 @@ class IRPredicate(IRNode):
 class BinaryIRPredicate(IRPredicate):
     def __init__(self, a, b):
         super().__init__()
-        self.a = a
-        self.b = b
+        self.a = a.with_parent(self)
+        self.b = b.with_parent(self)
 
     def __eq__(self, other):
         return other is not None and type(other) is self.__class__ and self.a == other.a and self.b == other.b
@@ -157,10 +165,11 @@ class BinaryIRPredicate(IRPredicate):
 class UnaryIRPredicate(IRPredicate):
     def __init__(self, a):
         super().__init__()
-        self.a = a
+        self.a = a.with_parent(self)
 
     def __eq__(self, other):
         return other is not None and type(other) is self.__class__ and self.a == other.a
 
     def __hash__(self):
         return hash(self.a)
+

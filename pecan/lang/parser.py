@@ -178,7 +178,7 @@ class PecanTransformer(Transformer):
 
     def restrict_many(self, args, pred):
         if type(pred) is VarRef: # If we do something like `x,y,z are nat`
-            return Restriction(args, Call(pred.var_name, [])) # '' is a dummy value because it'll get replaced
+            return Restriction(args, Call(pred.var_name, []))
         else:
             return Restriction(args, pred)
 

@@ -19,9 +19,6 @@ class VarRef(IRExpression):
         self.var_name = var_name
         self.is_int = False
 
-    def insert_first(self, arg_name):
-        return Call(self.var_name, [arg_name])
-
     def evaluate(self, prog):
         # The automata accepts everything (because this isn't a predicate)
         return spot.formula('1').translate(), self.var_name
@@ -31,6 +28,15 @@ class VarRef(IRExpression):
 
     def show(self):
         return str(self.var_name)
+
+    def __repr__(self):
+        return self.show()
+
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.var_name == other.var_name and self.get_type() == other.get_type()
+
+    def __hash__(self):
+        return hash((self.var_name, self.get_type()))
 
 class AutLiteral(IRPredicate):
     def __init__(self, aut):
@@ -50,6 +56,12 @@ class AutLiteral(IRPredicate):
     def __repr__(self):
         return 'AUTOMATON LITERAL' # TODO: Maybe improve this?
 
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.aut == other.aut
+
+    def __hash__(self):
+        return hash((self.aut))
+
 class SpotFormula(IRPredicate):
     def __init__(self, formula_str):
         super().__init__()
@@ -63,6 +75,12 @@ class SpotFormula(IRPredicate):
 
     def __repr__(self):
         return 'LTL({})'.format(self.formula_str)
+
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.formula_str == other.formula_str
+
+    def __hash__(self):
+        return hash((self.formula_str))
 
 class Match:
     def __init__(self, pred_name=None, pred_args=None, match_any=False):
@@ -137,7 +155,7 @@ class Call(IRPredicate):
     def __init__(self, name, args):
         super().__init__()
         self.name = name
-        self.args = args if isinstance(args, list) else [args]
+        self.args = [arg.with_parent(self) if isinstance(arg, IRNode) else arg for arg in args]
 
     def arity(self):
         return len(self.args)
@@ -146,10 +164,7 @@ class Call(IRPredicate):
         return Match(self.name, self.args)
 
     def with_args(self, new_args):
-        if len(new_args) == 0:
-            return VarRef(self.name)
-        else:
-            return Call(self.name, new_args)
+        return Call(self.name, new_args)
 
     def insert_first(self, new_arg):
         return Call(self.name, [new_arg] + self.actual_args())
@@ -186,7 +201,7 @@ class Call(IRPredicate):
 
         final_pred = AutLiteral(prog.call(self.name, final_args))
         for pred, var_name in arg_preds:
-            final_pred = Exists(var_name, Conjunction(pred, final_pred))
+            final_pred = Exists(VarRef(var_name), None, Conjunction(pred, final_pred))
 
         return final_pred.evaluate(prog)
 
@@ -210,13 +225,13 @@ class NamedPred(IRNode):
                 self.args.append(arg)
             elif type(arg) is Call:
                 self.args.append(arg.args[0])
-                self.arg_restrictions.append(Restriction([arg.args[0]], arg.insert_first))
+                self.arg_restrictions.append(Restriction([arg.args[0]], arg.insert_first).with_parent(self))
             else:
                 raise Exception("Argument '{}' is not: string, VarRef, or a Call!".format(arg))
 
         self.restriction_env = restriction_env or {}
 
-        self.body = body
+        self.body = body.with_parent(self)
         self.body_evaluated = body_evaluated
 
     def evaluate(self, prog):
@@ -246,19 +261,20 @@ class NamedPred(IRNode):
     def call(self, prog, arg_names=None):
         prog.enter_scope(dict(self.restriction_env))
 
-        try:
-            if self.body_evaluated is None:
-                # We postprocess here because we will do it every time we call anyway (in AutomatonTransformer)
-                self.body_evaluated = self.body.evaluate(prog).postprocess('BA')
+        if self.body_evaluated is None:
+            # We postprocess here because we will do it every time we call anyway (in AutomatonTransformer)
+            self.body_evaluated = self.body.evaluate(prog).postprocess('BA')
 
-            if arg_names is None:
-                return self.body_evaluated
-            else:
-                subs_dict = {str(arg): spot.formula_ap(str(name)) for arg, name in zip(self.args, arg_names)}
-                substitution = Substitution(subs_dict)
-                return AutomatonTransformer(self.body_evaluated, substitution.substitute).transform()
-        finally:
-            prog.exit_scope()
+        if arg_names is None or len(arg_names) == 0:
+            result = self.body_evaluated
+        else:
+            subs_dict = {str(arg): spot.formula_ap(str(name)) for arg, name in zip(self.args, arg_names)}
+            substitution = Substitution(subs_dict)
+            result = AutomatonTransformer(self.body_evaluated, substitution.substitute).transform()
+
+        prog.exit_scope()
+
+        return result
 
     def __repr__(self):
         if self.body_evaluated is None:
@@ -270,7 +286,7 @@ class Program(IRNode):
     def __init__(self, defs, *args, **kwargs):
         super().__init__()
 
-        self.defs = defs
+        self.defs = [d.with_parent(self) for d in defs]
         self.preds = kwargs.get('preds', {})
         self.context = kwargs.get('context', {})
         self.restrictions = kwargs.get('restrictions', [{}])
@@ -301,9 +317,9 @@ class Program(IRNode):
 
     def include(self, other_prog):
         # Note: Intentionally do NOT merge restrictions, because it would be super confusing if variable restrictions "leaked" from imports
-        self.preds.update(other_prog.preds)
+        self.preds.update({k: v.with_parent(self) for k, v in other_prog.preds.items()})
         self.context.update(other_prog.context)
-        self.types.update(other_prog.types)
+        self.types.update({k: {pred_k: pred_v.with_parent(self) for pred_k, pred_v in v.items()} for k, v in other_prog.types.items()})
         self.parser = other_prog.parser
 
         self.fresh_counter += other_prog.fresh_counter + 1
@@ -321,7 +337,7 @@ class Program(IRNode):
 
         for i, d in enumerate(self.defs):
             if type(d) is NamedPred:
-                self.defs[i] = self.type_inferer.reset().transform(d)
+                self.defs[i] = self.type_inferer.reset().transform(d).with_parent(self)
                 self.preds[d.name] = self.defs[i]
                 self.preds[d.name].evaluate(self)
                 if self.debug > 0:
@@ -349,8 +365,14 @@ class Program(IRNode):
         msgs = []
 
         for d in self.defs:
+            if self.debug > 0:
+                print(d)
+
             # Ignore these constructs because we should have run them earlier in run_type_inference
             if type(d) is NamedPred:
+                # If we already computed it, it doesn't matter if we replace it with a more efficient version
+                if self.preds[d.name].body_evaluated is None:
+                    self.preds[d.name] = d
                 pass
             elif type(d) is Restriction:
                 pass
@@ -542,7 +564,7 @@ class Restriction(IRNode):
     def __init__(self, var_names, pred):
         super().__init__()
         self.var_names = var_names
-        self.pred = pred
+        self.pred = pred.with_parent(self)
 
     def evaluate(self, prog):
         for var_name in self.var_names:

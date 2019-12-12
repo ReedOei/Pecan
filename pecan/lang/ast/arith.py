@@ -69,6 +69,10 @@ class Div(BinaryExpression):
     def show(self):
         return '({} / {})'.format(self.a, self.b)
 
+    def evaluate_int(self, prog):
+        assert self.is_int
+        return self.a.evaluate_int(prog) // self.b.evaluate_int(prog)
+
     def transform(self, transformer):
         return transformer.transform_Div(self)
 

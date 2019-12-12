@@ -8,7 +8,9 @@ class Conjunction(BinaryIRPredicate):
         super().__init__(a, b)
 
     def evaluate_node(self, prog):
-        return spot.product(self.a.evaluate(prog), self.b.evaluate(prog))
+        a_aut = self.a.evaluate(prog)
+        b_aut = self.b.evaluate(prog)
+        return spot.product(a_aut, b_aut)
 
     def transform(self, transformer):
         return transformer.transform_Conjunction(self)
@@ -21,7 +23,9 @@ class Disjunction(BinaryIRPredicate):
         super().__init__(a, b)
 
     def evaluate_node(self, prog):
-        return spot.product_or(self.a.evaluate(prog), self.b.evaluate(prog))
+        a_aut = self.a.evaluate(prog)
+        b_aut = self.b.evaluate(prog)
+        return spot.product_or(a_aut, b_aut)
 
     def transform(self, transformer):
         return transformer.transform_Disjunction(self)
@@ -84,3 +88,4 @@ class FormulaFalse(IRPredicate):
 
     def __hash__(self):
         return 0 # No fields to hash
+

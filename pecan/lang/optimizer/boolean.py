@@ -21,6 +21,11 @@ class BooleanOptimizer(BasicOptimizer):
             self.changed = True
             return self.transform(Conjunction(Complement(node.a.a), Complement(node.a.b)))
 
+        # This transformation can let us avoid complements
+        elif type(node.a) is Less:
+            self.changed = True
+            return self.transform(Disjunction(Less(node.a.b, node.a.a), Equals(node.a.a, node.a.b)))
+
         else:
             return Complement(self.transform(node.a))
 

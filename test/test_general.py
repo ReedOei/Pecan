@@ -46,3 +46,6 @@ class GeneralTest(unittest.TestCase):
     def test_chicken_mcnugget(self):
         return self.run_file('examples/chicken_mcnugget.pn')
 
+    def test_arith_props(self):
+        return self.run_file('examples/arith_props.pn')
+
