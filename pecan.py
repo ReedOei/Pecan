@@ -31,7 +31,7 @@ def run_repl(env):
             print('') # newline to go "below" the prompt
             print("Use 'exit' to exit Pecan.")
         except EOFError:
-            print('')
+            print('exit')
             break
         except UnexpectedToken as e:
             print(e)
