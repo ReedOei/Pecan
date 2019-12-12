@@ -22,7 +22,7 @@ x, y, z are ostrowski(alpha)
 
 // These tests of arithmetic properties are relevant because they use bases other than binary
 add_comm() := forall alpha. forall x. forall y. x + y = y + x
-// #assert_prop(true, add_comm)
+#assert_prop(true, add_comm)
 
 zero_add_refl() := forall alpha. forall x. x + 0 = x
 #assert_prop(true, zero_add_refl)
