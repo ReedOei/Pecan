@@ -1,4 +1,4 @@
-x, y, z are nat
+x,y,z are binary
 
 double(x, y) := x+x=y
 
@@ -60,6 +60,7 @@ test17() := forall x. forall y.  ((x <= y) <=> (x < y | x = y))
 test18() := forall x. forall y.  ((x >= y) <=> (x > y | x = y))
 #assert_prop(true, test18)
 
+//TODO: Still need to fix int const to pass these tests
 test19() := forall x. finite_num(x) => (1+2) + x = 1 + (x + 2)
 #assert_prop(true, test19)
 
@@ -79,3 +80,4 @@ test23() := forall x.(finite_num(x)) => 2*x + 3*x = (3+2)*x
 //distributive on both
 test24() := forall x. forall y. (finite_num(x) & finite_num(y)) => (2+3)*(x+y) = 2*x+2*y +3*x+3*y
 #assert_prop(true, test24)
+

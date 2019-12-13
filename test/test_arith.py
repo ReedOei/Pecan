@@ -3,7 +3,7 @@ import unittest
 import spot
 
 from pecan.lang.parser import pecan_parser
-from pecan.lang.ast import *
+from pecan.lang.ir import *
 
 class ArithTest(unittest.TestCase):
     def print_addition(self):

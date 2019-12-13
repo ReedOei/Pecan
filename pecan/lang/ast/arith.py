@@ -56,8 +56,6 @@ class Mul(BinaryExpression):
         assert self.is_int
         return self.a.evaluate_int(prog) * self.b.evaluate_int(prog)
 
-
-#TODO:
 class Div(BinaryExpression):
     def __init__(self, a, b):
         super().__init__(a, b)
@@ -76,9 +74,7 @@ class Div(BinaryExpression):
     def transform(self, transformer):
         return transformer.transform_Div(self)
 
-constants_map = {}
 class IntConst(Expression):
-    # Constant 0 is defined as 000000...
     def __init__(self, val):
         super().__init__()
         self.val = val
@@ -146,11 +142,6 @@ class LessEquals(Predicate):
         super().__init__()
         self.a = a
         self.b = b
-
-    def evaluate_node(self, prog):
-        if self.a.is_int and self.b.is_int:
-            return spot.formula('1').translate() if self.a.evaluate_int(prog) <= self.b.evaluate_int(prog) else spot.formula('0').translate()
-        return Disjunction(Less(self.a,self.b),Equals(self.a,self.b)).evaluate(prog)
 
     def transform(self, transformer):
         return transformer.transform_LessEquals(self)
