@@ -9,18 +9,10 @@ from pecan.tools.automaton_tools import TruthValue
 from pecan.tools.convert_hoa import convert_aut
 from pecan.lang.ast import *
 
-class Directive(ASTNode):
-    def __init__(self, name):
-        super().__init__()
-        self.name = name
-
-    def __repr__(self):
-        return '#{}'.format(self.name)
-
-class DirectiveSaveAut(Directive):
+class DirectiveSaveAut(ASTNode):
     def __init__(self, filename, pred_name):
-        super().__init__('save_aut')
-        self.filename = filename[1:-1]
+        super().__init__()
+        self.filename = filename
         self.pred_name = pred_name
 
     def transform(self, transformer):
@@ -29,10 +21,10 @@ class DirectiveSaveAut(Directive):
     def __repr__(self):
         return '#save_aut({}, {})'.format(str(self.filename), self.pred_name)
 
-class DirectiveSaveAutImage(Directive):
+class DirectiveSaveAutImage(ASTNode):
     def __init__(self, filename, pred_name):
-        super().__init__('save_aut_img')
-        self.filename = filename[1:-1]
+        super().__init__()
+        self.filename = filename
         self.pred_name = pred_name
 
     def transform(self, transformer):
@@ -41,11 +33,11 @@ class DirectiveSaveAutImage(Directive):
     def __repr__(self):
         return '#save_aut_img({}, {})'.format(repr(self.filename), self.pred_name)
 
-class DirectiveContext(Directive):
+class DirectiveContext(ASTNode):
     def __init__(self, context_key, context_val):
-        super().__init__('context')
-        self.context_key = context_key[1:-1]
-        self.context_val = context_val[1:-1]
+        super().__init__()
+        self.context_key = context_key
+        self.context_val = context_val
 
     def transform(self, transformer):
         return transformer.transform_DirectiveContext(self)
@@ -53,10 +45,10 @@ class DirectiveContext(Directive):
     def __repr__(self):
         return '#context({}, {})'.format(self.context_key, self.context_val)
 
-class DirectiveEndContext(Directive):
+class DirectiveEndContext(ASTNode):
     def __init__(self, context_key):
-        super().__init__('end_context')
-        self.context_key = context_key[1:-1]
+        super().__init__()
+        self.context_key = context_key
 
     def transform(self, transformer):
         return transformer.transform_DirectiveEndContext(self)
@@ -65,9 +57,9 @@ class DirectiveEndContext(Directive):
         return '#end_context({})'.format(self.context_key)
 
 # Asserts that pred_name is truth_val: i.e., that pred_name is 'true' (always), 'false' (always), or 'sometimes' true
-class DirectiveAssertProp(Directive):
+class DirectiveAssertProp(ASTNode):
     def __init__(self, truth_val, pred_name):
-        super().__init__('assert_prop')
+        super().__init__()
         self.truth_val = truth_val
         self.pred_name = pred_name
 
@@ -77,11 +69,11 @@ class DirectiveAssertProp(Directive):
     def __repr__(self):
         return '#assert_prop({}, {})'.format(self.truth_val, self.pred_name)
 
-class DirectiveLoadAut(Directive):
+class DirectiveLoadAut(ASTNode):
     def __init__(self, filename, aut_format, pred):
-        super().__init__('load')
-        self.filename = filename[1:-1]
-        self.aut_format = aut_format[1:-1] # Remove the quotes at the beginning and end # TODO: Do this better
+        super().__init__()
+        self.filename = filename
+        self.aut_format = aut_format
         self.pred = pred
 
     def transform(self, transformer):
@@ -90,10 +82,10 @@ class DirectiveLoadAut(Directive):
     def __repr__(self):
         return '#load({}, {}, {})'.format(self.filename, self.aut_format, repr(self.pred))
 
-class DirectiveImport(Directive):
+class DirectiveImport(ASTNode):
     def __init__(self, filename):
-        super().__init__('import')
-        self.filename = filename[1:-1]
+        super().__init__()
+        self.filename = filename
 
     def transform(self, transformer):
         return transformer.transform_DirectiveImport(self)
@@ -101,9 +93,9 @@ class DirectiveImport(Directive):
     def __repr__(self):
         return '#import({})'.format(repr(self.filename))
 
-class DirectiveForget(Directive):
+class DirectiveForget(ASTNode):
     def __init__(self, var_name):
-        super().__init__('forget')
+        super().__init__()
         self.var_name = var_name
 
     def transform(self, transformer):
@@ -112,9 +104,9 @@ class DirectiveForget(Directive):
     def __repr__(self):
         return '#forget({})'.format(repr(self.var_name))
 
-class DirectiveType(Directive):
+class DirectiveType(ASTNode):
     def __init__(self, pred_ref, val_dict):
-        super().__init__('type')
+        super().__init__()
 
         if type(pred_ref) is VarRef:
             self.pred_ref = Call(pred_ref.var_name, [VarRef('*')])
@@ -131,9 +123,9 @@ class DirectiveType(Directive):
     def __repr__(self):
         return '#type({}, {})'.format(self.pred_ref, self.val_dict)
 
-class DirectiveShowWord(Directive):
+class DirectiveShowWord(ASTNode):
     def __init__(self, word_name, index_type, start_index, end_index):
-        super().__init__('show_word')
+        super().__init__()
         self.word_name = word_name
 
         if index_type is not None:

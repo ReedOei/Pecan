@@ -13,12 +13,11 @@ pecan_grammar = """
 
     ?def: pred_definition
         | restriction
-        | "#" var -> directive
         | "#" "save_aut" "(" string "," var ")" -> directive_save_aut
         | "#" "save_aut_img" "(" string "," var ")" -> directive_save_aut_img
         | "#" "context" "(" string "," string ")" -> directive_context
         | "#" "end_context" "(" string ")" -> directive_end_context
-        | "#" "load" "(" string "," string "," formal ")" -> directive_load
+        | "#" "load" "(" string "," string "," formal ")" -> directive_load_aut
         | "#" "assert_prop" "(" PROP_VAL "," var ")" -> directive_assert_prop
         | "#" "import" "(" string ")" -> directive_import
         | "#" "forget" "(" var ")" -> directive_forget
@@ -76,19 +75,14 @@ pecan_grammar = """
 
     ?arith: product
           | arith "+" product -> add
-          | arith "+_" var product -> add_with_param
           | arith "-" product -> sub
-          | arith "-_" var product -> sub_with_param
 
     ?product: atom
             | product "*" atom -> mul
-            | product "*_" var atom -> mul_with_param
             | product "/" atom -> div
-            | product "/_" var atom -> div_with_param
 
     ?atom: var -> var_ref
          | int
-         | int "_" var -> const_with_param
          | "-" int  -> neg
          | "(" arith ")"
 
@@ -134,50 +128,26 @@ pecan_grammar = """
 @v_args(inline=True)
 class PecanTransformer(Transformer):
     var_tok = str
-    escaped_str = str
+    escaped_str = lambda self, v: str(v[1:-1]) # Remove the quotes, which are the first and last characters
     varlist = lambda self, *vals: list(map(VarRef, list(vals)))
     args = lambda self, *args: list(args)
-    directive = Directive
-    directive_assert_prop = DirectiveAssertProp
-    directive_type = DirectiveType
-    directive_show_word = DirectiveShowWord
+    formals = lambda self, *args: list(args)
 
-    def formals(self, *args):
-        return list(args)
+    restrict_is = lambda self, varlist, var_ref: Restriction(varlist, Call(var_ref, []))
+    restrict_call = lambda self, varlist, call_name, call_arg_vars: Restriction(varlist, Call(call_name, call_arg_vars))
 
-    def restrict_is(self, varlist, var_ref):
-        return Restriction(varlist, Call(var_ref, []))
+    formal_is = lambda self, var_name, call_name: Call(call_name, [VarRef(var_name)])
+    formal_is_call = lambda self, var_name, call_name, call_args: Call(call_name, [VarRef(var_name)] + call_args)
+    formal_call = lambda self, call_name, call_args: Call(call_name, call_args)
+    formal_var = VarRef
 
-    def restrict_call(self, varlist, call_name, call_arg_vars):
-        return Restriction(varlist, Call(call_name, call_arg_vars))
+    call_args = Call
+    call_is = lambda self, var_name, call_name: Call(call_name, [VarRef(var_name)])
+    call_is_args = lambda self, var_name, call_name, args: Call(call_name, [VarRef(var_name)] + args)
 
-    def formal_is(self, var_name, call_name):
-        return Call(call_name, [VarRef(var_name)])
+    val_dict = lambda self, *pairs: dict(pairs)
 
-    def formal_is_call(self, var_name, call_name, call_args):
-        return Call(call_name, [VarRef(var_name)] + call_args)
-
-    def formal_call(self, call_name, call_args):
-        return Call(call_name, call_args)
-
-    def formal_var(self, var_name):
-        return VarRef(var_name)
-
-    def call_args(self, call_name, args):
-        return Call(call_name, args)
-
-    def call_is(self, var_name, call_name):
-        return Call(call_name, [VarRef(var_name)])
-
-    def call_is_args(self, var_name, call_name, args):
-        return Call(call_name, [VarRef(var_name)] + args)
-
-    def val_dict(self, *pairs):
-        return dict(pairs)
-
-    def kv_pair(self, key, val):
-        key = key[1:-1]
-        return (key, val)
+    kv_pair = lambda self, key, val: (key, val)
 
     def restrict_many(self, args, pred):
         if type(pred) is VarRef: # If we do something like `x,y,z are nat`
@@ -185,32 +155,18 @@ class PecanTransformer(Transformer):
         else:
             return Restriction(args, pred)
 
-    def directive_save_aut(self, filename, pred_name):
-        return DirectiveSaveAut(filename, pred_name)
+    directive_assert_prop = DirectiveAssertProp
+    directive_type = DirectiveType
+    directive_show_word = DirectiveShowWord
+    directive_save_aut = DirectiveSaveAut
+    directive_save_aut_img = DirectiveSaveAutImage
+    directive_context = DirectiveContext
+    directive_end_context = DirectiveEndContext
+    directive_load_aut = DirectiveLoadAut
+    directive_import = DirectiveImport
+    directive_forget = DirectiveForget
 
-    def directive_save_aut_img(self, filename, pred_name):
-        return DirectiveSaveAutImage(filename, pred_name)
-
-    def directive_save_pred(self, filename, pred_name):
-        return DirectiveSavePred(filename, pred_name)
-
-    def directive_context(self, key, val):
-        return DirectiveContext(key, val)
-
-    def directive_end_context(self, context_name):
-        return DirectiveEndContext(context_name)
-
-    def directive_load(self, filename, aut_format, pred):
-        return DirectiveLoadAut(filename, aut_format, pred)
-
-    def directive_import(self, filename):
-        return DirectiveImport(filename)
-
-    def directive_forget(self, var_name):
-        return DirectiveForget(var_name)
-
-    def prog(self, defs):
-        return Program(defs)
+    prog = Program
 
     def nil_def(self):
         return []
@@ -243,32 +199,11 @@ class PecanTransformer(Transformer):
     def var(self, letter, *args):
         return letter + ''.join(args)
 
-    def add(self, a, b):
-        return Add(a, b)
-
-    def sub(self, a, b):
-        return Sub(a, b)
-
-    def mul(self, a, b):
-        return Mul(a, b)
-
-    def div(self, a, b):
-        return Div(a, b)
-
-    def add_with_param(self, a, var, b):
-        return Add(a, b, param=var)
-
-    def sub_with_param(self, a, var, b):
-        return Sub(a, b, param=var)
-
-    def mul_with_param(self, a, var, b):
-        return Mul(a, b, param=var)
-
-    def div_with_param(self, a, var, b):
-        return Div(a, b, param=var)
-
-    def neg(self, a):
-        return Neg(a)
+    add = Add
+    sub = Sub
+    mul = Mul
+    div = Div
+    neg = Neg
 
     def const(self, const):
         if const.type != "INT":
@@ -276,17 +211,8 @@ class PecanTransformer(Transformer):
         const = int(const.value)
         return IntConst(const)
 
-    def const_with_param(self, const, var):
-        if const.type != "INT":
-            raise AutomatonArithmeticError("Constants need to be integers: " + const)
-        const = int(const.value)
-        return IntConst(const, param=var)
-
-    def index(self, var_name, index_expr):
-        return Index(var_name, index_expr)
-
-    def index_range(self, var_name, start_expr, end_expr):
-        return IndexRange(var_name, start_expr, end_expr)
+    index = Index
+    index_range = IndexRange
 
     def equal(self, a, sym, b):
         # Resolve what sort of equality we're doing (e.g., "regular" equality, equality of subwords, etc.)
@@ -358,14 +284,10 @@ class PecanTransformer(Transformer):
     def var_ref(self, name):
         return VarRef(str(name))
 
-    def formula_true(self):
-        return FormulaTrue()
+    formula_true = FormulaTrue
+    formula_false = FormulaFalse
 
-    def formula_false(self):
-        return FormulaFalse()
-
-    def spot_formula(self, formula_str):
-        return SpotFormula(formula_str[1:-1])
+    spot_formula = SpotFormula
 
 pecan_parser = Lark(pecan_grammar, parser='lalr', transformer=PecanTransformer(), propagate_positions=True)
 

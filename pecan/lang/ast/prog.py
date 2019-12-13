@@ -38,7 +38,7 @@ class AutLiteral(Predicate):
         return repr(self)
 
     def __repr__(self):
-        return 'AUTOMATON LITERAL' # TODO: Maybe improve this?
+        return 'AUTOMATON LITERAL'
 
 class SpotFormula(Predicate):
     def __init__(self, formula_str):
