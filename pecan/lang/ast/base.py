@@ -19,6 +19,9 @@ class ASTNode:
     def evaluate_node(self, prog):
         raise NotImplementedError
 
+    def __repr__(self):
+        return self.show()
+
 class Expression(ASTNode):
     def __init__(self):
         super().__init__()
@@ -27,9 +30,6 @@ class Expression(ASTNode):
     # This should be overriden by all expressions
     def show(self):
         raise NotImplementedError
-
-    def __repr__(self):
-        return self.show()
 
 class UnaryExpression(Expression):
     def __init__(self, a):

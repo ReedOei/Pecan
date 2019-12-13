@@ -37,7 +37,7 @@ class AutLiteral(Predicate):
     def show(self):
         return repr(self)
 
-    def __repr__(self):
+    def show(self):
         return 'AUTOMATON LITERAL'
 
 class SpotFormula(Predicate):
@@ -48,7 +48,7 @@ class SpotFormula(Predicate):
     def transform(self, transformer):
         return transformer.transform_SpotFormula(self)
 
-    def __repr__(self):
+    def show(self):
         return 'LTL({})'.format(self.formula_str)
 
 class Call(Predicate):
@@ -66,7 +66,7 @@ class Call(Predicate):
     def with_args(self, new_args):
         return Call(self.name, new_args)
 
-    def __repr__(self):
+    def show(self):
         return '{}({})'.format(self.name, ', '.join(map(repr, self.args)))
 
 class NamedPred(ASTNode):
@@ -91,7 +91,7 @@ class NamedPred(ASTNode):
     def transform(self, transformer):
         return transformer.transform_NamedPred(self)
 
-    def __repr__(self):
+    def show(self):
         return '{}({}) := {}'.format(self.name, ','.join(map(repr, self.args)), self.body)
 
 class Program(ASTNode):
@@ -117,7 +117,7 @@ class Program(ASTNode):
     def transform(self, transformer):
         return transformer.transform_Program(self)
 
-    def __repr__(self):
+    def show(self):
         return repr(self.defs)
 
 class Restriction(ASTNode):
@@ -134,6 +134,6 @@ class Restriction(ASTNode):
     def transform(self, transformer):
         return transformer.transform_Restriction(self)
 
-    def __repr__(self):
+    def show(self):
         return '{} are {}'.format(', '.join(map(repr, self.restrict_vars)), self.pred)
 
