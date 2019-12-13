@@ -51,3 +51,6 @@ class GeneralTest(unittest.TestCase):
     def test_arith_props(self):
         return self.run_file('examples/arith_props.pn')
 
+    def test_fa19_poster_session(self):
+        return self.run_file('examples/fa19-poster-session.pn')
+

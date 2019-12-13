@@ -18,16 +18,20 @@ from pecan.settings import settings
 def run_repl(env):
     while True:
         try:
-            prog_str = input('> ')
+            prog_str = input('> ').strip()
 
-            if prog_str.strip().lower() == 'exit':
+            if prog_str.lower() == 'exit':
                 break
 
-            prog = program.from_source(prog_str)
-
-            settings.log(0, prog)
-
-            env = prog.evaluate(env)
+            if prog_str.startswith(':set'):
+                parts = prog_str.split(' ')
+                if len(parts) > 1:
+                    if parts[1] == 'debug':
+                        settings.set_debug_level(1 if settings.get_debug_level() <= 0 else 0)
+            else:
+                prog = program.from_source(prog_str)
+                settings.log(0, prog)
+                env = prog.evaluate(env)
         except KeyboardInterrupt:
             print('') # newline to go "below" the prompt
             print("Use 'exit' to exit Pecan.")

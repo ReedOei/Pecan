@@ -5,7 +5,7 @@ from pecan.lang.ast import *
 from lark import Lark, Transformer, v_args
 
 pecan_grammar = """
-    ?start: defs  -> prog
+    ?start: _NEWLINE* defs  -> prog
 
     ?defs:          -> nil_def
          | def -> single_def

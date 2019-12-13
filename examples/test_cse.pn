@@ -1,0 +1,4 @@
+x, y, z are nat
+
+test(z) := 2*(x + y) = z
+

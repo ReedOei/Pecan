@@ -1,0 +1,72 @@
+// Note: This file contains a bunch of theorems that were entered by various people at the IGL Fall 2019 poster session,
+//  which have now been imortalized forever as tests. Thanks to everyone who tried it out!
+
+// Note: All weird syntax/idiosyncratic ways of expressions theorems (e.g., x+x+x instead of 3*x) have been preserved
+//  intentionally, to ensure there are no regressions in the parser.
+
+t() := forall x. x = x
+#assert_prop(true, t)
+
+t2():= forall x is nat. exists y is nat.x=y+y
+#assert_prop(false, t2)
+
+t3():= forall x is nat. exists y is nat. x = 3 * y | x = 3 * y + 1 | x = 3 * y + 2
+#assert_prop(true, t3)
+
+t4() := forall x is nat. ((exists y is nat. x = 2 * y + 1) & (exists z is nat. x = 3 * z + 2)) => exists w is nat. x = 6 * w + 5
+#assert_prop(true, t4)
+
+t5() := exists x is nat. forall y is nat. x = 2*y
+#assert_prop(false, t5)
+
+t6() := exists x is nat. exists y is nat. x = 2*y
+#assert_prop(true, t6)
+
+t7() := forall x is nat. exists y is nat. exists z is nat. (x + y = 2*z & y > x)
+#assert_prop(true, t7)
+
+t8() := exists x is nat. forall y is nat. (3*y > 5 & 2*x + 4*y >= 5)
+#assert_prop(false, t8)
+
+t9() := exists x is nat. x is nat
+#assert_prop(true, t9)
+
+t9() := forall x is nat. x is nat
+#assert_prop(true, t9)
+
+t10() := forall x is nat. x is nat
+#assert_prop(true, t10)
+
+t11() := exists x is nat. not x is nat
+#assert_prop(false, t11)
+
+t12() := forall x is nat. forall y is nat. (x + y = y + x)
+#assert_prop(true, t12)
+
+t13() := forall x is nat. exists y is nat. exists z is nat. forall w is nat. (x + y = z & z + w = w)
+#assert_prop(false, t13)
+
+t14() := forall x is nat. ((exists y is nat. y + y = x) & (exists y is nat. y + y + y = x)) => (exists y is nat. y + y + y + y + y + y = x)
+#assert_prop(true, t14)
+
+t15() := forall x is nat. ((exists y is nat. y*2 = x) & (exists y is nat. y*3 = x)) => (exists y is nat. y*6 = x)
+#assert_prop(true, t15)
+
+t16():=forall x is nat. x+x < 1000000
+#assert_prop(false, t16)
+
+t17():=forall x is nat. x+x=x
+#assert_prop(false, t17)
+
+t18():=forall x is nat. forall y is nat. x-y>0
+#assert_prop(false, t18)
+
+t19():=forall x is nat. x+0>0
+#assert_prop(false, t19)
+
+t20():=forall x is nat. x+0>=0
+#assert_prop(true, t20)
+
+t21() := forall x is nat. (exists y is nat. x = 2*y) => (exists z is nat. x + 1 = 2*z+1)
+#assert_prop(true, t21)
+
