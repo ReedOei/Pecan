@@ -556,5 +556,5 @@ class Restriction(IRNode):
         return transformer.transform_Restriction(self)
 
     def __repr__(self):
-        return '{} are {}'.format(', '.join(map(str, self.restrict_vars)), self.pred.insert_first(VarRef('*'))) # TODO: Improve this
+        return '{} are {}'.format(', '.join(map(repr, self.restrict_vars)), self.pred)
 
