@@ -1,0 +1,8 @@
+x, y are nat
+
+test() := forall x. x is even or x is odd
+#assert_prop(true, test)
+
+test2() := forall x. (x is even => odd(x + 1)) & (x is odd => even(x + 1))
+#assert_prop(true, test2)
+

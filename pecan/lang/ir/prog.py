@@ -169,7 +169,8 @@ class Call(IRPredicate):
         for arg in self.args:
             # If it's not just a variable, we need to actually do something
             if type(arg) is not VarRef:
-                new_var = VarRef(prog.fresh_name())
+                new_var = VarRef(prog.fresh_name()).with_type(arg.get_type())
+                prog.restrict(new_var.var_name, arg.get_type().restrict(new_var))
                 # For some reason we need to import again here?
                 from pecan.lang.ir.arith import Equals
                 arg_preds.append((Equals(arg, new_var), new_var))
@@ -475,6 +476,17 @@ class Program(IRNode):
                         return self.types[t][pred_name].match()
                     else:
                         return Match(match_any=True)
+
+        # TODO: it would be nice if we could just use the type on the variable to look up this instead of worry about
+        # if arg.get_type() is None:
+        #     return Match(match_any=True)
+        # for t in self.types:
+        #     restriction = arg.get_type().restrict(arg)
+        #     if self.try_unify_type(restriction, t.restrict(arg), unification):
+        #         if pred_name in self.types[t]:
+        #             return self.types[t][pred_name].match()
+        #         else:
+        #             return Match(match_any=True)
 
         return Match(match_any=True)
 

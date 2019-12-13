@@ -54,3 +54,6 @@ class GeneralTest(unittest.TestCase):
     def test_fa19_poster_session(self):
         return self.run_file('examples/fa19-poster-session.pn')
 
+    def test_even(self):
+        return self.run_file('examples/test_even.pn')
+
