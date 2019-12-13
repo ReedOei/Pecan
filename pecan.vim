@@ -15,7 +15,7 @@ let b:current_syntax = "pn"
 syntax keyword keywords is are forall exists not or and sometimes
 syntax match keyword_op '∀\|∃'
 syntax keyword bool true false
-syntax keyword directive save_aut save_aut_img save_pred context end_context load assert_prop import forget type show_word
+syntax keyword directive save_aut save_aut_img save_pred context end_context load assert_prop import forget type show_word accepting_word
 syntax match directiveOp '#'
 
 syntax match operator '+\|-\|=\|:=\|=>\|*\|/\|!\|\.\|>\|<\||\|&\|∧\|:\|∈\|≠\|¬\|⟺\|≤\|≥\|⇒\|⟹\|⇔\|∨'

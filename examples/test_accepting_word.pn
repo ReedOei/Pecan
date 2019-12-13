@@ -1,0 +1,3 @@
+c92(x is nat) := x = 92
+#accepting_word(c92)
+

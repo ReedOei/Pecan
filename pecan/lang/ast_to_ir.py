@@ -86,6 +86,9 @@ class ASTToIR(AstTransformer):
     def transform_DirectiveShowWord(self, node):
         return ir.DirectiveShowWord(self.transform(node.word_name), self.transform_decl_type(node.index_type), node.start_index, node.end_index)
 
+    def transform_DirectiveAcceptingWord(self, node):
+        return ir.DirectiveAcceptingWord(node.pred_name)
+
     def transform_Add(self, node):
         self.expr_depth += 1
         res = ir.Add(self.transform(node.a), self.transform(node.b))

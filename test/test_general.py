@@ -43,26 +43,26 @@ class GeneralTest(unittest.TestCase):
         self.run_file('examples/test_word_indexing.pn')
 
     def test_scope(self):
-        return self.run_file('examples/test_scope.pn')
+        self.run_file('examples/test_scope.pn')
 
     def test_chicken_mcnugget(self):
-        return self.run_file('examples/chicken_mcnugget.pn')
+        self.run_file('examples/chicken_mcnugget.pn')
 
     def test_arith_props(self):
-        return self.run_file('examples/arith_props.pn')
+        self.run_file('examples/arith_props.pn')
 
     def test_fa19_poster_session(self):
-        return self.run_file('examples/fa19-poster-session.pn')
+        self.run_file('examples/fa19-poster-session.pn')
 
     def test_even(self):
-        return self.run_file('examples/test_even.pn')
+        self.run_file('examples/test_even.pn')
 
     def test_word_syntax(self):
-        return self.run_file('examples/test_word_syntax.pn')
+        self.run_file('examples/test_word_syntax.pn')
 
     def test_type_infer_arguments(self):
-        return self.run_file('examples/test_type_infer_arguments.pn')
+        self.run_file('examples/test_type_infer_arguments.pn')
 
     def test_function_expression(self):
-        return self.run_file('examples/test_function_expression.pn')
+        self.run_file('examples/test_function_expression.pn')
 

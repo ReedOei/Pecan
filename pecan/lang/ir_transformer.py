@@ -60,6 +60,9 @@ class IRTransformer:
     def transform_DirectiveShowWord(self, node):
         return node
 
+    def transform_DirectiveAcceptingWord(self, node):
+        return node
+
     def transform_Add(self, node):
         return Add(self.transform(node.a), self.transform(node.b)).with_type(node.get_type())
 

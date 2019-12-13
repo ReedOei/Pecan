@@ -25,6 +25,7 @@ pecan_grammar = """
         | "#" "forget" "(" var ")" -> directive_forget
         | "#" "type" "(" formal "," val_dict ")" -> directive_type
         | "#" "show_word" "(" var "," formal "," int "," int ")" -> directive_show_word
+        | "#" "accepting_word" "(" var ")" -> directive_accepting_word
 
     ?val_dict: "{" [_NEWLINE* kv_pair _NEWLINE* ("," _NEWLINE* kv_pair _NEWLINE*)*] "}"
     ?kv_pair: string ":" var "(" args ")" -> kv_pair
@@ -172,6 +173,7 @@ class PecanTransformer(Transformer):
     directive_type = DirectiveType
     directive_show_word = DirectiveShowWord
     directive_save_aut = DirectiveSaveAut
+    directive_accepting_word = DirectiveAcceptingWord
     directive_save_aut_img = DirectiveSaveAutImage
     directive_context = DirectiveContext
     directive_end_context = DirectiveEndContext

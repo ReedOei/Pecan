@@ -143,3 +143,14 @@ class DirectiveShowWord(ASTNode):
     def __repr__(self):
         return '#show_word({}, {}, {}, {})'.format(self.word_name, self.index_type, self.start_index, self.end_index)
 
+class DirectiveAcceptingWord(ASTNode):
+    def __init__(self, pred_name):
+        super().__init__()
+        self.pred_name = pred_name
+
+    def transform(self, transformer):
+        return transformer.transform_DirectiveAcceptingWord(self)
+
+    def __repr__(self):
+        return '#accepting_word({})'.format(self.pred_name)
+
