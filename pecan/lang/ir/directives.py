@@ -156,16 +156,17 @@ class DirectiveLoadAut(IRNode):
         self.pred = pred.with_parent(self)
 
     def evaluate(self, prog):
+        # TODO: Support argument restrictions on loaded automata
+        realpath = prog.locate_file(self.filename)
+
         if self.aut_format == 'hoa':
-            realpath = prog.locate_file(self.filename)
             aut = spot.automaton(realpath)
-            prog.preds[self.pred.name] = NamedPred(self.pred.name, self.pred.args, AutLiteral(aut))
         elif self.aut_format == 'pecan':
-            realpath = prog.locate_file(self.filename)
             aut = convert_aut(realpath, [v.var_name for v in self.pred.args])
-            prog.preds[self.pred.name] = NamedPred(self.pred.name, self.pred.args, AutLiteral(aut))
         else:
             raise Exception('Unknown format: {}'.format(self.aut_format))
+
+        prog.preds[self.pred.name] = NamedPred(self.pred.name, self.pred.args, {}, AutLiteral(aut))
 
         return None
 

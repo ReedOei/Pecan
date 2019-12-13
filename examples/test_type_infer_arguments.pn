@@ -1,0 +1,30 @@
+// Test that restricting things based on the arguments works
+my_even(x is nat) := exists y is nat. x = 2*y
+
+// Test that the predicate we defined above is equivalent to the one defined in the standard library
+test() := forall x is nat. my_even(x) <=> even(x)
+#assert_prop(true, test)
+
+// Define a new numeration system so that we can't just fallback on the default adder, type inference MUST actually work
+#load("ostrowski/add_2.txt", "pecan", add2(alpha, a, b, c))
+#load("ostrowski/recog_2.txt", "pecan", recog2(alpha, x))
+#load("ostrowski/all_ones_2.txt", "pecan", all_ones2(a))
+#load("sturmian2.txt", "pecan", sturmian(n))
+
+x is ostrowski(a) := x is finite_num & recog2(a, x)
+x is zeckendorf := exists alpha is all_ones2. x is ostrowski(alpha)
+zeck_add(a, b, c) := exists alpha is all_ones2. add2(alpha, a, b, c)
+
+#type(zeckendorf, {
+    "adder": zeck_add(any, any, any),
+    "less": lt2(any, any)
+})
+
+zeck_even(x is zeckendorf) := exists y is zeckendorf. x=2*y
+
+// Test that we can properly use the argument types of functions to infer the types of things (e.g., constants as we do below)
+test2() := zeck_even(6)
+#assert_prop(true, test2)
+test3() := zeck_even(91)
+#assert_prop(false, test3)
+

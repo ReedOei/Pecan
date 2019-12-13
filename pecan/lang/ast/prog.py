@@ -63,26 +63,28 @@ class Call(Predicate):
     def insert_first(self, new_arg):
         return Call(self.name, [new_arg] + self.args)
 
+    def with_args(self, new_args):
+        return Call(self.name, new_args)
+
     def __repr__(self):
         return '{}({})'.format(self.name, ', '.join(map(repr, self.args)))
 
 class NamedPred(ASTNode):
-    def __init__(self, name, args, body, restriction_env=None):
+    def __init__(self, name, args, body):
         super().__init__()
         self.name = name
 
         self.args = []
-        self.arg_restrictions = []
+        self.arg_restrictions = {}
         for arg in args:
             if type(arg) is VarRef:
                 self.args.append(arg)
             elif type(arg) is Call:
-                self.args.append(arg.args[0])
-                self.arg_restrictions.append(Restriction([arg.args[0]], arg))
+                var = arg.args[0]
+                self.args.append(var)
+                self.arg_restrictions[var] = Restriction([var], arg.with_args(arg.args[1:]))
             else:
                 raise Exception("Argument '{}' is not: VarRef, or Call!".format(arg))
-
-        self.restriction_env = restriction_env or {}
 
         self.body = body
 

@@ -194,24 +194,16 @@ class Call(IRPredicate):
         return '{}({})'.format(self.name, ', '.join(map(repr, self.args)))
 
 class NamedPred(IRNode):
-    def __init__(self, name, args, body, restriction_env=None, body_evaluated=None):
+    def __init__(self, name, args, arg_restrictions, body, restriction_env=None, body_evaluated=None):
         super().__init__()
         self.name = name
 
-        self.args = []
-        self.arg_restrictions = []
-        for arg in args:
-            if type(arg) is VarRef:
-                self.args.append(arg)
-            elif type(arg) is Call:
-                self.args.append(arg.args[0])
-                self.arg_restrictions.append(Restriction([arg.args[0]], arg).with_parent(self))
-            else:
-                raise Exception("Argument '{}' is not: string, VarRef, or a Call!".format(arg))
+        self.args = [arg.with_parent(self) for arg in args]
+        self.arg_restrictions = {var.with_parent(self): restriction.with_parent(self) for var, restriction in arg_restrictions.items()}
+        self.body = body.with_parent(self)
 
         self.restriction_env = restriction_env or {}
 
-        self.body = body.with_parent(self)
         self.body_evaluated = body_evaluated
 
     def evaluate(self, prog):
@@ -222,7 +214,7 @@ class NamedPred(IRNode):
         prog.enter_scope()
 
         try:
-            for arg_restriction in self.arg_restrictions:
+            for _, arg_restriction in self.arg_restrictions.items():
                 arg_restriction.evaluate(prog)
 
             self.restriction_env = prog.get_restriction_env()
@@ -295,8 +287,9 @@ class Program(IRNode):
         self.types[pred_ref] = val_dict
 
     def run_type_inference(self):
-        from pecan.lang.ir.directives import DirectiveType, DirectiveForget
+        from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport
 
+        # TODO: Cleanup this part relative to evaluate below (e.g., lots of repeated if tree). Instead we could add a evaluate_type method or something, and let dispatch handle it for us
         for i, d in enumerate(self.defs):
             if type(d) is NamedPred:
                 self.defs[i] = self.type_inferer.reset().transform(d).with_parent(self)
@@ -309,6 +302,10 @@ class Program(IRNode):
                 d.evaluate(self)
             elif type(d) is DirectiveType:
                 d.evaluate(self)
+            elif type(d) is DirectiveLoadAut:
+                d.evaluate(self)
+            elif type(d) is DirectiveImport:
+                d.evaluate(self)
 
         # Clear all restrictions. All relevant restrictions will be held inside the restriction_env of the relevant predicates.
         # Having them also in our restrictions list just leads to double restricting, which is a waste of computation time
@@ -317,7 +314,7 @@ class Program(IRNode):
         return self
 
     def evaluate(self, old_env=None):
-        from pecan.lang.ir.directives import DirectiveType, DirectiveForget
+        from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport
 
         if old_env is not None:
             self.include(old_env)
@@ -338,6 +335,10 @@ class Program(IRNode):
             elif type(d) is DirectiveType:
                 pass
             elif type(d) is DirectiveForget:
+                pass
+            elif type(d) is DirectiveLoadAut:
+                pass
+            elif type(d) is DirectiveImport:
                 pass
 
             else:
@@ -476,8 +477,7 @@ class Program(IRNode):
 
         return Match(match_any=True)
 
-    # Dynamic dispatch based on argument types
-    def dynamic_call(self, pred_name, args):
+    def lookup_dynamic_call(self, pred_name, args):
         matches = []
         unification = {}
         for arg in args:
@@ -488,14 +488,18 @@ class Program(IRNode):
 
         # There will always be at least one match because there should always be
         # at least one argument, so no need for an initial value
-        final_match = reduce(lambda a, b: a.unify(b), matches)
+        final_match = reduce(lambda a, b: a.unify(b), matches, Match(match_any=True))
 
         # Match any means that we didn't find any type-specific matches
         if final_match.match_any:
-            return self.lookup_pred_by_name(pred_name).call(self, args)
+            return Call(pred_name, args)
         else:
-            final_call = final_match.call_with(pred_name, unification, args)
-            return self.lookup_pred_by_name(final_call.name).call(self, final_call.args)
+            return final_match.call_with(pred_name, unification, args)
+
+    # Dynamic dispatch based on argument types
+    def dynamic_call(self, pred_name, args):
+        final_call = self.lookup_dynamic_call(pred_name, args)
+        return self.lookup_pred_by_name(final_call.name).call(self, final_call.args)
 
     def locate_file(self, filename):
         for path in self.search_paths:

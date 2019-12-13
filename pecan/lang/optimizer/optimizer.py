@@ -16,7 +16,7 @@ class UntypedOptimizer:
     def optimize(self):
         for i, d in enumerate(self.prog.defs):
             if type(d) is NamedPred:
-                self.prog.defs[i] = NamedPred(d.name, d.args, self.run_optimizations(d.body), restriction_env=d.restriction_env)
+                self.prog.defs[i] = NamedPred(d.name, d.args, d.arg_restrictions, self.run_optimizations(d.body), restriction_env=d.restriction_env)
 
         return self.prog
 
@@ -45,7 +45,7 @@ class Optimizer:
     def optimize(self):
         for i, d in enumerate(self.prog.defs):
             if type(d) is NamedPred:
-                self.prog.defs[i] = NamedPred(d.name, d.args, self.run_optimizations(d.body), restriction_env=d.restriction_env)
+                self.prog.defs[i] = NamedPred(d.name, d.args, d.arg_restrictions, self.run_optimizations(d.body), restriction_env=d.restriction_env)
 
         return self.prog
 

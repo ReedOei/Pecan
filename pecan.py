@@ -29,6 +29,8 @@ def run_repl(env):
                     if parts[1] == 'debug':
                         settings.set_debug_level(1 if settings.get_debug_level() <= 0 else 0)
             else:
+                # We already loaded it before, so there's no point in loading it every time the user types something new in
+                settings.set_load_stdlib(False)
                 prog = program.from_source(prog_str)
                 settings.log(0, prog)
                 env = prog.evaluate(env)

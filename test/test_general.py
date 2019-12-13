@@ -60,3 +60,6 @@ class GeneralTest(unittest.TestCase):
     def test_word_syntax(self):
         return self.run_file('examples/test_word_syntax.pn')
 
+    def test_type_infer_arguments(self):
+        return self.run_file('examples/test_type_infer_arguments.pn')
+

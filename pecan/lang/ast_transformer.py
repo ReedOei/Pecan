@@ -137,7 +137,9 @@ class AstTransformer:
         return Call(node.name, [self.transform(arg) for arg in node.args])
 
     def transform_NamedPred(self, node):
-        return NamedPred(node.name, [self.transform(arg) for arg in node.args], self.transform(node.body), restriction_env=node.restriction_env)
+        new_args = [self.transform(arg) for arg in node.args]
+        new_restrictions = {self.transform(var): self.transform(restriction) for var, restriction in node.arg_restrictions.items()}
+        return NamedPred(node.name, new_args, new_restrictions, self.transform(node.body))
 
     def transform_Program(self, node):
         new_defs = [self.transform(d) for d in node.defs]

@@ -210,18 +210,52 @@ class TypeInferer(IRTransformer):
         return Less(a.with_type(res_type), b.with_type(res_type))
 
     def transform_Exists(self, node: Exists):
-        if node.cond is None:
-            if len(self.prog.get_restrictions(node.var.var_name)) == 0:
-                self.type_env[node.var.var_name] = AnyType()
-        else:
-            self.type_env[node.var.var_name] = RestrictionType(node.cond)
-        val = super().transform_Exists(node)
-        if node.var.var_name in self.type_env:
-            self.type_env.remove(node.var.var_name)
-        return val
+        self.prog.enter_scope()
+
+        if node.cond is not None:
+            self.prog.restrict(node.var.var_name, node.cond)
+        res = super().transform_Exists(node)
+
+        self.prog.exit_scope()
+
+        return res
 
     def transform_Call(self, node: Call):
-        # TODO: Handle the arg restrictions which can give us additional type information
+        # TODO: Handle the arg restrictions which can give us additional type information. Note: This will requires us to resolve calls ahead of time
         new_args = [self.transform(arg) for arg in node.args]
-        return Call(node.name, new_args)
+
+        self.prog.enter_scope()
+
+        temp_args = []
+        for arg in new_args:
+            if type(arg) is VarRef:
+                temp_args.append(arg)
+            else:
+                new_var = VarRef(self.prog.fresh_name()).with_type(arg.get_type())
+                self.prog.restrict(new_var.var_name, new_var.get_type().restrict(new_var))
+                temp_args.append(new_var)
+
+        resolved_call = self.prog.lookup_dynamic_call(node.name, temp_args)
+        resolved_pred = self.prog.lookup_pred_by_name(resolved_call.name)
+
+        final_args = []
+        for formal, arg in zip(resolved_pred.args, new_args):
+            if formal in resolved_pred.arg_restrictions:
+                restriction = resolved_pred.arg_restrictions[formal].pred.insert_first(formal)
+                res_type = self.type_env.unify(formal.with_type(RestrictionType(restriction)), arg)
+                final_args.append(arg.with_type(res_type))
+            else:
+                final_args.append(arg)
+
+        self.prog.exit_scope()
+
+        return Call(node.name, final_args)
+
+    def transform_NamedPred(self, node):
+        self.prog.enter_scope()
+        for _, arg_restriction in node.arg_restrictions.items():
+            arg_restriction.evaluate(self.prog)
+        res = super().transform_NamedPred(node)
+        self.prog.exit_scope()
+        return res
 

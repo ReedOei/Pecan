@@ -190,7 +190,9 @@ class ASTToIR(AstTransformer):
         return ir.Call(node.name, [self.transform(arg) for arg in node.args])
 
     def transform_NamedPred(self, node):
-        return ir.NamedPred(node.name, [self.transform(arg) for arg in node.args], self.transform(node.body), restriction_env=node.restriction_env)
+        new_args = [self.transform(arg) for arg in node.args]
+        new_restrictions = {self.transform(var): self.transform(restriction) for var, restriction in node.arg_restrictions.items()}
+        return ir.NamedPred(node.name, new_args, new_restrictions, self.transform(node.body))
 
     def transform_Program(self, node):
         # TODO: While `copy_defaults` will work here because of duck typing (node is an ast.prog.Program, not an ir.prog.Program), we should make come up with a better solution maybe?
