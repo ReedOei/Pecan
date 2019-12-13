@@ -47,20 +47,24 @@ pecan_grammar = """
     ?arg: expr
 
     ?call: var "(" args ")" -> call_args
-         | var _IS var     -> call_is
-         | var _IS var "(" args ")" -> call_is_args
+         | expr _IS var     -> call_is
+         | expr _IS var "(" args ")" -> call_is_args
 
-    ?pred: expr EQ expr                     -> equal
-         | expr NE expr                     -> not_equal
-         | expr "<" expr                    -> less
-         | expr ">" expr                    -> greater
-         | expr LE expr                     -> less_equal
-         | expr GE expr                     -> greater_equal
-         | pred IFF pred                    -> iff
-         | pred IMPLIES pred                -> implies
-         | pred CONJ pred                   -> conj
-         | pred DISJ pred                   -> disj
-         | COMP pred                        -> comp
+    ?pred: expr _EQ expr                     -> equal
+         | expr _NE expr                     -> not_equal
+         | expr "<" expr                     -> less
+         | expr ">" expr                     -> greater
+         | expr _LE expr                     -> less_equal
+         | expr _GE expr                     -> greater_equal
+         | pred _IFF pred                    -> iff
+         | pred "if" "and" "only" "if" pred  -> iff
+         | pred "iff" pred                   -> iff
+         | pred _IMPLIES pred                -> implies
+         | "if" pred "then" pred             -> implies
+         | "if" pred "then" pred _ELSE pred -> if_then_else
+         | pred _CONJ pred                   -> conj
+         | pred _DISJ pred                   -> disj
+         | _COMP pred                        -> comp
          | forall_sym formal "." pred       -> forall
          | exists_sym formal "." pred       -> exists
          | call
@@ -94,25 +98,27 @@ pecan_grammar = """
 
     PROP_VAL: "sometimes"i | "true"i | "false"i // case insensitive
 
-    NE: "!=" | "/=" | "≠"
-    COMP: "!" | "~" | "¬" | "not"
-    GE: ">=" | "≥"
-    LE: "<=" | "≤"
+    _NE: "!=" | "/=" | "≠"
+    _COMP: "!" | "~" | "¬" | "not"
+    _GE: ">=" | "≥"
+    _LE: "<=" | "≤"
 
-    IMPLIES: "=>" | "⇒" | "⟹ " | "->"
-    IFF: "<=>" | "⟺" | "⇔"
+    _IMPLIES: "=>" | "⇒" | "⟹ " | "->"
+    _IFF: "<=>" | "⟺" | "⇔"
 
-    EQ: "=" | "=="
+    _ELSE: "else" | "otherwise"
 
-    CONJ: "&" | "/\\\\" | "∧" | "and"
-    DISJ: "|" | "\\\\/" | "∨" | "or"
+    _EQ: "=" | "=="
+
+    _CONJ: "&" | "/\\\\" | "∧" | "and"
+    _DISJ: "|" | "\\\\/" | "∨" | "or"
 
     ?forall_sym: "A" | "forall" | "∀"
     ?exists_sym: "E" | "exists" | "∃"
 
     _NEWLINE: /\\n/
 
-    VAR: /(?!(is|are|forall|exists|not|or|and|sometimes|true|false)\\b)[a-zA-Z_][a-zA-Z_0-9]*/i
+    VAR: /(?!(if|then|else|otherwise|only|iff|is|are|forall|exists|not|or|and|sometimes|true|false)\\b)[a-zA-Z_][a-zA-Z_0-9]*/i
 
     COMMENT: "//" /(.)+/ _NEWLINE
 
@@ -142,8 +148,8 @@ class PecanTransformer(Transformer):
     formal_var = VarRef
 
     call_args = Call
-    call_is = lambda self, var_name, call_name: Call(call_name, [VarRef(var_name)])
-    call_is_args = lambda self, var_name, call_name, args: Call(call_name, [VarRef(var_name)] + args)
+    call_is = lambda self, var_name, call_name: Call(call_name, [var_name])
+    call_is_args = lambda self, var_name, call_name, args: Call(call_name, [var_name] + args)
 
     val_dict = lambda self, *pairs: dict(pairs)
 
@@ -214,7 +220,7 @@ class PecanTransformer(Transformer):
     index = Index
     index_range = IndexRange
 
-    def equal(self, a, sym, b):
+    def equal(self, a, b):
         # Resolve what sort of equality we're doing (e.g., "regular" equality, equality of subwords, etc.)
 
         # TODO: It would be nice to support automatic words with outputs other than 0 or 1
@@ -229,7 +235,7 @@ class PecanTransformer(Transformer):
         else:
             return Equals(a, b)
 
-    def not_equal(self, a, sym, b):
+    def not_equal(self, a, b):
         # Resolve what sort of equality we're doing (e.g., "regular" equality, equality of subwords, etc.)
         if type(a) is Index and type(b) is IntConst:
             return EqualsCompareIndex(False, a, b)
@@ -242,38 +248,19 @@ class PecanTransformer(Transformer):
         else:
             return NotEquals(a, b)
 
-    def less(self, a, b):
-        return Less(a, b)
+    less = Less
+    greater = Greater
+    less_equal = LessEquals
+    greater_equal = GreaterEquals
 
-    def greater(self, a, b):
-        return Greater(a, b)
+    def if_then_else(self, cond, p1, p2):
+        return Conjunction(Implies(cond, p1), Implies(Complement(cond), p2))
 
-    def less_equal(self, a, sym, b):
-        return LessEquals(a, b)
-
-    def greater_equal(self, a, sym, b):
-        return GreaterEquals(a, b)
-
-    def iff(self, a, sym, b):
-        return Iff(a, b)
-
-    def iff_words(self, a, b):
-        return Iff(a, b)
-
-    def implies(self, a, sym, b):
-        return Implies(a, b)
-
-    def implies_words(self, a, sym, b):
-        return Implies(a, b)
-
-    def conj(self, a, sym, b):
-        return Conjunction(a, b)
-
-    def disj(self, a, sym, b):
-        return Disjunction(a, b)
-
-    def comp(self, sym, a):
-        return Complement(a)
+    iff = Iff
+    implies = Implies
+    conj = Conjunction
+    disj = Disjunction
+    comp = Complement
 
     def forall(self, quant, var_name, pred):
         return Forall(var_name, pred)

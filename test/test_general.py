@@ -57,3 +57,6 @@ class GeneralTest(unittest.TestCase):
     def test_even(self):
         return self.run_file('examples/test_even.pn')
 
+    def test_word_syntax(self):
+        return self.run_file('examples/test_word_syntax.pn')
+
