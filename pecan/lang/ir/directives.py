@@ -189,7 +189,8 @@ class DirectiveImport(IRNode):
 
     def evaluate(self, prog):
         realpath = prog.locate_file(self.filename)
-        new_prog = prog.loader(realpath).copy_defaults(prog)
+        from pecan.program import load
+        new_prog = load(realpath).copy_defaults(prog)
         new_prog.evaluate()
         prog.include(new_prog)
         return None

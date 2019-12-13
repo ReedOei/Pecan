@@ -10,11 +10,7 @@ from functools import reduce
 import spot
 
 class ASTNode:
-    id = 0
     def __init__(self):
-        #TODO: detect used labels and avoid those
-        self.label = "__pecan{}".format(Expression.id)
-        Expression.id += 1
         self.type = None
 
     def transform(self, transformer):

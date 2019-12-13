@@ -8,10 +8,15 @@ from pecan.settings import settings
 
 class IRNode:
     id = 0
+    @staticmethod
+    def fresh_name():
+        label = f"__pecan_var{IRNode.id}"
+        IRNode.id += 1
+        return label
+
     def __init__(self):
         #TODO: detect used labels and avoid those
-        self.label = "__pecan{}".format(IRExpression.id)
-        IRExpression.id += 1
+        self.label = IRNode.fresh_name()
         self.type = None
         self.original_node = None
         self.parent = None

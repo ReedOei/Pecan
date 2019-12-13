@@ -101,21 +101,15 @@ class Program(ASTNode):
         self.context = kwargs.get('context', {})
         self.restrictions = kwargs.get('restrictions', [{}])
         self.types = kwargs.get('types', {})
-        self.parser = kwargs.get('parser', None) # This will be "filled in" in the main.py after we load a program
         self.eval_level = kwargs.get('eval_level', 0)
         self.result = kwargs.get('result', None)
         self.search_paths = kwargs.get('search_paths', [])
-        self.fresh_counter = kwargs.get('fresh_counter', 0)
-        self.loader = kwargs.get('loader', None)
 
     def copy_defaults(self, other_prog):
         self.context = other_prog.context
-        self.parser = other_prog.parser
         self.eval_level = other_prog.eval_level
         self.result = other_prog.result
         self.search_paths = other_prog.search_paths
-        self.fresh_counter = other_prog.fresh_counter
-        self.loader = other_prog.loader
         return self
 
     def transform(self, transformer):
