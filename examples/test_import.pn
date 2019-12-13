@@ -4,3 +4,7 @@
 test() := exists x. has_zeros(x)
 #assert_prop(true, test)
 
+// This is to make sure that restrictions don't get imported, because that would be super confusing; see examples/test_imported.pn
+test2() := exists y. not (y is nat)
+#assert_prop(true, test2)
+

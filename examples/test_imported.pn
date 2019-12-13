@@ -1,2 +1,5 @@
 has_zeros(x) := "F(!x)"
 
+// This is to make sure that restrictions don't get imported, because that would be super confusing
+y is nat // This comment is to test the parser to make sure we can write inline comments
+
