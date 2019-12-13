@@ -6,8 +6,7 @@ import spot
 from pecan.tools.automaton_tools import Substitution, AutomatonTransformer, Projection
 from pecan.lang.ir import *
 
-#TODO: memoize same expressions
-#TODO: Problem: can't change automaton for constants if definition of less_than or addition is changed in one run of Pecan.
+# TODO: memoize same expressions
 class Add(BinaryIRExpression):
     def __init__(self, a, b):
         super().__init__(a, b)
