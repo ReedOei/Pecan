@@ -174,7 +174,6 @@ class Call(IRPredicate):
             # If it's not just a variable, we need to actually do something
             if type(arg) is not VarRef:
                 new_var = VarRef(prog.fresh_name()).with_type(arg.get_type())
-                prog.restrict(new_var.var_name, arg.get_type().restrict(new_var))
                 # For some reason we need to import again here?
                 from pecan.lang.ir.arith import Equals
                 arg_preds.append((Equals(arg, new_var), new_var))

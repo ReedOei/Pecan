@@ -11,7 +11,7 @@ import spot
 
 class ASTNode:
     def __init__(self):
-        self.type = None
+        self.is_int = False
 
     def transform(self, transformer):
         return NotImplementedError('Transform not implemented for {}'.format(self.__class__.__name__))
@@ -29,10 +29,7 @@ class Expression(ASTNode):
         raise NotImplementedError
 
     def __repr__(self):
-        if self.type is None:
-            return self.show()
-        else:
-            return f'{self.show()} : {self.get_type()}'
+        return self.show()
 
 class UnaryExpression(Expression):
     def __init__(self, a):

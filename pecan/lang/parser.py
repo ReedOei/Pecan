@@ -1,8 +1,10 @@
 # -*- coding=utf-8 -*-
 
-from pecan.lang.ast import *
+from functools import reduce
 
 from lark import Lark, Transformer, v_args
+
+from pecan.lang.ast import *
 
 pecan_grammar = """
     ?start: _NEWLINE* defs  -> prog
@@ -25,7 +27,7 @@ pecan_grammar = """
         | "#" "show_word" "(" var "," formal "," int "," int ")" -> directive_show_word
 
     ?val_dict: "{" [_NEWLINE* kv_pair _NEWLINE* ("," _NEWLINE* kv_pair _NEWLINE*)*] "}"
-    ?kv_pair: string ":" call
+    ?kv_pair: string ":" var "(" args ")" -> kv_pair
 
     ?restriction: varlist ("are" | _IS) var -> restrict_is
                 | varlist ("are" | _IS) var "(" varlist ")" -> restrict_call
@@ -43,52 +45,56 @@ pecan_grammar = """
           | var _IS var -> formal_is
           | var _IS var "(" varlist ")" -> formal_is_call
 
-    args: [arg ("," arg)*]
-    ?arg: expr
-
-    ?call: var "(" args ")" -> call_args
-         | expr _IS var     -> call_is
-         | expr _IS var "(" args ")" -> call_is_args
-
-    ?pred: expr _EQ expr                     -> equal
-         | expr _NE expr                     -> not_equal
-         | expr "<" expr                     -> less
-         | expr ">" expr                     -> greater
-         | expr _LE expr                     -> less_equal
-         | expr _GE expr                     -> greater_equal
-         | pred _IFF pred                    -> iff
-         | pred "if" "and" "only" "if" pred  -> iff
-         | pred "iff" pred                   -> iff
+    ?pred: bool
          | pred _IMPLIES pred                -> implies
          | "if" pred "then" pred             -> implies
          | "if" pred "then" pred _ELSE pred -> if_then_else
-         | pred _CONJ pred                   -> conj
-         | pred _DISJ pred                   -> disj
-         | _COMP pred                        -> comp
+         | bool _IFF pred                    -> iff
+         | bool "if" "and" "only" "if" pred  -> iff
+         | bool "iff" pred                   -> iff
+         | bool _DISJ pred -> disj
+         | bool _CONJ pred -> conj
          | forall_sym formal "." pred       -> forall
          | exists_sym formal "." pred       -> exists
-         | call
-         | "(" pred ")"
-         | string                           -> spot_formula
+         | _COMP pred -> comp
+
+    ?bool: expr
          | "true"  -> formula_true
          | "false" -> formal_false
+         | string                           -> spot_formula
+         | "(" pred ")"
+         | comparison
+
+    ?comparison: expr _EQ expr                     -> equal
+               | expr _NE expr                     -> not_equal
+               | expr "<" expr                     -> less
+               | expr ">" expr                     -> greater
+               | expr _LE expr                     -> less_equal
+               | expr _GE expr                     -> greater_equal
 
     ?expr: arith
          | var "[" arith "]"  -> index
          | var "[" arith "." "." ["."] arith "]" -> index_range
 
-    ?arith: product
-          | arith "+" product -> add
-          | arith "-" product -> sub
+    ?arith: sub_expr
 
-    ?product: atom
-            | product "*" atom -> mul
-            | product "/" atom -> div
+    ?sub_expr: add_expr ("-" add_expr)* -> sub
+    ?add_expr: mul_expr ("+" mul_expr)* -> add
+    ?mul_expr: div_expr ("*" div_expr)* -> mul
+    ?div_expr: atom ("/" atom)* -> div
 
     ?atom: var -> var_ref
          | int
          | "-" int  -> neg
          | "(" arith ")"
+         | call
+
+    args: [arg ("," arg)*]
+    ?arg: expr
+
+    call: var "(" args ")" -> call_args
+         | atom _IS var     -> call_is
+         | atom _IS var "(" args ")" -> call_is_args
 
     int: INT -> const
 
@@ -113,8 +119,8 @@ pecan_grammar = """
     _CONJ: "&" | "/\\\\" | "∧" | "and"
     _DISJ: "|" | "\\\\/" | "∨" | "or"
 
-    ?forall_sym: "A" | "forall" | "∀"
-    ?exists_sym: "E" | "exists" | "∃"
+    ?forall_sym: "forall" | "∀"
+    ?exists_sym: "exists" | "∃"
 
     _NEWLINE: /\\n/
 
@@ -153,7 +159,8 @@ class PecanTransformer(Transformer):
 
     val_dict = lambda self, *pairs: dict(pairs)
 
-    kv_pair = lambda self, key, val: (key, val)
+    # TODO: Idealy we would allow all forms of calls here (e.g., "n is nat")
+    kv_pair = lambda self, key, pred_name, args: (key, Call(pred_name, args))
 
     def restrict_many(self, args, pred):
         if type(pred) is VarRef: # If we do something like `x,y,z are nat`
@@ -205,10 +212,11 @@ class PecanTransformer(Transformer):
     def var(self, letter, *args):
         return letter + ''.join(args)
 
-    add = Add
-    sub = Sub
-    mul = Mul
-    div = Div
+    add = lambda self, *args: reduce(Add, args)
+    sub = lambda self, *args: reduce(Sub, args)
+    mul = lambda self, *args: reduce(Mul, args)
+    div = lambda self, *args: reduce(Div, args)
+
     neg = Neg
 
     def const(self, const):

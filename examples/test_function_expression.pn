@@ -1,0 +1,10 @@
+one(x is nat) := x = 1
+two(x is nat) := x = 2
+
+test() := one() + one() = two()
+#assert_prop(true, test)
+
+// Also test the other, equivalent, syntax for this
+test2() := one(_) + one(_) = two(_)
+#assert_prop(true, test2)
+

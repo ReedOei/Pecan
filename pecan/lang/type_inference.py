@@ -265,3 +265,10 @@ class TypeInferer(IRTransformer):
 
         return res
 
+    def transform_FunctionExpression(self, node):
+        temp_args = list(node.args)
+        temp_args[node.val_idx] = VarRef(self.prog.fresh_name()).with_type(InferredType())
+        new_call = self.transform_Call(Call(node.pred_name, temp_args))
+        res_type = new_call.args[node.val_idx].get_type()
+        return FunctionExpression(new_call.name, new_call.args, node.val_idx).with_type(res_type)
+

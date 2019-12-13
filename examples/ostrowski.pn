@@ -10,8 +10,8 @@ x is ostrowski(a) := x is finite_num & recog2(a, x)
     "less": lt2(any, any)
 })
 
-x is zeckendorf := exists alpha is all_ones2. x is ostrowski(alpha)
-zeck_add(a, b, c) := exists alpha is all_ones2. add2(alpha, a, b, c)
+x is zeckendorf := x is ostrowski(all_ones2())
+zeck_add(a, b, c) := add2(all_ones2(), a, b, c)
 
 #type(zeckendorf, {
     "adder": zeck_add(any, any, any),

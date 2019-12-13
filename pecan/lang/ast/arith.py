@@ -27,7 +27,7 @@ class Sub(BinaryExpression):
     def __init__(self, a, b):
         super().__init__(a, b)
 
-    def __repr__(self):
+    def show(self):
         return '({} - {})'.format(self.a, self.b)
 
     def transform(self, transformer):

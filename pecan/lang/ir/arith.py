@@ -51,7 +51,7 @@ class Sub(BinaryIRExpression):
     def __init__(self, a, b):
         super().__init__(a, b)
 
-    def __repr__(self):
+    def show(self):
         return '({} - {})'.format(self.a, self.b)
 
     def evaluate_node(self, prog):
@@ -235,34 +235,25 @@ class Less(BinaryIRPredicate):
     def __repr__(self):
         return '({} < {})'.format(self.a, self.b)
 
-class UndeterminedExpression(IRExpression):
-    def __init__(self, pred, subs, val):
-        self.pred = pred # string, which function to be called
+class FunctionExpression(IRExpression):
+    def __init__(self, pred_name, args, val_idx):
+        super().__init__()
         self.is_int = False
-        self.subs = subs
-        self.val = val # val that is undetermined
+        self.pred_name = pred_name
+        self.args = args
+        self.val_idx = val_idx # the index of the "return value" of the function
+        # TODO: Warn users if the function is not a "true" function
 
-    def evaluate(self, prog):
-        reps = [x.evaluate(prog) for x in self.subs]
-        auts = [rep[0] for rep in reps]
-        vals = [rep[1] for rep in reps]
-        assert self.val in vals
-        idxs = [idx for idx,val in enumerate(vals) if val == self.val]
+    def evaluate_node(self, prog):
+        return_val = VarRef(prog.fresh_name()).with_type(self.args[self.val_idx].get_type())
+        self.args[self.val_idx] = return_val
+        return Call(self.pred_name, self.args).evaluate(prog), return_val
 
-        # product of all auts with aut without auts at idxs, and with pred
-        result = reduce(spot.product,[aut for aut,val in reps if val != self.val])
-        result = spot.product(result, prog.call(self.pred, vals))
+    def transform(self, transformer):
+        return transformer.transform_FunctionExpression(self)
 
-        # project var except those we want
-        proj_vals = set()
-        for idx,sub in enumerate(self.subs):
-            if type(sub) is not VarRef and reps[idx][1] != self.val:
-                proj_vals.add(vals[idx])
-        result = Projection(result, proj_vals).project()
-        return (result, self.val)
-
-        # def __repr__(self)
-        # return '()'.format()
+    def show(self):
+        return '{}({})'.format(self.pred_name, ', '.join(map(repr, self.args)))
 
 class AutomatonArithmeticError(Exception):
     pass

@@ -154,3 +154,6 @@ class AstTransformer:
     def transform_Restriction(self, node):
         return Restriction(list(map(self.transform, node.var_names)), self.transform(node.pred))
 
+    def transform_FunctionExpression(self, node):
+        return FunctionExpression(node.pred_name, list(map(self.transform, node.args)), node.val_idx)
+

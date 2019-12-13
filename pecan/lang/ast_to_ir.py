@@ -23,6 +23,7 @@ class ASTToIR(AstTransformer):
     def __init__(self):
         super().__init__()
         self.prog = None # This will be set when we are transforming programs
+        self.expr_depth = 0
 
     def transform_decl_type(self, t):
         if type(t) is Call:
@@ -86,10 +87,16 @@ class ASTToIR(AstTransformer):
         return ir.DirectiveShowWord(self.transform(node.word_name), self.transform_decl_type(node.index_type), node.start_index, node.end_index)
 
     def transform_Add(self, node):
-        return ir.Add(self.transform(node.a), self.transform(node.b))
+        self.expr_depth += 1
+        res = ir.Add(self.transform(node.a), self.transform(node.b))
+        self.expr_depth -= 1
+        return res
 
     def transform_Sub(self, node):
-        return ir.Sub(self.transform(node.a), self.transform(node.b))
+        self.expr_depth += 1
+        res = ir.Sub(self.transform(node.a), self.transform(node.b))
+        self.expr_depth -= 1
+        return res
 
     def transform_Mul(self, node):
         if node.is_int:
@@ -100,7 +107,10 @@ class ASTToIR(AstTransformer):
         if c == 0:
             return ir.IntConst(0)
 
+        self.expr_depth += 1
         power = self.transform(node.b)
+        self.expr_depth -= 1
+
         s = ir.IntConst(0)
         while True:
             if c & 1 == 1:
@@ -113,47 +123,63 @@ class ASTToIR(AstTransformer):
         return s.with_original_node(node)
 
     def transform_Div(self, node):
-        return ir.Div(self.transform(node.a), self.transform(node.b))
+        self.expr_depth += 1
+        res = ir.Div(self.transform(node.a), self.transform(node.b))
+        self.expr_depth -= 1
+        return res
 
     def transform_IntConst(self, node):
         return ir.IntConst(node.val)
 
     def transform_Equals(self, node):
-        return ir.Equals(self.transform(node.a), self.transform(node.b))
+        self.expr_depth += 1
+        res = ir.Equals(self.transform(node.a), self.transform(node.b))
+        self.expr_depth -= 1
+        return res
 
     def transform_NotEquals(self, node):
-        return ir.Complement(ir.Equals(self.transform(node.a), self.transform(node.b))).with_original_node(node)
+        return ir.Complement(self.transform(Equals(node.a, node.b))).with_original_node(node)
 
     def transform_Less(self, node):
-        return ir.Less(self.transform(node.a), self.transform(node.b))
+        self.expr_depth += 1
+        res = ir.Less(self.transform(node.a), self.transform(node.b))
+        self.expr_depth -= 1
+        return res
 
     def transform_Greater(self, node):
-        return ir.Less(self.transform(node.b), self.transform(node.a))
+        return self.transform(Less(node.b, node.a)).with_original_node(node)
 
     def transform_LessEquals(self, node):
-        new_a = self.transform(node.a)
-        new_b = self.transform(node.b)
-        return ir.Disjunction(ir.Less(new_a, new_b), ir.Equals(new_a, new_b))
+        return self.transform(Disjunction(Less(node.a, node.b), Equals(node.a, node.b))).with_original_node(node)
 
     def transform_GreaterEquals(self, node):
-        new_a = self.transform(node.a)
-        new_b = self.transform(node.b)
-        return ir.Disjunction(ir.Less(new_b, new_a), ir.Equals(new_a, new_b))
+        return self.transform(Disjunction(Less(node.b, node.a), Equals(node.a, node.b))).with_original_node(node)
 
     def transform_Neg(self, node):
-        return ir.Sub(IntConst(0), self.transform(node.a))
+        return self.transform(Sub(IntConst(0), node.a)).with_original_node(node)
 
     def transform_Index(self, node):
-        return ir.Index(node.var_name, self.transform(node.index_expr))
+        self.expr_depth += 1
+        res = ir.Index(node.var_name, self.transform(node.index_expr))
+        self.expr_depth -= 1
+        return res
 
     def transform_IndexRange(self, node):
-        return ir.IndexRange(node.var_name, self.transform(node.start), self.transform(node.end))
+        self.expr_depth += 1
+        res = ir.IndexRange(node.var_name, self.transform(node.start), self.transform(node.end))
+        self.expr_depth -= 1
+        return res
 
     def transform_EqualsCompareIndex(self, node):
-        return ir.EqualsCompareIndex(node.is_equals, self.transform(node.index_a), self.transform(node.index_b))
+        self.expr_depth += 1
+        res = ir.EqualsCompareIndex(node.is_equals, self.transform(node.index_a), self.transform(node.index_b))
+        self.expr_depth -= 1
+        return res
 
     def transform_EqualsCompareRange(self, node):
-        return ir.EqualsCompareRange(node.is_equals, self.transform(node.index_a), self.transform(node.index_b))
+        res = ir.EqualsCompareRange(node.is_equals, self.transform(node.index_a), self.transform(node.index_b))
+        self.expr_depth -= 1
+        return res
 
     def transform_Forall(self, node: Forall):
         if node.cond is not None:
@@ -187,7 +213,26 @@ class ASTToIR(AstTransformer):
         return ir.SpotFormula(node.formula_str)
 
     def transform_Call(self, node):
-        return ir.Call(node.name, [self.transform(arg) for arg in node.args])
+        self.expr_depth += 1
+        new_args = [self.transform(arg) for arg in node.args]
+        self.expr_depth -= 1
+        # This means we are inside an expression, and are to be treated as though we are an expression, not a predicate
+        if self.expr_depth > 0:
+            idx = -1
+            for i, arg in enumerate(new_args):
+                if arg.var_name == '_':
+                    if idx != -1:
+                        raise Exception('Multiple outputs specified for function expression: {}({})'.format(node.name, node.args))
+                    idx = i
+
+            # If no '_' is passed, then assume the output is the last arguments. This lets us write things like "add(a, b)" and get "add(a, b, _)"
+            if idx == -1:
+                idx = len(new_args)
+                new_args.append(ir.VarRef('_'))
+
+            return ir.FunctionExpression(node.name, new_args, idx)
+        else:
+            return ir.Call(node.name, new_args)
 
     def transform_NamedPred(self, node):
         new_args = [self.transform(arg) for arg in node.args]

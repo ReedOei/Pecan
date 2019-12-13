@@ -63,3 +63,6 @@ class GeneralTest(unittest.TestCase):
     def test_type_infer_arguments(self):
         return self.run_file('examples/test_type_infer_arguments.pn')
 
+    def test_function_expression(self):
+        return self.run_file('examples/test_function_expression.pn')
+
