@@ -28,6 +28,10 @@ class IRNode:
     def get_parent(self):
         return self.parent
 
+    def label_var(self):
+        from pecan.lang.ir.prog import VarRef
+        return VarRef(self.label).with_type(self.get_type())
+
     def with_original_node(self, original_node):
         self.original_node = original_node
         return self

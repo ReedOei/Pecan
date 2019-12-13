@@ -22,7 +22,7 @@ class VarRef(IRExpression):
 
     def evaluate(self, prog):
         # The automata accepts everything (because this isn't a predicate)
-        return spot.formula('1').translate(), self.var_name
+        return spot.formula('1').translate(), self
 
     def transform(self, transformer):
         return transformer.transform_VarRef(self)
@@ -40,10 +40,11 @@ class VarRef(IRExpression):
         return hash((self.var_name, self.get_type()))
 
 class AutLiteral(IRPredicate):
-    def __init__(self, aut):
+    def __init__(self, aut, display_node=None):
         super().__init__()
         self.aut = aut
         self.is_int = False
+        self.display_node = display_node
 
     def evaluate(self, prog):
         return self.aut
@@ -55,7 +56,10 @@ class AutLiteral(IRPredicate):
         return repr(self)
 
     def __repr__(self):
-        return 'AUTOMATON LITERAL'
+        if self.display_node is not None:
+            return 'AutLiteral({})'.format(repr(self.display_node))
+        else:
+            return 'AUTOMATON LITERAL'
 
     def __eq__(self, other):
         return other is not None and type(other) is self.__class__ and self.aut == other.aut
@@ -181,7 +185,7 @@ class Call(IRPredicate):
         from pecan.lang.ir.bool import Conjunction
         from pecan.lang.ir.quant import Exists
 
-        final_pred = AutLiteral(prog.call(self.name, final_args))
+        final_pred = AutLiteral(prog.call(self.name, final_args), display_node=Call(self.name, final_args))
         for pred, var in arg_preds:
             final_pred = Exists(var, None, Conjunction(pred, final_pred))
 
@@ -450,30 +454,16 @@ class Program(IRNode):
             raise Exception(f'Predicate {pred_name} not found (known predicates: {self.preds.keys()}!')
 
     def lookup_call(self, pred_name, arg, unification):
-        restrictions = self.get_restrictions(arg.var_name)
+        if arg.get_type() is None:
+            return Match(match_any=True)
 
-        # For now, use the restriction in the most local scope that we can find a match for
-        # TODO: Improve this?
-        for restriction in restrictions[::-1]:
-            for t in self.types:
-                if self.try_unify_type(restriction, t.restrict(arg), unification):
-                    if pred_name == restriction.name:
-                        return restriction.match()
-                    elif pred_name in self.types[t]:
-                        return self.types[t][pred_name].match()
-                    else:
-                        return Match(match_any=True)
-
-        # TODO: it would be nice if we could just use the type on the variable to look up this instead of worry about
-        # if arg.get_type() is None:
-        #     return Match(match_any=True)
-        # for t in self.types:
-        #     restriction = arg.get_type().restrict(arg)
-        #     if self.try_unify_type(restriction, t.restrict(arg), unification):
-        #         if pred_name in self.types[t]:
-        #             return self.types[t][pred_name].match()
-        #         else:
-        #             return Match(match_any=True)
+        for t in self.types:
+            restriction = arg.get_type().restrict(arg)
+            if self.try_unify_type(restriction, t.restrict(arg), unification):
+                if pred_name in self.types[t]:
+                    return self.types[t][pred_name].match()
+                else:
+                    return Match(match_any=True)
 
         return Match(match_any=True)
 

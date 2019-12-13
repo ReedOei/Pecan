@@ -28,20 +28,17 @@ class Add(BinaryIRExpression):
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
 
-        if self.get_type() is not None:
-            prog.restrict(self.label, self.get_type().restrict(VarRef(self.label)))
-
-        aut_add = prog.call('adder', [VarRef(val_a), VarRef(val_b), VarRef(self.label)])
+        aut_add = prog.call('adder', [val_a, val_b, self.label_var()])
         result = spot.product(aut_b, aut_a)
         result = spot.product(aut_add, result)
 
         proj_vars = set()
         if type(self.a) is not VarRef:
-            proj_vars.add(val_a)
+            proj_vars.add(val_a.var_name)
         if type(self.b) is not VarRef:
-            proj_vars.add(val_b)
+            proj_vars.add(val_b.var_name)
         result = Projection(result, proj_vars).project()
-        return (result, self.label)
+        return (result, self.label_var())
 
     def transform(self, transformer):
         return transformer.transform_Add(self)
@@ -64,20 +61,17 @@ class Sub(BinaryIRExpression):
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
 
-        if self.get_type() is not None:
-            prog.restrict(self.label, self.get_type().restrict(VarRef(self.label)))
-
-        aut_sub = prog.call('adder', [VarRef(self.label), VarRef(val_b), VarRef(val_a)])
+        aut_sub = prog.call('adder', [self.label_var(), val_b, val_a])
         result = spot.product(aut_b, aut_a)
         result = spot.product(aut_sub, result)
 
         proj_vars = set()
         if type(self.a) is not VarRef:
-            proj_vars.add(val_a)
+            proj_vars.add(val_a.var_name)
         if type(self.b) is not VarRef:
-            proj_vars.add(val_b)
+            proj_vars.add(val_b.var_name)
         result = Projection(result, proj_vars).project()
-        return (result, self.label)
+        return (result, self.label_var())
 
     def transform(self, transformer):
         return transformer.transform_Sub(self)
@@ -143,18 +137,15 @@ class IntConst(IRExpression):
         if (self.val, self.get_type()) in constants_map:
             return constants_map[(self.val, self.get_type())]
 
-        if self.get_type() is not None:
-            prog.restrict(self.label, self.get_type().restrict(VarRef(self.label)))
-
         if self.val == 0:
             # Constant 0 is defined as 000000... TODO: Maybe allow users to define their own 0
-            constants_map[(self.val, self.get_type())] = (spot.formula('G(~__constant0)').translate(), "__constant0")
+            constants_map[(self.val, self.get_type())] = (spot.formula('G(~__constant0)').translate(), self.label_var())
         elif self.val == 1:
-            leq = Disjunction(Less(one_const_var, b_const), Equals(one_const_var, b_const))
-            b_in_0_1 = Conjunction(Less(zero_const, b_const), Less(b_const, one_const_var))
-            formula_1 = Conjunction(Less(zero_const, one_const_var), Complement(Exists(b_const, self.get_type().restrict(b_const), b_in_0_1)))
+            leq = Disjunction(Less(self.label_var(), b_const), Equals(self.label_var(), b_const))
+            b_in_0_1 = Conjunction(Less(zero_const, b_const), Less(b_const, self.label_var()))
+            formula_1 = Conjunction(Less(zero_const, self.label_var()), Complement(Exists(b_const, self.get_type().restrict(b_const), b_in_0_1)))
 
-            constants_map[(self.val, self.get_type())] = (formula_1.evaluate(prog).postprocess('BA'), one_const_var.var_name)
+            constants_map[(self.val, self.get_type())] = (formula_1.evaluate(prog).postprocess('BA'), self.label_var())
         else:
             assert self.val >= 2, "constant here should be greater than or equal to 1, while it is {}".format(self.val)
 
@@ -201,13 +192,13 @@ class Equals(BinaryIRPredicate):
 
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
-        eq_aut = spot.formula('G(({0} -> {1}) & ({1} -> {0}))'.format(val_a, val_b)).translate()
+        eq_aut = spot.formula('G(({0} -> {1}) & ({1} -> {0}))'.format(val_a.var_name, val_b.var_name)).translate()
         result = spot.product(eq_aut, spot.product(aut_a, aut_b))
         proj_vars = set()
         if type(self.a) is not VarRef:
-            proj_vars.add(val_a)
+            proj_vars.add(val_a.var_name)
         if type(self.b) is not VarRef:
-            proj_vars.add(val_b)
+            proj_vars.add(val_b.var_name)
         result = Projection(result, proj_vars).project()
         return result
 
@@ -226,15 +217,15 @@ class Less(BinaryIRPredicate):
             return spot.formula('1').translate() if self.a.evaluate_int(prog) < self.b.evaluate_int(prog) else spot.formula('0').translate()
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
-        aut_less = prog.call('less', [VarRef(val_a), VarRef(val_b)])
+        aut_less = prog.call('less', [val_a, val_b])
         result = spot.product(aut_a, aut_b)
         result = spot.product(aut_less, result)
 
         proj_vars = set()
         if type(self.a) is not VarRef:
-            proj_vars.add(val_a)
+            proj_vars.add(val_a.var_name)
         if type(self.b) is not VarRef:
-            proj_vars.add(val_b)
+            proj_vars.add(val_b.var_name)
         result = Projection(result, proj_vars).project()
         return result
 

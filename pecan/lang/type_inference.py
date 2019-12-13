@@ -214,6 +214,7 @@ class TypeInferer(IRTransformer):
 
         if node.cond is not None:
             self.prog.restrict(node.var.var_name, node.cond)
+
         res = super().transform_Exists(node)
 
         self.prog.exit_scope()
@@ -221,10 +222,7 @@ class TypeInferer(IRTransformer):
         return res
 
     def transform_Call(self, node: Call):
-        # TODO: Handle the arg restrictions which can give us additional type information. Note: This will requires us to resolve calls ahead of time
         new_args = [self.transform(arg) for arg in node.args]
-
-        self.prog.enter_scope()
 
         temp_args = []
         for arg in new_args:
@@ -232,30 +230,38 @@ class TypeInferer(IRTransformer):
                 temp_args.append(arg)
             else:
                 new_var = VarRef(self.prog.fresh_name()).with_type(arg.get_type())
-                self.prog.restrict(new_var.var_name, new_var.get_type().restrict(new_var))
                 temp_args.append(new_var)
 
         resolved_call = self.prog.lookup_dynamic_call(node.name, temp_args)
         resolved_pred = self.prog.lookup_pred_by_name(resolved_call.name)
 
+        temp_type_env = TypeEnv(self.prog)
+
         final_args = []
         for formal, arg in zip(resolved_pred.args, new_args):
-            if formal in resolved_pred.arg_restrictions:
-                restriction = resolved_pred.arg_restrictions[formal].pred.insert_first(formal)
-                res_type = self.type_env.unify(formal.with_type(RestrictionType(restriction)), arg)
-                final_args.append(arg.with_type(res_type))
-            else:
-                final_args.append(arg)
+            found = False
 
-        self.prog.exit_scope()
+            for formal_var, restriction in resolved_pred.arg_restrictions.items():
+                if formal_var.var_name == formal.var_name:
+                    found = True
+
+                    restriction = restriction.pred.insert_first(formal)
+                    res_type = temp_type_env.unify(formal.with_type(RestrictionType(restriction)), arg)
+                    final_args.append(arg.with_type(res_type))
+
+            if not found:
+                final_args.append(arg)
 
         return Call(node.name, final_args)
 
     def transform_NamedPred(self, node):
         self.prog.enter_scope()
+
         for _, arg_restriction in node.arg_restrictions.items():
             arg_restriction.evaluate(self.prog)
         res = super().transform_NamedPred(node)
+
         self.prog.exit_scope()
+
         return res
 
