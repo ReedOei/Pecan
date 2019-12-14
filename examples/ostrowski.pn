@@ -39,6 +39,8 @@ i, j, k, n are zeckendorf
 F(n) := sturmian(n)
 
 square(i, n) := i is zeckendorf & n is zeckendorf & n > 0 & forall k. k < n => F[i + k] = F[i + k + n]
+// As a memorial to the optimizer, the only reasonable way to define square so that it would finish in time was:
+// square(i, n) := i is zeckendorf & n is zeckendorf & n > 0 & !(exists k. k < n & (exists ik is zeckendorf. ik = i + k & exists ikn is zeckendorf. ikn = ik + n & ((F(ik) & (!F(ikn))) | (F(ikn) & (!F(ik))))))
 squares_exist() := exists i. exists n. square(i, n)
 #assert_prop(true, squares_exist)
 
