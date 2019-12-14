@@ -26,6 +26,10 @@ class BooleanOptimizer(BasicOptimizer):
             self.changed = True
             return self.transform(Disjunction(Less(node.a.b, node.a.a), Equals(node.a.a, node.a.b)))
 
+        elif type(node.a) is EqualsCompareIndex:
+            self.changed = True
+            return self.transform(EqualsCompareIndex(not node.a.is_equals, node.a.index_a, node.a.index_b))
+
         else:
             return Complement(self.transform(node.a))
 

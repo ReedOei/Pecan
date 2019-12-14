@@ -3,14 +3,20 @@
 
 from pecan.lang.ir_transformer import IRTransformer
 from pecan.lang.optimizer.basic_optimizer import BasicOptimizer
+from pecan.lang.optimizer.tools import ExpressionFrequency, NodeSubstitution, DepthAnalyzer
 from pecan.lang.type_inference import *
 
 from pecan.lang.ir import *
 
 class ExpressionExtractor(IRTransformer):
-    def __init__(self, prog):
+    def __init__(self, prog, expr_frequency, depth_threshold=None, frequency_threshold=None):
         super().__init__()
         self.prog = prog
+        self.expr_frequency = expr_frequency
+
+        # Default is every occurrence of every expression gets extracted
+        self.depth_threshold = depth_threshold or 0
+        self.frequency_threshold = frequency_threshold or 0
 
         # TODO: Explain of these and simplify if possible
         self.expressions = {}
@@ -19,6 +25,16 @@ class ExpressionExtractor(IRTransformer):
         self.dep_graph = {}
 
         self.changed = False
+
+    def merge(self, other):
+        self.expressions.update(other.expressions)
+        self.expressions_compute.update(other.expressions_compute)
+        self.to_compute.update(other.to_compute)
+        self.dep_graph.update(other.dep_graph)
+
+        self.changed |= other.changed
+
+        return self
 
     def dep_order(self, new_vars):
         compute_vars = []
@@ -36,8 +52,10 @@ class ExpressionExtractor(IRTransformer):
 
         return compute_vars
 
-    def compute_variables_for_pred(self, compute_vars, pred):
-        compute_vars = self.dep_order(compute_vars)
+    def compute_vars_for(self, pred):
+        compute_vars = self.dep_order(list(self.dep_graph.keys()))
+
+        done = set()
 
         new_pred = pred
         for v in compute_vars:
@@ -59,45 +77,63 @@ class ExpressionExtractor(IRTransformer):
         if node.is_int:
             return node
 
-        if not node in self.expressions:
-            self.changed = True
+        if self.expr_frequency.get(node, 1) >= self.frequency_threshold:
+            depth = DepthAnalyzer().count(node)
+            if depth < self.depth_threshold:
+                return node
 
-            new_a = self.transform(node.a)
-            new_b = self.transform(node.b)
+            if not node in self.expressions:
+                self.changed = True
 
-            t = node.get_type() if node.get_type() is not None else InferredType()
-            new_var = VarRef(self.prog.fresh_name()).with_type(t)
+                new_a = self.transform(node.a)
+                new_b = self.transform(node.b)
 
-            self.expressions[node] = new_var
-            self.expressions_compute[node] = Sub(new_a, new_b).with_type(node.get_type())
-            self.to_compute[new_var] = node
-            self.dep_graph[new_var] = list(set(filter(self.is_var, [new_a, new_b])))
+                t = node.get_type() if node.get_type() is not None else InferredType()
+                new_var = VarRef(self.prog.fresh_name()).with_type(t)
 
-        return self.expressions[node]
+                self.expressions[node] = new_var
+                self.expressions_compute[node] = Sub(new_a, new_b).with_type(node.get_type())
+                self.to_compute[new_var] = node
+                self.dep_graph[new_var] = list(set(filter(self.is_var, [new_a, new_b])))
+
+            return self.expressions[node]
+        else:
+            return node
 
     def transform_Add(self, node):
         if node.is_int:
             return node
 
-        if not node in self.expressions:
-            self.changed = True
+        if self.expr_frequency.get(node, 1) >= self.frequency_threshold:
+            depth = DepthAnalyzer().count(node)
+            if depth < self.depth_threshold:
+                return node
 
+            if not node in self.expressions:
+                self.changed = True
+
+                new_a = self.transform(node.a)
+                new_b = self.transform(node.b)
+
+                t = node.get_type() if node.get_type() is not None else InferredType()
+                new_var = VarRef(self.prog.fresh_name()).with_type(t)
+
+                self.expressions[node] = new_var
+                self.expressions_compute[node] = Add(new_a, new_b).with_type(node.get_type())
+                self.to_compute[new_var] = node
+                self.dep_graph[new_var] = list(set(filter(self.is_var, [new_a, new_b])))
+
+            return self.expressions[node]
+        else:
             new_a = self.transform(node.a)
             new_b = self.transform(node.b)
-
-            t = node.get_type() if node.get_type() is not None else InferredType()
-            new_var = VarRef(self.prog.fresh_name()).with_type(t)
-
-            self.expressions[node] = new_var
-            self.expressions_compute[node] = Add(new_a, new_b).with_type(node.get_type())
-            self.to_compute[new_var] = node
-            self.dep_graph[new_var] = list(set(filter(self.is_var, [new_a, new_b])))
-
-        return self.expressions[node]
+            return Add(new_a, new_b).with_type(node.get_type())
 
 class CSEOptimizer(BasicOptimizer):
     def __init__(self, master_optimizer):
         super().__init__(master_optimizer)
+        self.frequency = None
+        self.frequency_threshold = 2
 
     def worth_optimization(self, node):
         if type(node) is VarRef:
@@ -112,13 +148,12 @@ class CSEOptimizer(BasicOptimizer):
         return True
 
     def transform_Equals(self, node):
-        extractor = ExpressionExtractor(self.prog)
+        # frequency = ExpressionFrequency().count(node)
+        extractor = ExpressionExtractor(self.prog, {})
 
-        compute_vars = []
         if isinstance(node.a, BinaryIRExpression) and self.worth_optimization(node.a):
             aa = extractor.transform(node.a.a)
             ab = extractor.transform(node.a.b)
-            compute_vars += [aa, ab]
             new_a = type(node.a)(aa, ab)
         else:
             new_a = node.a
@@ -126,12 +161,50 @@ class CSEOptimizer(BasicOptimizer):
         if isinstance(node.b, BinaryIRExpression) and self.worth_optimization(node.b):
             ba = extractor.transform(node.b.a)
             bb = extractor.transform(node.b.b)
-            compute_vars += [ba, bb]
             new_b = type(node.b)(ba, bb)
         else:
             new_b = node.b
 
         self.changed |= extractor.changed
 
-        return extractor.compute_variables_for_pred(compute_vars, Equals(new_a, new_b))
+        return extractor.compute_vars_for(Equals(new_a, new_b))
+
+    def multipass_cse(self, extractors, node):
+        new_node = node
+        for extractor in extractors:
+            new_node = extractor.transform(new_node)
+            if type(new_node) is VarRef:
+                break
+
+        return new_node
+
+    def transform_EqualsCompareIndex(self, node):
+        frequency = ExpressionFrequency().count(node)
+
+        # Extract everything that's either at least 2 levels deep or appears at least twice
+        freq_extractor = ExpressionExtractor(self.prog, frequency, frequency_threshold=2)
+        # TODO: This sometimes seems to help, but not all the time...still, it helps more than it hurts, especially for long-running theorems (e.g., examples/ostrowski.pn)
+        depth_extractor = ExpressionExtractor(self.prog, frequency, depth_threshold=1)
+
+        index_a = self.multipass_cse([freq_extractor, depth_extractor], node.index_a)
+        index_b = self.multipass_cse([freq_extractor, depth_extractor], node.index_b)
+
+        self.changed |= depth_extractor.changed or freq_extractor.changed
+
+        return depth_extractor.merge(freq_extractor).compute_vars_for(EqualsCompareIndex(node.is_equals, index_a, index_b))
+
+    def transform_Call(self, node):
+        frequency = ExpressionFrequency().count(node)
+
+        # Extract everything that's either at least 2 levels deep or appears at least twice
+        freq_extractor = ExpressionExtractor(self.prog, frequency, frequency_threshold=2)
+        depth_extractor = ExpressionExtractor(self.prog, frequency, depth_threshold=2)
+
+        new_args = []
+        for arg in node.args:
+            new_args.append(self.multipass_cse([freq_extractor, depth_extractor], arg))
+
+        self.changed |= depth_extractor.changed or freq_extractor.changed
+
+        return depth_extractor.merge(freq_extractor).compute_vars_for(Call(node.name, new_args))
 

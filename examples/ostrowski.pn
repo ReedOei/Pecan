@@ -38,8 +38,7 @@ i, j, k, n are zeckendorf
 // The Fibonacci word (i.e., characteristic Sturmian word with slope = 1/phi)
 F(n) := sturmian(n)
 
-// TODO: Make this nicer
-square(i, n) := i is zeckendorf & n is zeckendorf & n > 0 & !(exists k. k < n & (exists ik is zeckendorf. ik = i + k & exists ikn is zeckendorf. ikn = ik + n & !(F(ik) <=> F(ikn))))
+square(i, n) := i is zeckendorf & n is zeckendorf & n > 0 & forall k. k < n => F[i + k] = F[i + k + n]
 squares_exist() := exists i. exists n. square(i, n)
 #assert_prop(true, squares_exist)
 
@@ -47,7 +46,7 @@ cube(i, n) := square(i, n) & square(i + n, n)
 cubes_exist() := exists i. exists n. cube(i, n)
 #assert_prop(true, cubes_exist)
 
-fourth_power(i, n) := square(i, n) & exists in is zeckendorf. in = i + n & square(in, n) & square(in + n, n)
+fourth_power(i, n) := square(i, n) & square(i + n, n) & square(i + 2*n, n)
 fourth_power_exist() := exists i. exists n. fourth_power(i, n)
 #assert_prop(false, fourth_power_exist)
 

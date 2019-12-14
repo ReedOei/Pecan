@@ -287,4 +287,5 @@ class PecanTransformer(Transformer):
     spot_formula = SpotFormula
 
 pecan_parser = Lark(pecan_grammar, parser='lalr', transformer=PecanTransformer(), propagate_positions=True)
+pred_parser = Lark(pecan_grammar, parser='lalr', transformer=PecanTransformer(), propagate_positions=True, start='pred')
 

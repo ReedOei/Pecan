@@ -5,7 +5,7 @@ import io
 
 from pecan import program
 
-class GeneralTest(unittest.TestCase):
+class OutputTest(unittest.TestCase):
     def run_file(self, filename, expected_output):
         f = io.StringIO()
         with redirect_stdout(f):
