@@ -16,11 +16,11 @@ class UntypedOptimizer:
     def optimize(self):
         for i, d in enumerate(self.prog.defs):
             if type(d) is NamedPred:
-                self.prog.defs[i] = NamedPred(d.name, d.args, d.arg_restrictions, self.run_optimizations(d.body), restriction_env=d.restriction_env)
+                self.prog.defs[i] = NamedPred(d.name, d.args, d.arg_restrictions, self.run_optimizations(d.body, d), restriction_env=d.restriction_env)
 
         return self.prog
 
-    def run_optimizations(self, node):
+    def run_optimizations(self, node, pred):
         settings.log(2, f'Optimizing: {node}')
 
         optimization_pass = [ArithmeticOptimizer(self), BooleanOptimizer(self)]
@@ -30,7 +30,7 @@ class UntypedOptimizer:
         while ast_changed:
             ast_changed = False
             for optimization in optimization_pass:
-                changed, new_node = optimization.optimize(new_node)
+                changed, new_node = optimization.optimize(new_node, pred)
                 ast_changed |= changed
             break
 
@@ -45,11 +45,11 @@ class Optimizer:
     def optimize(self):
         for i, d in enumerate(self.prog.defs):
             if type(d) is NamedPred:
-                self.prog.defs[i] = NamedPred(d.name, d.args, d.arg_restrictions, self.run_optimizations(d.body), restriction_env=d.restriction_env)
+                self.prog.defs[i] = NamedPred(d.name, d.args, d.arg_restrictions, self.run_optimizations(d.body, d), restriction_env=d.restriction_env)
 
         return self.prog
 
-    def run_optimizations(self, node):
+    def run_optimizations(self, node, pred):
         settings.log(2, f'Optimizing: {node}')
 
         optimization_pass = [ArithmeticOptimizer(self), BooleanOptimizer(self), CSEOptimizer(self)]
@@ -59,7 +59,7 @@ class Optimizer:
         while ast_changed:
             ast_changed = False
             for optimization in optimization_pass:
-                changed, new_node = optimization.optimize(new_node)
+                changed, new_node = optimization.optimize(new_node, pred)
                 ast_changed |= changed
             break
 

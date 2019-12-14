@@ -3,14 +3,15 @@
 
 from pecan.lang.ir_transformer import IRTransformer
 from pecan.lang.optimizer.basic_optimizer import BasicOptimizer
-from pecan.lang.optimizer.tools import ExpressionFrequency, NodeSubstitution, DepthAnalyzer
+from pecan.lang.optimizer.tools import *
 from pecan.lang.type_inference import *
 
 from pecan.lang.ir import *
 
 class ExpressionExtractor(IRTransformer):
-    def __init__(self, prog, expr_frequency, depth_threshold=None, frequency_threshold=None):
+    def __init__(self, scope, prog, expr_frequency, depth_threshold=None, frequency_threshold=None):
         super().__init__()
+        self.scope = scope
         self.prog = prog
         self.expr_frequency = expr_frequency
 
@@ -18,13 +19,15 @@ class ExpressionExtractor(IRTransformer):
         self.depth_threshold = depth_threshold or 0
         self.frequency_threshold = frequency_threshold or 0
 
-        # TODO: Explain of these and simplify if possible
+        # TODO: Explain each of these and simplify if possible
         self.expressions = {}
         self.expressions_compute = {}
         self.to_compute = {}
         self.dep_graph = {}
 
         self.changed = False
+
+        self.current_scope = {}
 
     def merge(self, other):
         self.expressions.update(other.expressions)
@@ -64,7 +67,9 @@ class ExpressionExtractor(IRTransformer):
 
             # TODO: Make this cleaner
             if v.get_type() is not None and v.get_type().get_restriction() is not None:
-                new_pred = Exists(v, v.get_type().restrict(v), Conjunction(Equals(to_compute, v), new_pred))
+                # new_pred = Exists(v, v.get_type().restrict(v), Conjunction(Equals(to_compute, v), new_pred))
+                # TODO: Maybe it's unnecessary to restrict to the variable, because computing it should already do this for us
+                new_pred = Exists(v, None, Conjunction(Equals(to_compute, v), new_pred))
             else:
                 new_pred = Exists(v, None, Conjunction(Equals(to_compute, v), new_pred))
 
@@ -80,6 +85,9 @@ class ExpressionExtractor(IRTransformer):
         if self.expr_frequency.get(node, 1) >= self.frequency_threshold:
             depth = DepthAnalyzer().count(node)
             if depth < self.depth_threshold:
+                return node
+
+            if not VariableUsage().analyze(node).issubset(self.scope):
                 return node
 
             if not node in self.expressions:
@@ -107,6 +115,9 @@ class ExpressionExtractor(IRTransformer):
         if self.expr_frequency.get(node, 1) >= self.frequency_threshold:
             depth = DepthAnalyzer().count(node)
             if depth < self.depth_threshold:
+                return node
+
+            if not VariableUsage().analyze(node).issubset(self.scope):
                 return node
 
             if not node in self.expressions:
@@ -149,7 +160,7 @@ class CSEOptimizer(BasicOptimizer):
 
     def transform_Equals(self, node):
         # frequency = ExpressionFrequency().count(node)
-        extractor = ExpressionExtractor(self.prog, {})
+        extractor = ExpressionExtractor(self.current_scope, self.prog, {})
 
         if isinstance(node.a, BinaryIRExpression) and self.worth_optimization(node.a):
             aa = extractor.transform(node.a.a)
@@ -178,13 +189,36 @@ class CSEOptimizer(BasicOptimizer):
 
         return new_node
 
+    def pre_optimize(self, node):
+        self.current_scope = {arg.var_name for arg in self.pred.args}
+
+    def transform(self, node):
+        node = super().transform(node)
+        # if isinstance(node, IRPredicate):
+        #     frequency = ExpressionFrequency().count(node)
+        #     print('temp:', node, frequency)
+
+        #     # Extract everything that's either at least 2 levels deep or appears at least twice
+        #     freq_extractor = ExpressionExtractor(self.current_scope, self.prog, frequency, frequency_threshold=2)
+
+        #     new_node = self.multipass_cse([freq_extractor], node)
+
+        #     self.changed |= freq_extractor.changed
+
+        #     print('temp2:', new_node)
+
+        #     return freq_extractor.compute_vars_for(new_node)
+        #     return node
+        # else:
+        return node
+
     def transform_EqualsCompareIndex(self, node):
         frequency = ExpressionFrequency().count(node)
 
         # Extract everything that's either at least 2 levels deep or appears at least twice
-        freq_extractor = ExpressionExtractor(self.prog, frequency, frequency_threshold=2)
+        freq_extractor = ExpressionExtractor(self.current_scope, self.prog, frequency, frequency_threshold=2)
         # TODO: This sometimes seems to help, but not all the time...still, it helps more than it hurts, especially for long-running theorems (e.g., examples/ostrowski.pn)
-        depth_extractor = ExpressionExtractor(self.prog, frequency, depth_threshold=1)
+        depth_extractor = ExpressionExtractor(self.current_scope, self.prog, frequency, depth_threshold=1)
 
         index_a = self.multipass_cse([freq_extractor, depth_extractor], node.index_a)
         index_b = self.multipass_cse([freq_extractor, depth_extractor], node.index_b)
@@ -193,18 +227,9 @@ class CSEOptimizer(BasicOptimizer):
 
         return depth_extractor.merge(freq_extractor).compute_vars_for(EqualsCompareIndex(node.is_equals, index_a, index_b))
 
-    def transform_Call(self, node):
-        frequency = ExpressionFrequency().count(node)
-
-        # Extract everything that's either at least 2 levels deep or appears at least twice
-        freq_extractor = ExpressionExtractor(self.prog, frequency, frequency_threshold=2)
-        depth_extractor = ExpressionExtractor(self.prog, frequency, depth_threshold=2)
-
-        new_args = []
-        for arg in node.args:
-            new_args.append(self.multipass_cse([freq_extractor, depth_extractor], arg))
-
-        self.changed |= depth_extractor.changed or freq_extractor.changed
-
-        return depth_extractor.merge(freq_extractor).compute_vars_for(Call(node.name, new_args))
+    def transform_Exists(self, node: Exists):
+        self.current_scope.add(node.var.var_name)
+        res = super().transform_Exists(node)
+        self.current_scope.remove(node.var.var_name)
+        return res
 

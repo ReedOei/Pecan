@@ -9,6 +9,7 @@ class BasicOptimizer(IRTransformer):
         self.changed = False
         self.master_optimizer = master_optimizer
         self.prog = master_optimizer.prog
+        self.pred = None
 
     def pre_optimize(self, node):
         pass
@@ -16,8 +17,10 @@ class BasicOptimizer(IRTransformer):
     def post_optimize(self, node):
         pass
 
-    def optimize(self, node):
+    def optimize(self, node, pred):
         self.changed = False
+
+        self.pred = pred
 
         self.pre_optimize(node)
         new_node = self.transform(node)

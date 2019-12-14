@@ -60,3 +60,17 @@ class DepthAnalyzer(IRTransformer):
         self.transform(node)
         return self.max_depth
 
+class VariableUsage(IRTransformer):
+    def __init__(self):
+        super().__init__()
+        self.used_vars = set()
+
+    def transform_VarRef(self, node):
+        self.used_vars.add(node.var_name)
+        return node
+
+    def analyze(self, node):
+        self.used_vars = set()
+        self.transform(node)
+        return self.used_vars
+
