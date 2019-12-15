@@ -49,14 +49,15 @@ def intermediate_edge(b_inputs, start_state, end_state, base):
         s = states[str(start_state)]
         for i in range(base):
             inp = column(b_inputs, i)
-            if inp in s.keys():
+            if i == base - 1:
+                s[inp] = 'o' + str(end_state)
+            elif inp in s.keys():
                 key = s[inp]
                 if key[0] == 'o':
+                    print(key)
                     key = org_states[int(key[1:])]
                     s[inp] = key
                 s = states[key]
-            elif i == base - 1:
-                s[inp] = 'o' + str(end_state)
             else:
                 new_state = state(0)
                 name = str(state_counter)

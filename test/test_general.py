@@ -1,5 +1,4 @@
 import unittest
-
 from pecan import program
 from pecan.settings import settings
 
@@ -65,4 +64,7 @@ class GeneralTest(unittest.TestCase):
 
     def test_function_expression(self):
         self.run_file('examples/test_function_expression.pn')
+
+    def test_integers(self):
+        self.run_file('examples/test_integers.pn')
 

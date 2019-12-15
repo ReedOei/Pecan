@@ -223,7 +223,7 @@ class ASTToIR(AstTransformer):
         if self.expr_depth > 0:
             idx = -1
             for i, arg in enumerate(new_args):
-                if arg.var_name == '_':
+                if type(arg) is ir.VarRef and arg.var_name == '_':
                     if idx != -1:
                         raise Exception('Multiple outputs specified for function expression: {}({})'.format(node.name, node.args))
                     idx = i

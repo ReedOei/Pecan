@@ -1,0 +1,8 @@
+x is unary := "x U G(!x)"
+#save_aut_img("unary.svg", unary)
+
+  111110^w
++ 110^w
+---------------
+  11111110^w
+

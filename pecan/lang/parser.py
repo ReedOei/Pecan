@@ -53,8 +53,8 @@ pecan_grammar = """
          | bool _IFF pred                    -> iff
          | bool "if" "and" "only" "if" pred  -> iff
          | bool "iff" pred                   -> iff
-         | bool _DISJ pred -> disj
-         | bool _CONJ pred -> conj
+         | bool _DISJ _NEWLINE* pred -> disj
+         | bool _CONJ _NEWLINE* pred -> conj
          | forall_sym formal "." pred       -> forall
          | exists_sym formal "." pred       -> exists
          | _COMP pred -> comp
@@ -86,7 +86,7 @@ pecan_grammar = """
 
     ?atom: var -> var_ref
          | int
-         | "-" int  -> neg
+         | "-" atom  -> neg
          | "(" arith ")"
          | call
 
