@@ -409,9 +409,9 @@ class DirectiveAcceptingWord(IRNode):
             for var_name in var_names:
                 print('{}: {}({})^w'.format(var_name, prefixes[var_name], cycles[var_name]))
 
-            for var_name in var_names:
-                # TODO: Allow users to define their own formatters here
-                print('{}: {}'.format(var_name, self.format_real(prefixes[var_name], cycles[var_name])))
+            # for var_name in var_names:
+            #     # TODO: Allow users to define their own formatters here
+            #     print('{}: {}'.format(var_name, self.format_real(prefixes[var_name], cycles[var_name])))
 
             acc_word.as_automaton().postprocess('BA').save('{}.aut'.format(self.pred_name))
 
