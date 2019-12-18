@@ -22,7 +22,7 @@ class DirectiveSaveAut(IRNode):
     def evaluate(self, prog):
         settings.log(f'[INFO] Saving {self.pred_name} as {self.filename}')
 
-        prog.call(self.pred_name).postprocess('BA').save(self.filename)
+        prog.call(self.pred_name).save(self.filename)
         return None
 
     def transform(self, transformer):
@@ -47,7 +47,7 @@ class DirectiveSaveAutImage(IRNode):
         # TODO: Support formats other than SVG?
         settings.log(f'[INFO] Saving {self.pred_name} as an SVG in {self.filename}')
 
-        evaluated = prog.call(self.pred_name).postprocess('BA')
+        evaluated = prog.call(self.pred_name)
         with open(self.filename, 'w') as f:
             f.write(evaluated.show().data) # Write the raw svg data into the file
 

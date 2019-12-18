@@ -9,7 +9,11 @@ import spot
 
 class AutomatonTransformer:
     def __init__(self, original_aut, formula_builder):
-        self.original_aut = original_aut.postprocess('BA', 'small') # Ensure that the automata we get is a Buchi (possible nondeterministic) automata
+        if original_aut.is_sba():
+            self.original_aut = original_aut
+        else:
+            self.original_aut = original_aut.postprocess('BA') # Ensure that the automata we get is a Buchi (possible nondeterministic) automata
+
         self.formula_builder = formula_builder
 
     def transform(self):

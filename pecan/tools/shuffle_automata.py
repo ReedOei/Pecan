@@ -6,8 +6,16 @@ import spot
 
 class ShuffleAutomata:
     def __init__(self, aut_a, aut_b):
-        self.aut_a = aut_a.postprocess('BA')
-        self.aut_b = aut_b.postprocess('BA')
+        if aut_a.is_sba():
+            self.aut_a = aut_a
+        else:
+            self.aut_a = aut_a.postprocess('BA')
+
+        if aut_b.is_sba():
+            self.aut_b = aut_b
+        else:
+            self.aut_b = aut_b.postprocess('BA')
+
         self.state_encoding = {}
 
     def shuffle(self, disjunction=False):

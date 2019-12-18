@@ -10,6 +10,8 @@ class Conjunction(BinaryIRPredicate):
     def evaluate_node(self, prog):
         # TODO: Shortcircuit this? (i.e., if either a_aut or b_aut is empty, then just return an empty automaton? Is that worth it? Probably, right?)
         a_aut = self.a.evaluate(prog)
+        if a_aut.is_empty():
+            return a_aut
         b_aut = self.b.evaluate(prog)
         return spot.product(a_aut, b_aut)
 

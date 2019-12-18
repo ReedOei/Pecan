@@ -55,13 +55,18 @@ class IRNode:
         return '{}{}'.format(' ' * prog.eval_level, s)
 
     def simplify(self, prog, aut):
-        # self.show_aut_stats(prog, aut, desc='before simplify')
-        #o if aut.is_deterministic():
+        self.show_aut_stats(prog, aut, desc='before simplify')
+        # if aut.is_deterministic():
         #     aut = spot.minimize_obligation(aut)
         #     self.show_aut_stats(prog, aut, desc='after minimize_obligation')
 
-        # aut = aut.postprocess('BA')
-        # self.show_aut_stats(prog, aut, desc='after postprocess')
+        if aut.num_edges() < 10000:
+            aut.merge_edges()
+            self.show_aut_stats(prog, aut, desc='after merge_edges')
+
+        if aut.num_states() < 1000:
+            aut.merge_states()
+            self.show_aut_stats(prog, aut, desc='after merge_states')
 
         return aut
 
