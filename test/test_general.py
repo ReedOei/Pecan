@@ -68,3 +68,6 @@ class GeneralTest(unittest.TestCase):
     def test_integers(self):
         self.run_file('examples/test_integers.pn')
 
+    def test_real(self):
+        self.run_file('examples/test_real.pn')
+

@@ -1,0 +1,25 @@
+#load("integer/positive.txt", "pecan", positive(n))
+#load("integer/negate.txt", "pecan", negate(n, m))
+
+negative(a) := !positive(a)
+int_less(a, b) := (positive(a) & positive(b) & bin_less(a, b)) |
+                  (negative(a) & positive(b)) |
+                  (negative(a) & negative(b) & bin_less(b, a))
+
+pos_int_add(a, b, c) := positive(a) & positive(b) & bin_add(a, b, c)
+neg_int_add(a, b, c) := negative(a) & negative(b) & negate(bin_add(negate(a), negate(b)), c)
+neg_pos_add(a, b, c) := (negative(a) & positive(b) & bin_less(b, negate(a)) & negate(bin_add(_, b, negate(a)), c)) |
+                        (negative(a) & positive(b) & (bin_less(negate(a), b) | negate(a, b)) & bin_add(c, negate(a), b))
+pos_neg_add(a, b, c) := (positive(a) & negative(b) & bin_less(a, negate(b)) & negate(bin_add(_, a, negate(b)), c)) |
+                        (positive(a) & negative(b) & (bin_less(negate(b), a) | negate(b, a)) & bin_add(c, negate(b), a))
+
+negative_zero(x) := "x & X(G(!x))"
+x is int := x is finite_num & !negative_zero(x)
+
+int_add(a, b, c) := a is int & b is int & c is int & (pos_int_add(a, b, c) | neg_int_add(a, b, c) | neg_pos_add(a, b, c) | pos_neg_add(a, b, c))
+
+#type(int, {
+    "adder": int_add(any, any, any),
+    "less": int_less(any, any)
+})
+

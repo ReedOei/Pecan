@@ -17,5 +17,5 @@ class OutputTest(unittest.TestCase):
         self.run_file('examples/test_show_word.pn', '01101001100101101001011001101001100101100110100101101001100101101001011001101001011010011001011001101')
 
     def test_accepting_word(self):
-        self.run_file('examples/test_accepting_word.pn', '!x; !x; x; x; x; !x; x; cycle{!x}')
+        self.run_file('examples/test_accepting_word.pn', '!x; !x; x; x; x; !x; x; cycle{!x}\nx: 0011101(0)^w')
 
