@@ -73,7 +73,10 @@ class SpotFormula(IRPredicate):
         self.formula_str = formula_str
 
     def evaluate(self, prog):
-        return spot.translate(self.formula_str)
+        try:
+            return spot.translate(self.formula_str)
+        except:
+            return spot.parse_word(self.formula_str).as_automaton()
 
     def transform(self, transformer):
         return transformer.transform_SpotFormula(self)
@@ -173,10 +176,17 @@ class Call(IRPredicate):
         for arg in self.args:
             # If it's not just a variable, we need to actually do something
             if type(arg) is not VarRef:
-                new_var = VarRef(prog.fresh_name()).with_type(arg.get_type())
                 # For some reason we need to import again here?
-                from pecan.lang.ir.arith import Equals
+                from pecan.lang.ir.arith import Equals, FunctionExpression
+
+                new_var = VarRef(prog.fresh_name()).with_type(arg.get_type())
+
+                # if type(arg) is FunctionExpression:
+                #     arg_preds.append((arg.to_call(new_var), new_var))
+                # else:
+                aut, res_var = new_var.evaluate(prog)
                 arg_preds.append((Equals(arg, new_var), new_var))
+
                 final_args.append(new_var)
             else:
                 final_args.append(arg)
@@ -238,7 +248,7 @@ class NamedPred(IRNode):
 
         if self.body_evaluated is None:
             # We postprocess here because we will do it every time we call anyway (in AutomatonTransformer)
-            self.body_evaluated = self.body.evaluate(prog).postprocess('BA')
+            self.body_evaluated = spot.simulation(spot.scc_filter(self.body.evaluate(prog))).postprocess('BA')
 
         if arg_names is None or len(arg_names) == 0:
             result = self.body_evaluated
@@ -290,7 +300,7 @@ class Program(IRNode):
         self.types[pred_ref] = val_dict
 
     def run_type_inference(self):
-        from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport
+        from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle
 
         # TODO: Cleanup this part relative to evaluate below (e.g., lots of repeated if tree). Instead we could add a evaluate_type method or something, and let dispatch handle it for us
         for i, d in enumerate(self.defs):
@@ -309,6 +319,8 @@ class Program(IRNode):
                 d.evaluate(self)
             elif type(d) is DirectiveImport:
                 d.evaluate(self)
+            elif type(d) is DirectiveShuffle:
+                d.evaluate(self)
 
         # Clear all restrictions. All relevant restrictions will be held inside the restriction_env of the relevant predicates.
         # Having them also in our restrictions list just leads to double restricting, which is a waste of computation time
@@ -317,7 +329,7 @@ class Program(IRNode):
         return self
 
     def evaluate(self, old_env=None):
-        from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport
+        from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle
 
         if old_env is not None:
             self.include(old_env)
@@ -342,6 +354,8 @@ class Program(IRNode):
             elif type(d) is DirectiveLoadAut:
                 pass
             elif type(d) is DirectiveImport:
+                pass
+            elif type(d) is DirectiveShuffle:
                 pass
 
             else:

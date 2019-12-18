@@ -89,6 +89,9 @@ class ASTToIR(AstTransformer):
     def transform_DirectiveAcceptingWord(self, node):
         return ir.DirectiveAcceptingWord(node.pred_name)
 
+    def transform_DirectiveShuffle(self, node):
+        return ir.DirectiveShuffle(node.disjunction, self.transform(node.pred_a), self.transform(node.pred_b), self.transform(node.output_pred))
+
     def transform_Add(self, node):
         self.expr_depth += 1
         res = ir.Add(self.transform(node.a), self.transform(node.b))

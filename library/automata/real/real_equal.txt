@@ -1,0 +1,55 @@
+{0,1} {0,1}
+
+sign: 1
+0 0 -> first_frac
+1 1 -> first_frac
+
+first_frac: 1
+0 0 -> int,no_repeat
+// Carry repeat left (/right) means that the left (/right) hand side has to keep repeating forever, and we add 1 to the integral part of the RHS (/LHS).
+// This is to handle cases like: 1.\overline{0} = 0.\overline{1}
+0 1 -> int,carry_repeat_right
+// However, it could also just be a "regular" carry, which will be made up by a repeat on the "other" side (e.g., 0.0\overline{1} = 0.1\overline{0})
+0 1 -> int,repeat_left
+1 0 -> int,carry_repeat_left
+1 0 -> int,repeat_right
+1 1 -> int,no_repeat
+
+frac,no_repeat: 1
+0 0 -> int,no_repeat
+0 1 -> int,repeat_left
+1 1 -> int,no_repeat
+1 0 -> int,repeat_right
+
+frac,repeat_right: 1
+0 1 -> int,repeat_right
+
+frac,carry_repeat_right: 1
+0 1 -> int,carry_repeat_right
+
+frac,carry_repeat_left: 1
+1 0 -> int,carry_repeat_left
+
+frac,repeat_left: 1
+1 0 -> int,repeat_left
+
+int,carry_repeat_left: 1
+0 1 -> frac,repeat_left
+1 0 -> frac,carry_repeat_left
+
+int,carry_repeat_right: 1
+1 0 -> frac,repeat_right
+0 1 -> frac,carry_repeat_right
+
+int,no_repeat: 1
+0 0 -> frac,no_repeat
+1 1 -> frac,no_repeat
+
+int,repeat_left: 1
+0 0 -> frac,repeat_left
+1 1 -> frac,repeat_left
+
+int,repeat_right: 1
+0 0 -> frac,repeat_right
+1 1 -> frac,repeat_right
+

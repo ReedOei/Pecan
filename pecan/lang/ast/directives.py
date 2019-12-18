@@ -154,3 +154,17 @@ class DirectiveAcceptingWord(ASTNode):
     def __repr__(self):
         return '#accepting_word({})'.format(self.pred_name)
 
+class DirectiveShuffle(ASTNode):
+    def __init__(self, disjunction, pred_a, pred_b, output_pred):
+        super().__init__()
+        self.disjunction = disjunction
+        self.pred_a = pred_a
+        self.pred_b = pred_b
+        self.output_pred = output_pred
+
+    def transform(self, transformer):
+        return transformer.transform_DirectiveShuffle(self)
+
+    def __repr__(self):
+        return '#shuffle({}, {}, {})'.format(self.pred_a, self.pred_b, self.output_pred)
+

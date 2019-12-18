@@ -3,6 +3,9 @@ x,y,z are int
 test() := forall x. (if x is positive then negate(x) is negative) & (if x is negative then negate(x) is positive)
 #assert_prop(true, test)
 
+add_closed_int() := forall x. forall y. (x + y) is int
+#assert_prop(true, add_closed_int)
+
 add_comm_int() := forall x. forall y. x + y = y + x
 #assert_prop(true, add_comm_int)
 
@@ -24,4 +27,7 @@ abs_positive() := forall x. abs(x) >= 0
 
 abs_bigger() := forall x. abs(x) >= x
 #assert_prop(true, abs_bigger)
+
+ints_dense() := forall x. forall y. x < y => exists z. x < z & z < y
+#assert_prop(false, ints_dense)
 

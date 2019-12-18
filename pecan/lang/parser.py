@@ -26,6 +26,8 @@ pecan_grammar = """
         | "#" "type" "(" formal "," val_dict ")" -> directive_type
         | "#" "show_word" "(" var "," formal "," int "," int ")" -> directive_show_word
         | "#" "accepting_word" "(" var ")" -> directive_accepting_word
+        | "#" "shuffle" "(" formal "," formal "," formal ")" -> directive_shuffle
+        | "#" "shuffle_or" "(" formal "," formal "," formal ")" -> directive_shuffle_or
 
     ?val_dict: "{" [_NEWLINE* kv_pair _NEWLINE* ("," _NEWLINE* kv_pair _NEWLINE*)*] "}"
     ?kv_pair: string ":" var "(" args ")" -> kv_pair
@@ -36,9 +38,9 @@ pecan_grammar = """
 
     _IS: "is" | "∈"
 
-    ?pred_definition: var "(" formals ")" ":=" pred -> def_pred_standard
-                    | var _IS var [":=" pred] -> def_pred_is
-                    | var _IS var "(" formals ")" [":=" pred] -> def_pred_is_call
+    ?pred_definition: var "(" formals ")" ":=" _NEWLINE* pred -> def_pred_standard
+                    | var _IS var [":=" _NEWLINE* pred] -> def_pred_is
+                    | var _IS var "(" formals ")" [":=" _NEWLINE* pred] -> def_pred_is_call
 
     formals: [formal ("," formal)*]
     formal: var -> formal_var
@@ -47,16 +49,16 @@ pecan_grammar = """
           | var _IS var "(" varlist ")" -> formal_is_call
 
     ?pred: bool
-         | pred _IMPLIES pred                -> implies
-         | "if" pred "then" pred             -> implies
-         | "if" pred "then" pred _ELSE pred -> if_then_else
-         | bool _IFF pred                    -> iff
-         | bool "if" "and" "only" "if" pred  -> iff
+         | pred _IMPLIES _NEWLINE* pred                -> implies
+         | "if" pred "then" _NEWLINE* pred             -> implies
+         | "if" pred "then" _NEWLINE* pred _ELSE _NEWLINE* pred -> if_then_else
+         | bool _IFF _NEWLINE* pred                    -> iff
+         | bool "if" "and" "only" "if" _NEWLINE* pred  -> iff
          | bool "iff" pred                   -> iff
          | bool _DISJ _NEWLINE* pred -> disj
          | bool _CONJ _NEWLINE* pred -> conj
-         | forall_sym formal "." pred       -> forall
-         | exists_sym formal "." pred       -> exists
+         | forall_sym formal "." _NEWLINE* pred       -> forall
+         | exists_sym formal "." _NEWLINE* pred       -> exists
          | _COMP pred -> comp
 
     ?bool: expr
@@ -79,10 +81,10 @@ pecan_grammar = """
 
     ?arith: sub_expr
 
-    ?sub_expr: add_expr ("-" add_expr)* -> sub
-    ?add_expr: mul_expr ("+" mul_expr)* -> add
-    ?mul_expr: div_expr ("*" div_expr)* -> mul
-    ?div_expr: atom ("/" atom)* -> div
+    ?sub_expr: add_expr ("-" _NEWLINE* add_expr)* -> sub
+    ?add_expr: mul_expr ("+" _NEWLINE* mul_expr)* -> add
+    ?mul_expr: div_expr ("*" _NEWLINE* div_expr)* -> mul
+    ?div_expr: atom ("/" _NEWLINE* atom)* -> div
 
     ?atom: var -> var_ref
          | int
@@ -180,6 +182,12 @@ class PecanTransformer(Transformer):
     directive_load_aut = DirectiveLoadAut
     directive_import = DirectiveImport
     directive_forget = DirectiveForget
+
+    def directive_shuffle(self, pred_a, pred_b, output_pred):
+        return DirectiveShuffle(False, pred_a, pred_b, output_pred)
+
+    def directive_shuffle_or(self, pred_a, pred_b, output_pred):
+        return DirectiveShuffle(True, pred_a, pred_b, output_pred)
 
     prog = Program
 

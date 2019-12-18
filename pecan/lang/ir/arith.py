@@ -141,9 +141,12 @@ class IntConst(IRExpression):
             # Constant 0 is defined as 000000... TODO: Maybe allow users to define their own 0
             constants_map[(self.val, self.get_type())] = (spot.formula('G(~__constant0)').translate(), self.label_var())
         elif self.val == 1:
+            res = prog.call('one', [self.label_var()])
             leq = Disjunction(Less(self.label_var(), b_const), Equals(self.label_var(), b_const))
             b_in_0_1 = Conjunction(Less(zero_const, b_const), Less(b_const, self.label_var()))
             formula_1 = Conjunction(Less(zero_const, self.label_var()), Complement(Exists(b_const, self.get_type().restrict(b_const), b_in_0_1)))
+
+
 
             constants_map[(self.val, self.get_type())] = (formula_1.evaluate(prog).postprocess('BA'), self.label_var())
         else:
@@ -188,11 +191,11 @@ class Equals(BinaryIRPredicate):
 
     def evaluate_node(self, prog):
         if self.a.is_int and self.b.is_int:
-            return spot.formula('1').translate() if self.a.evaluate_int(prog) == self.b.evaluate_int(prog) else spot.formula('0').translate()
+            return spot.translate('1') if self.a.evaluate_int(prog) == self.b.evaluate_int(prog) else spot.translate('0')
 
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
-        eq_aut = spot.formula('G(({0} -> {1}) & ({1} -> {0}))'.format(val_a.var_name, val_b.var_name)).translate()
+        eq_aut = prog.call('equal', [val_a, val_b])
         result = spot.product(eq_aut, spot.product(aut_a, aut_b))
         proj_vars = set()
         if type(self.a) is not VarRef:
@@ -248,6 +251,12 @@ class FunctionExpression(IRExpression):
         return_val = VarRef(prog.fresh_name()).with_type(self.args[self.val_idx].get_type())
         self.args[self.val_idx] = return_val
         return Call(self.pred_name, self.args).evaluate(prog), return_val
+
+    # Transforms the function expression into a regular call, with the result going into the variable provided.
+    # For example: if we have something like P() = x, we probably want to transform this into just P(x)
+    def to_call(self, result_var):
+        self.args[self.val_idx] = result_var
+        return Call(self.pred_name, self.args)
 
     def transform(self, transformer):
         return transformer.transform_FunctionExpression(self)

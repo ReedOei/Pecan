@@ -10,12 +10,12 @@ elseif exists("b:current_syntax")
   finish
 endif
 
-let b:current_syntax = "pn"
+let b:current_syntax = "pecan"
 
 syntax keyword keywords is are forall exists not or and sometimes
 syntax match keyword_op '∀\|∃'
 syntax keyword bool true false
-syntax keyword directive save_aut save_aut_img save_pred context end_context load assert_prop import forget type show_word accepting_word
+syntax keyword directive save_aut save_aut_img save_pred context end_context load assert_prop import forget type show_word accepting_word shuffle
 syntax match directiveOp '#'
 
 syntax match operator '+\|-\|=\|:=\|=>\|*\|/\|!\|\.\|>\|<\||\|&\|∧\|:\|∈\|≠\|¬\|⟺\|≤\|≥\|⇒\|⟹\|⇔\|∨'

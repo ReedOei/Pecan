@@ -6,9 +6,6 @@
 finite_num(x) := "F(G(!x))"
 zero(x) := "G(!x)"
 
-#context("adder", "bin_add")
-#context("less", "bin_less")
-
 x is any := true
 x is nat := finite_num(x)
 // binary is, for the moment, a synonym for nat; eventually we may decouple the two
@@ -19,16 +16,29 @@ bin_even(x) := x is binary & exists y is binary. x = 2*y
 bin_odd(x) := x is binary & ¬bin_even(x)
 #forget(x)
 
+bin_one(x is binary) := x > 0 & forall b is binary. b > 0 => (x <= b)
+
+default_equal(x, y) := "G((x -> y) & (y -> x))"
+
+#context("adder", "bin_add")
+#context("less", "bin_less")
+#context("one", "bin_one")
+#context("equal", "default_equal")
+
 #type(nat, {
     "adder": bin_add(any, any, any),
     "less": bin_less(any, any),
+    "one": bin_one(any),
     "even": bin_even(any),
+    "equal": default_equal(any, any),
     "odd": bin_odd(any)
 })
 
 #type(binary, {
     "adder": bin_add(any, any, any),
     "less": bin_less(any, any),
+    "one": bin_one(any),
+    "equal": default_equal(any, any),
     "even": bin_even(any),
     "odd": bin_odd(any)
 })
@@ -48,11 +58,10 @@ neg_pos_add(a, b, c) := (negative(a) & positive(b) & bin_less(b, negate(a)) & ne
 pos_neg_add(a, b, c) := (positive(a) & negative(b) & bin_less(a, negate(b)) & negate(bin_add(_, a, negate(b)), c)) |
                         (positive(a) & negative(b) & (bin_less(negate(b), a) | negate(b, a)) & bin_add(c, negate(b), a))
 
-int_add(a, b, c) := pos_int_add(a, b, c) | neg_int_add(a, b, c) | neg_pos_add(a, b, c) | pos_neg_add(a, b, c)
-
 negative_zero(x) := "x & X(G(!x))"
-
 x is int := x is finite_num & !negative_zero(x)
+
+int_add(a, b, c) := a is int & b is int & c is int & (pos_int_add(a, b, c) | neg_int_add(a, b, c) | neg_pos_add(a, b, c) | pos_neg_add(a, b, c))
 
 #type(int, {
     "adder": int_add(any, any, any),

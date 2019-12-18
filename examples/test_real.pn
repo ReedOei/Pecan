@@ -1,0 +1,130 @@
+// TODO: Rename "labeled" to "pecan" and "pecan" to "walnut" for format names
+#load("real/msd_bin_less.txt", "pecan", msd_bin_less(a, b))
+#load("real/real_equal.txt", "labeled", real_equal(a, b))
+
+one_int(x) := "!x & X(x) & X(X(G(!x)))"
+zeros(x) := "G(!x)"
+
+not_all_ones(x) := "G(F(!x))"
+
+any2(a, b) := true
+
+// Build the basic recognition, addition, and comparison operators for real numbers
+
+// Real numbers aren't allowed to end in infinitely many ones---this preserves unique representations
+#shuffle(finite_num(x), not_all_ones(x), real_temp(x))
+real(x) := real_temp(x) & !negative_zero(x)
+
+#shuffle(one_int(x), zeros(x), real_one(x))
+
+// Takes a real number with a possibly all 1's ending, and replaces it with a real number that doesn't have all 1's as it's ending.
+normalize_real(a, b) := real_equal(a, b) & b is real
+
+// TODO: Add a "postprocess everything" option in the context or something; this would be helpful for when we want to produce minimally sized automata and can afford to pay the time cost
+#shuffle(int_less(a, b), any2(a, b), integral_less(a, b))
+
+#shuffle(default_equal(a, b), any2(a, b), integral_equal(a, b))
+
+x, y, z are real
+
+integral_less_irrefl() := forall x. !integral_less(x, x)
+#assert_prop(true, integral_less_irrefl)
+
+integral_less_antisym() := forall x. forall y. if integral_less(x, y) & integral_less(y, x) then integral_equal(x, y)
+#assert_prop(true, integral_less_antisym)
+
+integral_less_trans() := forall x. forall y. forall z. if integral_less(x, y) & integral_less(y, z) then integral_less(x, z)
+#assert_prop(true, integral_less_trans)
+
+integral_less_total() := forall x. forall y. integral_less(x, y) | integral_equal(x, y) | integral_less(y, x)
+#assert_prop(true, integral_less_total)
+
+// TODO: Probably writing "a is int" in the argument should automatically add a "a is int" conjunction to the body. That would make sense, anyway, and it would reduce the repetitions we have in some predicates about. We should also grab restrictions from the environment when we do this (or just look at the restriction_env, probably)
+#shuffle(any2(a, b), msd_bin_less(a, b), fractional_less(a, b))
+
+real_equal_refl() := forall x. real_equal(x, x)
+#assert_prop(true, real_equal_refl)
+
+real_equal_sym() := forall x. forall y. real_equal(x, y) <=> real_equal(y, x)
+#assert_prop(true, real_equal_sym)
+
+real_equal_trans() := forall x. forall y. forall z. (real_equal(x, y) & real_equal(y, z)) => real_equal(x, z)
+#assert_prop(true, real_equal_trans)
+
+real_less(a, b) := integral_less(a, b) | (integral_equal(a, b) &
+                                            ((negative(a) & negative(b) & fractional_less(b, a)) |
+                                             (positive(a) & positive(b) & fractional_less(a, b))))
+
+real_less_irrefl() := forall x. !real_less(x, x)
+#assert_prop(true, real_less_irrefl)
+
+real_less_antisym() := forall x. forall y. if real_less(x, y) & real_less(y, x) then x = y
+#assert_prop(true, real_less_antisym)
+
+real_less_trans() := forall x. forall y. forall z. if real_less(x, y) & real_less(y, z) then real_less(x, z)
+#assert_prop(true, real_less_trans)
+
+real_less_total() := forall x. forall y. real_less(x, y) | x = y | real_less(y, x)
+#assert_prop(true, real_less_total)
+
+#load("real/real_add_pos.txt", "labeled", real_add_pos_temp(a, b, c))
+
+// After adding with the adder loaded above, we may have a representation with infinitely many repeating 1's, but this is not allowed.
+// Therefore, we find an equivalent real number that ends in all 0's
+real_add_pos(a, b, c) := exists temp1. exists temp2. exists temp3. normalize_real(temp1, a) & normalize_real(temp2, b) & normalize_real(temp3, c) & real_add_pos_temp(temp1, temp2, temp3)
+
+real_add_pos_closed() := forall x. x is positive => forall y. y is positive => exists z. real_add_pos(x, y, z)
+#assert_prop(true, real_add_pos_closed)
+
+real_add_pos_comm() := forall x. x is positive => forall y. y is positive => forall z. (real_add_pos(x, y, z) <=> real_add_pos(y, x, z))
+#assert_prop(true, real_add_pos_comm)
+
+temp(x, xy, yz, z) := forall w. (w is positive) => (real_add_pos(xy, z, w) <=> real_add_pos(x, yz, w))
+inner(x, y, z, w) := forall xy. forall yz. (real_add_pos(x, y, xy) & real_add_pos(y, z, yz)) => temp(x, xy, yz, z)
+real_add_pos_assoc() := forall x.
+                        forall y.
+                        forall z.
+                        forall w is real. (w is real & x is real & x is positive & y is real & y is positive & z is real & z is positive) => inner(x, y, z, w)
+// TODO: This seems to be too expensive to verify right now...not a great sign
+// #assert_prop(true, real_add_pos_assoc)
+
+can_sub_if_lt() := forall x. x is positive => forall y. (y is positive & real_less(y, x)) => exists w. real_add_pos(w, y, x)
+#assert_prop(true, can_sub_if_lt)
+
+real_leq(a, b) := real_less(a, b) | a = b
+
+pos_real_add(a, b, c) := positive(a) & positive(b) & real_add_pos(a, b, c)
+neg_real_add(a, b, c) := negative(a) & negative(b) & negate(real_add_pos(negate(a), negate(b)), c)
+
+neg_pos_real_add(a, b, c) := negative(a) & positive(b) & ((real_less(b, negate(a)) & negate(real_add_pos(_, b, negate(a)), c)) |
+                                                          (real_leq(negate(a), b) & real_add_pos(c, negate(a), b)))
+
+pos_neg_real_add(a, b, c) := (positive(a) & negative(b) & real_less(a, negate(b)) & negate(real_add_pos(_, a, negate(b)), c)) |
+                             (positive(a) & negative(b) & real_leq(negate(b), a) & real_add_pos(c, negate(b), a))
+
+real_add(a, b, c) := (pos_real_add(a, b, c) | neg_real_add(a, b, c) | neg_pos_real_add(a, b, c) | pos_neg_real_add(a, b, c))
+
+real_add_neg_closed() := forall x. x is negative => forall y. y is negative => exists z. neg_real_add(x, y, z)
+#assert_prop(true, real_add_neg_closed)
+
+real_add_neg_pos_closed() := forall x. forall y. (x is negative & x is real & y is positive) => exists z. neg_pos_real_add(x, y, z)
+#assert_prop(true, real_add_neg_pos_closed)
+
+real_add_pos_neg_closed() := forall x. forall y. (x is positive & x is real & y is negative) => exists z. pos_neg_real_add(x, y, z)
+#assert_prop(true, real_add_pos_neg_closed)
+
+real_add_closed() := forall x. forall y. (x is real & y is real) => exists z. real_add(x, y, z)
+#assert_prop(true, real_add_closed)
+
+#type(real, {
+    "adder": real_add(any, any, any),
+    "less": real_less(any, any),
+    "one": real_one(any)
+})
+
+real_add_comm() := forall x. forall y. x is real => x + y = y + x
+#assert_prop(true, real_add_comm)
+
+reals_dense() := forall x. forall y. x < y => exists z. x < z & z < y
+#assert_prop(true, reals_dense)
+

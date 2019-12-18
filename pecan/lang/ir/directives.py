@@ -6,7 +6,9 @@ import sys
 import spot
 
 from pecan.tools.automaton_tools import TruthValue
+from pecan.tools.shuffle_automata import ShuffleAutomata
 from pecan.tools.convert_hoa import convert_aut
+from pecan.tools.labeled_aut_converter import convert_labeled_aut
 from pecan.lang.ir import *
 
 from pecan.settings import settings
@@ -160,9 +162,12 @@ class DirectiveLoadAut(IRNode):
         realpath = prog.locate_file(self.filename)
 
         if self.aut_format == 'hoa':
+            # TODO: Rename the APs of the loaded automaton to be the same as the args specified
             aut = spot.automaton(realpath)
         elif self.aut_format == 'pecan':
             aut = convert_aut(realpath, [v.var_name for v in self.pred.args])
+        elif self.aut_format == 'labeled':
+            aut = convert_labeled_aut(realpath, [v.var_name for v in self.pred.args])
         else:
             raise Exception('Unknown format: {}'.format(self.aut_format))
 
@@ -312,11 +317,128 @@ class DirectiveAcceptingWord(IRNode):
     def transform(self, transformer):
         return transformer.transform_DirectiveAcceptingWord(self)
 
+    # TODO: Remove this, an add a more extensible method for doing this sort of thing
+    def to_binary(self, var_names, bdd_list):
+        var_vals = {k: '' for k in var_names}
+
+        for bdd in bdd_list:
+            formula = spot.bdd_to_formula(bdd)
+
+            next_vals = {}
+            self.process_formula(next_vals, formula)
+
+            # If we didn't find a value for a variable in this part of the formula, that means it can be either 0 or 1.
+            # We arbitrarily choose 0.
+            for var_name in var_names:
+                var_vals[var_name] += next_vals.get(var_name, '0')
+
+        return var_vals
+
+    def process_formula(self, next_vals, formula):
+        if formula._is(spot.op_ap):
+            next_vals[formula.ap_name()] = "1"
+        elif formula._is(spot.op_Not):
+            next_vals[formula[0].ap_name()] = "0"
+        elif formula._is(spot.op_And):
+            for i in range(formula.size()):
+                self.process_formula(next_vals, formula[i])
+        elif formula._is(spot.op_tt):
+            pass
+        else:
+            raise Exception('Cannot process formula: {}'.format(formula))
+
+    def format_real(self, prefix, cycle):
+        # It is possible for the whole number to be in the cycle (e.g., if the integral part is 0^w)
+        if len(prefix) == 0:
+            cycle_offset = 1
+            sign = '+' if cycle[0] == '0' else '-'
+        else:
+            cycle_offset = 0
+            sign = '+' if prefix[0] == '0' else '-'
+
+        integral = ''
+        # This is always just zeros, so don't bother showing it
+        integral_repeat = ''
+        fractional = ''
+        fractional_repeat = ''
+
+        # Need to keep track of which part will have
+        fractional_modulus = 0
+        for i, c in enumerate(prefix[1:]):
+            if i % 2 == 0:
+                fractional_modulus = 1
+                fractional += c
+            else:
+                fractional_modulus = 0
+                integral += c
+
+        fractional_modulus = (fractional_modulus + cycle_offset) % 2
+        for i, c in enumerate(cycle):
+            if i % 2 == fractional_modulus:
+                fractional_repeat += c
+            else:
+                integral_repeat += c
+
+        # We store the integral part in LSD first
+        integral = integral[::-1]
+        integral_repeat = integral_repeat[::-1]
+
+        if len(integral) > 0:
+            return '{}{}.{}({})^w'.format(sign, integral, fractional, fractional_repeat)
+        else:
+            return '{}({})^w.{}({})^w'.format(sign, integral_repeat, fractional, fractional_repeat)
+
     def evaluate(self, prog):
-        print(prog.call(self.pred_name).accepting_word())
+        acc_word = prog.call(self.pred_name).accepting_word()
+
+        if acc_word is not None:
+            acc_word.simplify()
+
+        print(acc_word)
+
+        if acc_word is not None:
+            var_vals = {}
+            var_names = []
+            for formula in list(acc_word.prefix) + list(acc_word.cycle):
+                for f in spot.atomic_prop_collect(spot.bdd_to_formula(formula)):
+                    var_names.append(f.ap_name())
+            var_names = list(set(var_names))
+            prefixes = self.to_binary(var_names, acc_word.prefix)
+            cycles = self.to_binary(var_names, acc_word.cycle)
+
+            for var_name in var_names:
+                print('{}: {}({})^w'.format(var_name, prefixes[var_name], cycles[var_name]))
+
+            for var_name in var_names:
+                # TODO: Allow users to define their own formatters here
+                print('{}: {}'.format(var_name, self.format_real(prefixes[var_name], cycles[var_name])))
+
+            acc_word.as_automaton().postprocess('BA').save('{}.aut'.format(self.pred_name))
 
         return None
 
     def __repr__(self):
         return '#accepting_word({})'.format(self.pred_name)
+
+class DirectiveShuffle(IRNode):
+    def __init__(self, disjunction, pred_a, pred_b, output_pred):
+        super().__init__()
+        self.disjunction = disjunction
+        self.pred_a = pred_a
+        self.pred_b = pred_b
+        self.output_pred = output_pred
+
+    def transform(self, transformer):
+        return transformer.transform_DirectiveShuffle(self)
+
+    def evaluate(self, prog):
+        a_aut = prog.call(self.pred_a.name, self.pred_a.args)
+        b_aut = prog.call(self.pred_b.name, self.pred_b.args)
+        aut_res = ShuffleAutomata(a_aut, b_aut).shuffle(self.disjunction)
+        prog.preds[self.output_pred.name] = NamedPred(self.output_pred.name, self.output_pred.args, {}, AutLiteral(aut_res))
+
+        return None
+
+    def __repr__(self):
+        return '#shuffle({}, {}, {})'.format(self.pred_a, self.pred_b, self.output_pred)
 

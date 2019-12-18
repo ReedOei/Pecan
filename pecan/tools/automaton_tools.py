@@ -16,10 +16,6 @@ class AutomatonTransformer:
         # Build a new automata with different edges
         new_aut = spot.make_twa_graph()
 
-        aps = {}
-        for ap in self.original_aut.ap():
-            aps[ap.ap_name()] = buddy.bdd_ithvar(new_aut.register_ap(ap.ap_name()))
-
         # Set the acceptance condition to be same as the input automata
         acc = self.original_aut.get_acceptance()
         new_aut.set_acceptance(acc.used_sets().max_set(), acc)

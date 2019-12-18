@@ -1,0 +1,93 @@
+{0,1} {0,1} {0,1}
+
+// each state is: section,int carry,frac carry expected
+
+sign: 0
+0 0 0 -> first_frac
+
+first_frac: 0
+0 0 0 -> int,0,0,no_repeat
+0 0 1 -> int,0,1,no_repeat
+
+0 1 1 -> int,0,0,no_repeat
+0 1 0 -> int,1,1,no_repeat
+
+1 0 1 -> int,0,0,no_repeat
+1 0 0 -> int,1,1,no_repeat
+
+// Expect no more carry, because otherwise we'd be 1+1+1 = 11, not 1+1+0 = 10
+1 1 0 -> int,1,0,no_repeat
+1 1 1 -> int,1,1,no_repeat
+
+frac,0,0,no_repeat: 1
+0 0 0 -> int,0,0,no_repeat
+0 1 1 -> int,0,0,no_repeat
+1 0 1 -> int,0,0,no_repeat
+0 0 1 -> int,0,1,no_repeat
+
+frac,0,1,no_repeat: 0
+1 0 0 -> int,0,1,no_repeat
+0 1 0 -> int,0,1,no_repeat
+1 1 0 -> int,0,0,no_repeat
+1 1 1 -> int,0,1,repeat
+
+frac,1,0,no_repeat: 0
+0 0 0 -> int,1,0,no_repeat
+0 1 1 -> int,1,0,no_repeat
+1 0 1 -> int,1,0,no_repeat
+0 0 1 -> int,1,1,no_repeat
+
+frac,1,1,no_repeat: 0
+1 0 0 -> int,1,1,no_repeat
+0 1 0 -> int,1,1,no_repeat
+1 1 0 -> int,1,0,no_repeat
+1 1 1 -> int,1,1,repeat
+
+frac,0,1,repeat: 1
+1 0 0 -> int,0,1,no_repeat
+0 1 0 -> int,0,1,no_repeat
+1 1 0 -> int,0,0,no_repeat
+1 1 1 -> int,0,1,repeat
+
+frac,1,1,repeat: 0
+1 0 0 -> int,1,1,no_repeat
+0 1 0 -> int,1,1,no_repeat
+1 1 0 -> int,1,0,no_repeat
+1 1 1 -> int,1,1,repeat
+
+int,0,0,no_repeat: 1
+0 0 0 -> frac,0,0,no_repeat
+0 1 1 -> frac,0,0,no_repeat
+1 0 1 -> frac,0,0,no_repeat
+1 1 0 -> frac,1,0,no_repeat
+
+int,0,1,no_repeat: 0
+0 0 0 -> frac,0,1,no_repeat
+0 1 1 -> frac,0,1,no_repeat
+1 0 1 -> frac,0,1,no_repeat
+1 1 0 -> frac,1,1,no_repeat
+
+int,1,0,no_repeat: 0
+0 0 1 -> frac,0,0,no_repeat
+0 1 0 -> frac,1,0,no_repeat
+1 0 0 -> frac,1,0,no_repeat
+1 1 1 -> frac,1,0,no_repeat
+
+int,1,1,no_repeat: 0
+0 0 1 -> frac,0,1,no_repeat
+0 1 0 -> frac,1,1,no_repeat
+1 0 0 -> frac,1,1,no_repeat
+1 1 1 -> frac,1,1,no_repeat
+
+int,0,1,repeat: 1
+0 0 0 -> frac,0,1,repeat
+0 1 1 -> frac,0,1,repeat
+1 0 1 -> frac,0,1,repeat
+1 1 0 -> frac,1,1,repeat
+
+int,1,1,repeat: 0
+0 0 1 -> frac,0,1,repeat
+0 1 0 -> frac,1,1,repeat
+1 0 0 -> frac,1,1,repeat
+1 1 1 -> frac,1,1,repeat
+

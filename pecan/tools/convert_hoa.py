@@ -1,5 +1,6 @@
+import buddy
 import math
-import spot, buddy
+import spot
 
 # GLOBAL VARIABLES
 state_counter = -1
@@ -49,19 +50,28 @@ def intermediate_edge(b_inputs, start_state, end_state, base):
         s = states[str(start_state)]
         for i in range(base):
             inp = column(b_inputs, i)
+
             if i == base - 1:
-                s[inp] = 'o' + str(end_state)
+                if inp in s:
+                    s[inp].append('o' + str(end_state))
+                else:
+                    s[inp] = ['o' + str(end_state)]
             elif inp in s.keys():
                 key = s[inp]
-                if key[0] == 'o':
-                    print(key)
-                    key = org_states[int(key[1:])]
-                    s[inp] = key
+                for i, key in enumerate(s[inp]):
+                    if key[0] == 'o':
+                        key = org_states[int(key[1:])]
+                    s[inp][i] = key
                 s = states[key]
             else:
                 new_state = state(0)
+
                 name = str(state_counter)
-                s[inp] = name
+                if inp in s:
+                    s[inp].append(name)
+                else:
+                    s[inp] = [name]
+
                 s = states[name]
 
 def edge(old_line, base):
@@ -95,15 +105,17 @@ def adjust_base(line):
                 base = 1
         return bases
 
-
 def convert_aut(txt, inp_names = []):
+    with open(txt, 'r') as f:
+        return convert_aut_lines(f.readlines(), inp_names)
+
+def convert_aut_lines(lines, inp_names = []):
         reset_global()
-        f = open(txt, 'r')
 
         bases = []
         base = 0
 
-        for line in f.readlines():
+        for line in lines:
             if line[0] == '{':
                 bases = adjust_base(line)
                 for i in range(len(bases)):
@@ -113,7 +125,6 @@ def convert_aut(txt, inp_names = []):
                 edge(line.strip(), base)
             elif len(line) > 1:
                 state_line(line.strip())
-        f.close()
 
         aut = spot.make_twa_graph()
         aps = []
@@ -132,14 +143,16 @@ def convert_aut(txt, inp_names = []):
             state = states[i]
             for j in state.keys():
                 if j != "acc":
-                    end_state = state[j]
-                    if end_state[0] == 'o':
-                        end_state = org_states[int(end_state[1:])]
-                    end_state = end_state
-                    label = make_edge(aps, j)
-                    if states[end_state]["acc"]:
-                        aut.new_edge(int(i), int(end_state), label, [0])
-                    else:
-                        aut.new_edge(int(i), int(end_state), label)
+                    for end_state in state[j]:
+                        if end_state[0] == 'o':
+                            end_state = org_states[int(end_state[1:])]
+
+                        label = make_edge(aps, j)
+
+                        if states[end_state]["acc"]:
+                            aut.new_edge(int(i), int(end_state), label, [0])
+                        else:
+                            aut.new_edge(int(i), int(end_state), label)
+
         return aut
 
