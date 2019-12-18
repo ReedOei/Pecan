@@ -164,9 +164,9 @@ class DirectiveLoadAut(IRNode):
         if self.aut_format == 'hoa':
             # TODO: Rename the APs of the loaded automaton to be the same as the args specified
             aut = spot.automaton(realpath)
-        elif self.aut_format == 'pecan':
+        elif self.aut_format == 'walnut':
             aut = convert_aut(realpath, [v.var_name for v in self.pred.args])
-        elif self.aut_format == 'labeled':
+        elif self.aut_format == 'pecan':
             aut = convert_labeled_aut(realpath, [v.var_name for v in self.pred.args])
         else:
             raise Exception('Unknown format: {}'.format(self.aut_format))

@@ -1,4 +1,4 @@
-#load("sturmian_bin.txt", "pecan", sturmian_bin(n))
+#load("sturmian_bin.txt", "walnut", sturmian_bin(n))
 
 a is binary
 

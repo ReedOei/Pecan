@@ -1,11 +1,11 @@
 #import("integers.pn")
 
-// TODO: Rename "labeled" to "pecan" and "pecan" to "walnut" for format names
-#load("real/msd_bin_less.txt", "pecan", msd_bin_less(a, b))
-#load("real/real_equal.txt", "labeled", real_equal(a, b))
+#load("real/msd_bin_less.txt", "walnut", msd_bin_less(a, b))
+#load("real/real_equal.txt", "pecan", real_equal(a, b))
 
 one_int(x) := "!x & X(x) & X(X(G(!x)))"
 zeros(x) := "G(!x)"
+#shuffle(one_int(x), zeros(x), real_one(x))
 
 not_all_ones(x) := "G(F(!x))"
 
@@ -17,24 +17,18 @@ any2(a, b) := true
 #shuffle(finite_num(x), not_all_ones(x), real_temp(x))
 real(x) := real_temp(x) & !negative_zero(x)
 
-#shuffle(one_int(x), zeros(x), real_one(x))
-
-// Takes a real number with a possibly all 1's ending, and replaces it with a real number that doesn't have all 1's as it's ending.
-normalize_real(a, b) := real_equal(a, b) & b is real
-
-// TODO: Add a "postprocess everything" option in the context or something; this would be helpful for when we want to produce minimally sized automata and can afford to pay the time cost
 #shuffle(int_less(a, b), any2(a, b), integral_less(a, b))
-
 #shuffle(default_equal(a, b), any2(a, b), integral_equal(a, b))
-
-// TODO: Probably writing "a is int" in the argument should automatically add a "a is int" conjunction to the body. That would make sense, anyway, and it would reduce the repetitions we have in some predicates about. We should also grab restrictions from the environment when we do this (or just look at the restriction_env, probably)
 #shuffle(any2(a, b), msd_bin_less(a, b), fractional_less(a, b))
 
 real_less(a, b) := integral_less(a, b) | (integral_equal(a, b) &
                                             ((negative(a) & negative(b) & fractional_less(b, a)) |
                                              (positive(a) & positive(b) & fractional_less(a, b))))
 
-#load("real/real_add_pos.txt", "labeled", real_add_pos_temp(a, b, c))
+#load("real/real_add_pos.txt", "pecan", real_add_pos_temp(a, b, c))
+
+// Takes a real number with a possibly all 1's ending, and replaces it with a real number that doesn't have all 1's as it's ending.
+normalize_real(a, b) := real_equal(a, b) & b is real
 
 // After adding with the adder loaded above, we may have a representation with infinitely many repeating 1's, but this is not allowed.
 // Therefore, we find an equivalent real number that ends in all 0's

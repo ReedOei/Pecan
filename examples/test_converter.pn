@@ -1,4 +1,4 @@
-#load("has_zeros.txt", "pecan", has_zeros(a))
+#load("has_zeros.txt", "walnut", has_zeros(a))
 test() := exists x. has_zeros(x)
 #assert_prop(true, test)
 
@@ -6,17 +6,17 @@ test() := exists x. has_zeros(x)
 test2() := exists x. has_zeros2(x)
 #assert_prop(true, test2)
 
-#load("all_ones.txt", "pecan", all_ones(a))
+#load("all_ones.txt", "walnut", all_ones(a))
 test3() := forall x. has_zeros(x) <=> ! all_ones(x)
 #assert_prop(true, test3)
 
-#load("mult_inp_dumb.txt", "pecan", both(a, b))
+#load("mult_inp_dumb.txt", "walnut", both(a, b))
 test4a() := forall x. forall y. both(x, y) <=> (has_zeros(x) & all_ones(y))
 test4b() := forall x. exists y. has_zeros(x) => both(x, y)
 #assert_prop(true, test4a)
 #assert_prop(true, test4b)
 
-#load("not_buchi.txt", "pecan", some_fsm(a))
+#load("not_buchi.txt", "walnut", some_fsm(a))
 buchiness() := exists x. some_fsm(x)
 #assert_prop(false, buchiness)
 

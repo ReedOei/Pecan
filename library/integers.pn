@@ -1,5 +1,5 @@
-#load("integer/positive.txt", "pecan", positive(n))
-#load("integer/negate.txt", "pecan", negate(n, m))
+#load("integer/positive.txt", "walnut", positive(n))
+#load("integer/negate.txt", "walnut", negate(n, m))
 
 negative(a) := !positive(a)
 int_less(a, b) := (positive(a) & positive(b) & bin_less(a, b)) |

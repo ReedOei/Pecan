@@ -1,6 +1,0 @@
-#load("bco_adder.txt", "pecan", bco_adder(alpha, a, b, c))
-
-#type(ostrowski(a), {
-
-})
-
