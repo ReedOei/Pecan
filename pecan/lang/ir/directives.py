@@ -413,7 +413,7 @@ class DirectiveAcceptingWord(IRNode):
             #     # TODO: Allow users to define their own formatters here
             #     print('{}: {}'.format(var_name, self.format_real(prefixes[var_name], cycles[var_name])))
 
-            acc_word.as_automaton().postprocess('BA').save('{}.aut'.format(self.pred_name))
+            # acc_word.as_automaton().postprocess('BA').save('{}.aut'.format(self.pred_name))
 
         return None
 
