@@ -1,6 +1,23 @@
 {0,1} {0,1} {0,1}
 
-// each state is: section,int carry,frac carry expected
+// each state is: section,int carry,frac carry expected,frac_is_repeating
+
+// 0.0\overline{01} + 0.0\overine{10} = 0.1\overline{0}
+// 0.0(01)^w
+//+0.0(10)^w
+//-------------
+// 0.1(00)^w
+// will need to "guess" if we'll hit a point where we always see 0 and 1 so that the representation is going to end up being all ones, if so, carry a 1 onto the current spot
+// basically, at any point in processing the fraction we could end up with 1 more than expected because of infinitely many 1's at the end of the fraction.
+// the repeating part will no longer have a carry, and will only allow (0,1) or (1,0)
+
+// x: +01.000(110)^w
+// y: +00.000(101)^w
+// z: +01.001(100)^w
+
+// 0110110110
+// 0101101101
+// 1100100100
 
 sign: 0
 0 0 0 -> first_frac
@@ -15,7 +32,6 @@ first_frac: 0
 1 0 1 -> int,0,0,no_repeat
 1 0 0 -> int,1,1,no_repeat
 
-// Expect no more carry, because otherwise we'd be 1+1+1 = 11, not 1+1+0 = 10
 1 1 0 -> int,1,0,no_repeat
 1 1 1 -> int,1,1,no_repeat
 
@@ -25,11 +41,13 @@ frac,0,0,no_repeat: 1
 1 0 1 -> int,0,0,no_repeat
 0 0 1 -> int,0,1,no_repeat
 
-frac,0,1,no_repeat: 0
+frac,0,1,no_repeat: 1
+1 0 0 -> int,0,0,repeat
 1 0 0 -> int,0,1,no_repeat
 0 1 0 -> int,0,1,no_repeat
+0 1 0 -> int,0,0,repeat
 1 1 0 -> int,0,0,no_repeat
-1 1 1 -> int,0,1,repeat
+1 1 1 -> int,0,1,no_repeat
 
 frac,1,0,no_repeat: 0
 0 0 0 -> int,1,0,no_repeat
@@ -38,22 +56,20 @@ frac,1,0,no_repeat: 0
 0 0 1 -> int,1,1,no_repeat
 
 frac,1,1,no_repeat: 0
+1 0 0 -> int,1,0,repeat
 1 0 0 -> int,1,1,no_repeat
+0 1 0 -> int,1,0,repeat
 0 1 0 -> int,1,1,no_repeat
 1 1 0 -> int,1,0,no_repeat
-1 1 1 -> int,1,1,repeat
+1 1 1 -> int,1,1,no_repeat
 
-frac,0,1,repeat: 1
-1 0 0 -> int,0,1,no_repeat
-0 1 0 -> int,0,1,no_repeat
-1 1 0 -> int,0,0,no_repeat
-1 1 1 -> int,0,1,repeat
+frac,0,0,repeat: 1
+1 0 0 -> int,0,0,repeat
+0 1 0 -> int,0,0,repeat
 
-frac,1,1,repeat: 0
-1 0 0 -> int,1,1,no_repeat
-0 1 0 -> int,1,1,no_repeat
-1 1 0 -> int,1,0,no_repeat
-1 1 1 -> int,1,1,repeat
+frac,1,0,repeat: 1
+1 0 0 -> int,1,0,repeat
+0 1 0 -> int,1,0,repeat
 
 int,0,0,no_repeat: 1
 0 0 0 -> frac,0,0,no_repeat
@@ -79,15 +95,15 @@ int,1,1,no_repeat: 0
 1 0 0 -> frac,1,1,no_repeat
 1 1 1 -> frac,1,1,no_repeat
 
-int,0,1,repeat: 1
-0 0 0 -> frac,0,1,repeat
-0 1 1 -> frac,0,1,repeat
-1 0 1 -> frac,0,1,repeat
-1 1 0 -> frac,1,1,repeat
+int,0,0,repeat: 1
+0 0 0 -> frac,0,0,repeat
+0 1 1 -> frac,0,0,repeat
+1 0 1 -> frac,0,0,repeat
+1 1 0 -> frac,1,0,repeat
 
-int,1,1,repeat: 0
-0 0 1 -> frac,0,1,repeat
-0 1 0 -> frac,1,1,repeat
-1 0 0 -> frac,1,1,repeat
-1 1 1 -> frac,1,1,repeat
+int,1,0,repeat: 0
+0 0 1 -> frac,0,0,repeat
+0 1 0 -> frac,1,0,repeat
+1 0 0 -> frac,1,0,repeat
+1 1 1 -> frac,1,0,repeat
 

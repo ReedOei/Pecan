@@ -110,8 +110,15 @@ class ASTToIR(AstTransformer):
 
         # We are guaranteed that node.a will be an integer, so we don't need to worry about transforming it
         c = node.a.evaluate_int(prog)  # copy of a
+
+        negative = False
+
         if c == 0:
             return ir.IntConst(0)
+
+        if c < 0:
+            negative = True
+            c = -c
 
         self.expr_depth += 1
         power = self.transform(node.b)
@@ -126,7 +133,10 @@ class ASTToIR(AstTransformer):
                 break
             power = ir.Add(power, power)
 
-        return s.with_original_node(node)
+        if negative:
+            return ir.Sub(ir.IntConst(0), s).with_original_node(node)
+        else:
+            return s.with_original_node(node)
 
     def transform_Div(self, node):
         self.expr_depth += 1

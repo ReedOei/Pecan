@@ -30,14 +30,11 @@ class AutomatonTransformer:
             # Convert to a formula because formulas are nicer to work with than the bdd's
             formula = spot.bdd_to_formula(e.cond)
             new_formula = self.formula_builder(formula)
-            cond = self.create_edge_condition(new_aut, new_formula)
+            cond = formula_to_bdd(new_aut, new_formula)
             # print('Adding edge', e.src, e.dst, '(', formula, ')', '(', new_formula, ')', e.acc)
             new_aut.new_edge(e.src, e.dst, cond, e.acc)
 
         return new_aut
-
-    def create_edge_condition(self, aut, new_formula):
-        return formula_to_bdd(aut, new_formula)
 
 class Substitution:
     def __init__(self, subs):
@@ -55,7 +52,7 @@ def build_bdd(kind, children):
     elif kind == spot.op_Or:
         return reduce(lambda a, b: a | b, children)
     elif kind == spot.op_Not:
-        return buddy.bdd_not(children[0])  # TODO: Put error check in here
+        return buddy.bdd_not(children[0])
     elif kind == spot.op_tt:
         return buddy.bddtrue
     elif kind == spot.op_ff:

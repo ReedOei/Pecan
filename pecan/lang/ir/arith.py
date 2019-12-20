@@ -141,13 +141,17 @@ class IntConst(IRExpression):
             # Constant 0 is defined as 000000... TODO: Maybe allow users to define their own 0
             constants_map[(self.val, self.get_type())] = (spot.formula('G(~__constant0)').translate(), self.label_var())
         elif self.val == 1:
-            res = prog.call('one', [self.label_var()])
+            res = prog.lookup_dynamic_call('one', [self.label_var()])
 
-            leq = Disjunction(Less(self.label_var(), b_const), Equals(self.label_var(), b_const))
-            b_in_0_1 = Conjunction(Less(zero_const, b_const), Less(b_const, self.label_var()))
-            formula_1 = Conjunction(Less(zero_const, self.label_var()), Complement(Exists(b_const, self.get_type().restrict(b_const), b_in_0_1)))
-
-            constants_map[(self.val, self.get_type())] = (formula_1.evaluate(prog).postprocess('BA'), self.label_var())
+            # This means we didn't find a user-defined "one", so just use the default expression
+            if res.name == 'one':
+                leq = Disjunction(Less(self.label_var(), b_const), Equals(self.label_var(), b_const))
+                b_in_0_1 = Conjunction(Less(zero_const, b_const), Less(b_const, self.label_var()))
+                formula_1 = Conjunction(Less(zero_const, self.label_var()), Complement(Exists(b_const, self.get_type().restrict(b_const), b_in_0_1)))
+                constants_map[(self.val, self.get_type())] = (formula_1.evaluate(prog).postprocess('BA'), self.label_var())
+            else:
+                res = prog.call('one', [self.label_var()])
+                constants_map[(self.val, self.get_type())] = (res, self.label_var())
         else:
             assert self.val >= 2, "constant here should be greater than or equal to 1, while it is {}".format(self.val)
 

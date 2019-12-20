@@ -30,8 +30,8 @@ class VarRef(IRExpression):
     def show(self):
         return str(self.var_name)
 
-    def __repr__(self):
-        return self.show()
+    # def __repr__(self):
+    #     return self.show()
 
     def __eq__(self, other):
         return other is not None and type(other) is self.__class__ and self.var_name == other.var_name and self.get_type() == other.get_type()
@@ -248,7 +248,7 @@ class NamedPred(IRNode):
 
         if self.body_evaluated is None:
             # We postprocess here because we will do it every time we call anyway (in AutomatonTransformer)
-            self.body_evaluated = spot.simulation(spot.scc_filter(self.body.evaluate(prog))).postprocess('BA')
+            self.body_evaluated = self.body.evaluate(prog).postprocess('BA')
 
         if arg_names is None or len(arg_names) == 0:
             result = self.body_evaluated

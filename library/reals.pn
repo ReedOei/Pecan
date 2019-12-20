@@ -25,14 +25,7 @@ real_less(a, b) := integral_less(a, b) | (integral_equal(a, b) &
                                             ((negative(a) & negative(b) & fractional_less(b, a)) |
                                              (positive(a) & positive(b) & fractional_less(a, b))))
 
-#load("real/real_add_pos.txt", "pecan", real_add_pos_temp(a, b, c))
-
-// Takes a real number with a possibly all 1's ending, and replaces it with a real number that doesn't have all 1's as it's ending.
-normalize_real(a, b) := real_equal(a, b) & b is real
-
-// After adding with the adder loaded above, we may have a representation with infinitely many repeating 1's, but this is not allowed.
-// Therefore, we find an equivalent real number that ends in all 0's
-real_add_pos(a, b, c) := exists temp1. exists temp2. exists temp3. normalize_real(temp1, a) & normalize_real(temp2, b) & normalize_real(temp3, c) & real_add_pos_temp(temp1, temp2, temp3)
+#load("real/real_add_pos.txt", "pecan", real_add_pos(a, b, c))
 
 real_leq(a, b) := real_less(a, b) | a = b
 

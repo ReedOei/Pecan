@@ -65,11 +65,8 @@ class ExpressionExtractor(IRTransformer):
             expr = self.to_compute[v]
             to_compute = self.expressions_compute[expr]
 
-            # TODO: Make this cleaner
             if v.get_type() is not None and v.get_type().get_restriction() is not None:
-                # new_pred = Exists(v, v.get_type().restrict(v), Conjunction(Equals(to_compute, v), new_pred))
-                # TODO: Maybe it's unnecessary to restrict to the variable, because computing it should already do this for us
-                new_pred = Exists(v, None, Conjunction(Equals(to_compute, v), new_pred))
+                new_pred = Exists(v, v.get_type().restrict(v), Conjunction(Equals(to_compute, v), new_pred))
             else:
                 new_pred = Exists(v, None, Conjunction(Equals(to_compute, v), new_pred))
 
@@ -106,7 +103,9 @@ class ExpressionExtractor(IRTransformer):
 
             return self.expressions[node]
         else:
-            return node
+            new_a = self.transform(node.a)
+            new_b = self.transform(node.b)
+            return Sub(new_a, new_b).with_type(node.get_type())
 
     def transform_Add(self, node):
         if node.is_int:
@@ -165,14 +164,14 @@ class CSEOptimizer(BasicOptimizer):
         if isinstance(node.a, BinaryIRExpression) and self.worth_optimization(node.a):
             aa = extractor.transform(node.a.a)
             ab = extractor.transform(node.a.b)
-            new_a = type(node.a)(aa, ab)
+            new_a = type(node.a)(aa, ab).with_type(node.a.get_type())
         else:
             new_a = node.a
 
         if isinstance(node.b, BinaryIRExpression) and self.worth_optimization(node.b):
             ba = extractor.transform(node.b.a)
             bb = extractor.transform(node.b.b)
-            new_b = type(node.b)(ba, bb)
+            new_b = type(node.b)(ba, bb).with_type(node.b.get_type())
         else:
             new_b = node.b
 

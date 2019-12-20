@@ -52,7 +52,7 @@ class Optimizer:
     def run_optimizations(self, node, pred):
         settings.log(2, f'Optimizing: {node}')
 
-        optimization_pass = [ArithmeticOptimizer(self), BooleanOptimizer(self), CSEOptimizer(self)]
+        optimization_pass = [ArithmeticOptimizer(self), CSEOptimizer(self), BooleanOptimizer(self)]
         new_node = node
 
         ast_changed = True # Default to true so we run at least once

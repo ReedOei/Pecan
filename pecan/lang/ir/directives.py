@@ -402,7 +402,7 @@ class DirectiveAcceptingWord(IRNode):
             for formula in list(acc_word.prefix) + list(acc_word.cycle):
                 for f in spot.atomic_prop_collect(spot.bdd_to_formula(formula)):
                     var_names.append(f.ap_name())
-            var_names = list(set(var_names))
+            var_names = sorted(list(set(var_names)))
             prefixes = self.to_binary(var_names, acc_word.prefix)
             cycles = self.to_binary(var_names, acc_word.cycle)
 
