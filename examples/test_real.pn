@@ -51,19 +51,13 @@ real_add_pos_assoc() := forall x.
                         forall xy.
                         forall yz. (real_add_pos(x, y, xy) & real_add_pos(y, z, yz)) =>
                             forall w. real_add_pos(xy, z, w) <=> real_add_pos(x, yz, w)
-#assert_prop(true, real_add_pos_assoc)
+// #assert_prop(true, real_add_pos_assoc)
 
 can_sub_if_lt() := forall x. x is positive => forall y. (y is positive & real_less(y, x)) => exists w. real_add_pos(w, y, x)
 #assert_prop(true, can_sub_if_lt)
 
-real_add_neg_closed() := forall x. x is negative => forall y. y is negative => exists z. neg_real_add(x, y, z)
-#assert_prop(true, real_add_neg_closed)
-
-real_add_neg_pos_closed() := forall x. forall y. (x is negative & x is real & y is positive) => exists z. neg_pos_real_add(x, y, z)
-#assert_prop(true, real_add_neg_pos_closed)
-
-real_add_pos_neg_closed() := forall x. forall y. (x is positive & x is real & y is negative) => exists z. pos_neg_real_add(x, y, z)
-#assert_prop(true, real_add_pos_neg_closed)
+real_add_dif_sign_closed() := forall x. forall y. (x is negative & x is real & y is positive) => exists z. real_add_dif_sign(x, y, z)
+#assert_prop(true, real_add_dif_sign_closed)
 
 real_add_closed() := forall x. forall y. (x is real & y is real) => exists z. real_add(x, y, z)
 #assert_prop(true, real_add_closed)
@@ -78,9 +72,10 @@ real_add_assoc() := forall x.
                     forall y.
                     forall z.
                     forall xy is real.
-                    forall yz is real. (xy is real & yz is real & real_add(x, y, xy) & real_add(y, z, yz)) =>
-                        forall w. (real_add(x, yz, w) <=> real_add(xy, z, w))
-// #assert_prop(true, real_add_assoc)
+                    forall yz is real.
+                    (xy is real & real_add(x, y, xy) & real_add(y, z, yz) & x is real & z is real) =>
+                    real_add(x, yz, xy + z)
+#assert_prop(true, real_add_assoc)
 
 reals_dense() := forall x. forall y. x < y => exists z. x < z & z < y
 #assert_prop(true, reals_dense)

@@ -29,16 +29,10 @@ real_less(a, b) := integral_less(a, b) | (integral_equal(a, b) &
 
 real_leq(a, b) := real_less(a, b) | a = b
 
-pos_real_add(a, b, c) := positive(a) & positive(b) & real_add_pos(a, b, c)
-neg_real_add(a, b, c) := negative(a) & negative(b) & negate(real_add_pos(negate(a), negate(b)), c)
-
-neg_pos_real_add(a, b, c) := negative(a) & positive(b) & ((real_less(b, negate(a)) & negate(real_add_pos(_, b, negate(a)), c)) |
+real_add_dif_sign(a, b, c) := negative(a) & positive(b) & ((real_less(b, negate(a)) & negate(real_add_pos(_, b, negate(a)), c)) |
                                                           (real_leq(negate(a), b) & real_add_pos(c, negate(a), b)))
 
-pos_neg_real_add(a, b, c) := (positive(a) & negative(b) & real_less(a, negate(b)) & negate(real_add_pos(_, a, negate(b)), c)) |
-                             (positive(a) & negative(b) & real_leq(negate(b), a) & real_add_pos(c, negate(b), a))
-
-real_add(a, b, c) := (pos_real_add(a, b, c) | neg_real_add(a, b, c) | neg_pos_real_add(a, b, c) | pos_neg_real_add(a, b, c))
+real_add(a, b, c) := (real_add_pos(a, b, c) | real_add_dif_sign(a, b, c) | real_add_dif_sign(b, a, c))
 
 #type(real, {
     "adder": real_add(any, any, any),
