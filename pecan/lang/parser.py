@@ -7,138 +7,194 @@ from lark import Lark, Transformer, v_args
 from pecan.lang.ast import *
 
 pecan_grammar = """
-    ?start: _NEWLINE* defs  -> prog
+?start: _NEWLINE* defs  -> prog
 
-    ?defs:          -> nil_def
-         | def -> single_def
-         | def _NEWLINE+ defs -> multi_def
+?defs:          -> nil_def
+     | def -> single_def
+     | def _NEWLINE+ defs -> multi_def
 
-    ?def: pred_definition
-        | restriction
-        | "#" "save_aut" "(" string "," var ")" -> directive_save_aut
-        | "#" "save_aut_img" "(" string "," var ")" -> directive_save_aut_img
-        | "#" "context" "(" string "," string ")" -> directive_context
-        | "#" "end_context" "(" string ")" -> directive_end_context
-        | "#" "load" "(" string "," string "," formal ")" -> directive_load_aut
-        | "#" "assert_prop" "(" PROP_VAL "," var ")" -> directive_assert_prop
-        | "#" "import" "(" string ")" -> directive_import
-        | "#" "forget" "(" var ")" -> directive_forget
-        | "#" "type" "(" formal "," val_dict ")" -> directive_type
-        | "#" "show_word" "(" var "," formal "," int "," int ")" -> directive_show_word
-        | "#" "accepting_word" "(" var ")" -> directive_accepting_word
-        | "#" "shuffle" "(" formal "," formal "," formal ")" -> directive_shuffle
-        | "#" "shuffle_or" "(" formal "," formal "," formal ")" -> directive_shuffle_or
+?def: pred_definition
+    | restriction
+    | "#" "save_aut" "(" string "," var ")" -> directive_save_aut
+    | "#" "save_aut_img" "(" string "," var ")" -> directive_save_aut_img
+    | "#" "context" "(" string "," string ")" -> directive_context
+    | "#" "end_context" "(" string ")" -> directive_end_context
+    | "#" "load" "(" string "," string "," formal ")" -> directive_load_aut
+    | "#" "assert_prop" "(" PROP_VAL "," var ")" -> directive_assert_prop
+    | "#" "import" "(" string ")" -> directive_import
+    | "#" "forget" "(" var ")" -> directive_forget
+    | "#" "type" "(" formal "," val_dict ")" -> directive_type
+    | "#" "show_word" "(" var "," formal "," int "," int ")" -> directive_show_word
+    | "#" "accepting_word" "(" var ")" -> directive_accepting_word
+    | "#" "shuffle" "(" formal "," formal "," formal ")" -> directive_shuffle
+    | "#" "shuffle_or" "(" formal "," formal "," formal ")" -> directive_shuffle_or
+    | directive
 
-    ?val_dict: "{" [_NEWLINE* kv_pair _NEWLINE* ("," _NEWLINE* kv_pair _NEWLINE*)*] "}"
-    ?kv_pair: string ":" var "(" args ")" -> kv_pair
+?directive: "Definition" app ":=" _NEWLINE* term "." -> praline_def
+          | "Execute" term "."             -> praline_execute
+          | "Display" term "."             -> praline_display
+          | "Verify" term "."              -> praline_verify
 
-    ?restriction: varlist ("are" | _IS) var -> restrict_is
-                | varlist ("are" | _IS) var "(" varlist ")" -> restrict_call
-    varlist: var ("," var)*
+?term: "if" term "then" term "else" term
+     | praline_operator
+     | "\\\\" app "->" term
+     | "let" var "be" pecan_term "in" term
+     | "let" var ":=" term "in" term
+     | "match" term "with" _NEWLINE* (match_arm)+ _NEWLINE* "end"
 
-    _IS: "is" | "∈"
+?match_arm: "case" match_expr "->" term _NEWLINE*
 
-    ?pred_definition: var "(" formals ")" ":=" _NEWLINE* pred -> def_pred_standard
-                    | var _IS var [":=" _NEWLINE* pred] -> def_pred_is
-                    | var _IS var "(" formals ")" [":=" _NEWLINE* pred] -> def_pred_is_call
+?match_expr: int
+    | string
+    | var
+    | "[" "]"
+    | match_expr "::" match_expr
+    | praline_tuple
 
-    formals: [formal ("," formal)*]
-    formal: var -> formal_var
-          | var "(" varlist ")" -> formal_call
-          | var _IS var -> formal_is
-          | var _IS var "(" varlist ")" -> formal_is_call
+?praline_operator: praline_sub
 
-    ?pred: bool
-         | pred _IMPLIES _NEWLINE* pred                -> implies
-         | "if" pred "then" _NEWLINE* pred             -> implies
-         | "if" pred "then" _NEWLINE* pred _ELSE _NEWLINE* pred -> if_then_else
-         | bool _IFF _NEWLINE* pred                    -> iff
-         | bool "if" "and" "only" "if" _NEWLINE* pred  -> iff
-         | bool "iff" pred                   -> iff
-         | bool _DISJ _NEWLINE* pred -> disj
-         | bool _CONJ _NEWLINE* pred -> conj
-         | forall_sym formal "." _NEWLINE* pred       -> forall
-         | exists_sym formal "." _NEWLINE* pred       -> exists
-         | _COMP pred -> comp
+?praline_sub: praline_add ("-" _NEWLINE* praline_add)*
+?praline_add: praline_mul ("+" _NEWLINE* praline_mul)*
+?praline_mul: praline_div ("*" _NEWLINE* praline_div)*
+?praline_div: praline_exponent ("/" _NEWLINE* praline_exponent)*
 
-    ?bool: expr
-         | "true"  -> formula_true
-         | "false" -> formal_false
-         | string                           -> spot_formula
-         | "(" pred ")"
-         | comparison
+?praline_exponent: praline_prepend "^" praline_prepend
+                 | praline_prepend
 
-    ?comparison: expr _EQ expr                     -> equal
-               | expr _NE expr                     -> not_equal
-               | expr "<" expr                     -> less
-               | expr ">" expr                     -> greater
-               | expr _LE expr                     -> less_equal
-               | expr _GE expr                     -> greater_equal
+?praline_prepend: praline_compose "::" praline_compose
+                | praline_compose
 
-    ?expr: arith
-         | var "[" arith "]"  -> index
-         | var "[" arith "." "." ["."] arith "]" -> index_range
+?praline_compose: app "∘" app
+                | app
 
-    ?arith: sub_expr
+?app: [app] praline_atom
 
-    ?sub_expr: add_expr ("-" _NEWLINE* add_expr)* -> sub
-    ?add_expr: mul_expr ("+" _NEWLINE* mul_expr)* -> add
-    ?mul_expr: div_expr ("*" _NEWLINE* div_expr)* -> mul
-    ?div_expr: atom ("/" _NEWLINE* atom)* -> div
+?praline_atom: var -> var_ref
+     | "-" praline_atom
+     | int
+     | string
+     | "(" term ")"
+     | praline_list
+     | praline_tuple
+     | pecan_term
 
-    ?atom: var -> var_ref
-         | int
-         | "-" atom  -> neg
-         | "(" arith ")"
-         | call
+?pecan_term: "{" pred "}"
 
-    args: [arg ("," arg)*]
-    ?arg: expr
+?praline_list: "[" [ term ("," term)* ] "]"
+             | "[" term "." "." ["."] term "]"
 
-    call: var "(" args ")" -> call_args
-         | atom _IS var     -> call_is
-         | atom _IS var "(" args ")" -> call_is_args
+?praline_tuple: "(" (term ",")+ [term] ")"
 
-    int: INT -> const
+?val_dict: "{" [_NEWLINE* kv_pair _NEWLINE* ("," _NEWLINE* kv_pair _NEWLINE*)*] "}"
+?kv_pair: string ":" var "(" args ")" -> kv_pair
 
-    var: VAR -> var_tok
+?restriction: varlist ("are" | _IS) var -> restrict_is
+            | varlist ("are" | _IS) var "(" varlist ")" -> restrict_call
+varlist: var ("," var)*
 
-    ?string: ESCAPED_STRING -> escaped_str
+_IS: "is" | "∈"
 
-    PROP_VAL: "sometimes"i | "true"i | "false"i // case insensitive
+?pred_definition: var "(" formals ")" ":=" _NEWLINE* pred -> def_pred_standard
+                | var _IS var [":=" _NEWLINE* pred] -> def_pred_is
+                | var _IS var "(" formals ")" [":=" _NEWLINE* pred] -> def_pred_is_call
 
-    _NE: "!=" | "/=" | "≠"
-    _COMP: "!" | "~" | "¬" | "not"
-    _GE: ">=" | "≥"
-    _LE: "<=" | "≤"
+formals: [formal ("," formal)*]
+formal: var -> formal_var
+      | var "(" varlist ")" -> formal_call
+      | var _IS var -> formal_is
+      | var _IS var "(" varlist ")" -> formal_is_call
 
-    _IMPLIES: "=>" | "⇒" | "⟹ " | "->"
-    _IFF: "<=>" | "⟺" | "⇔"
+?pred: bool
+     | pred _IMPLIES _NEWLINE* pred                -> implies
+     | "if" pred "then" _NEWLINE* pred             -> implies
+     | "if" pred "then" _NEWLINE* pred _ELSE _NEWLINE* pred -> if_then_else
+     | bool _IFF _NEWLINE* pred                    -> iff
+     | bool "if" "and" "only" "if" _NEWLINE* pred  -> iff
+     | bool "iff" pred                   -> iff
+     | bool _DISJ _NEWLINE* pred -> disj
+     | bool _CONJ _NEWLINE* pred -> conj
+     | forall_sym formal "." _NEWLINE* pred       -> forall
+     | exists_sym formal "." _NEWLINE* pred       -> exists
+     | _COMP pred -> comp
 
-    _ELSE: "else" | "otherwise"
+?bool: expr
+     | "true"  -> formula_true
+     | "false" -> formal_false
+     | string                           -> spot_formula
+     | "(" pred ")"
+     | comparison
 
-    _EQ: "=" | "=="
+?comparison: expr _EQ expr                     -> equal
+           | expr _NE expr                     -> not_equal
+           | expr "<" expr                     -> less
+           | expr ">" expr                     -> greater
+           | expr _LE expr                     -> less_equal
+           | expr _GE expr                     -> greater_equal
 
-    _CONJ: "&" | "/\\\\" | "∧" | "and"
-    _DISJ: "|" | "\\\\/" | "∨" | "or"
+?expr: arith
+     | var "[" arith "]"  -> index
+     | var "[" arith "." "." ["."] arith "]" -> index_range
 
-    ?forall_sym: "forall" | "∀"
-    ?exists_sym: "exists" | "∃"
+?arith: sub_expr
 
-    _NEWLINE: /\\n/
+?sub_expr: add_expr ("-" _NEWLINE* add_expr)* -> sub
+?add_expr: mul_expr ("+" _NEWLINE* mul_expr)* -> add
+?mul_expr: div_expr ("*" _NEWLINE* div_expr)* -> mul
+?div_expr: atom ("/" _NEWLINE* atom)* -> div
 
-    VAR: /(?!(if|then|else|otherwise|only|iff|is|are|forall|exists|not|or|and|sometimes|true|false)\\b)[a-zA-Z_][a-zA-Z_0-9]*/i
+?atom: var -> var_ref
+     | int
+     | "-" atom  -> neg
+     | "(" arith ")"
+     | call
 
-    COMMENT: "//" /(.)+/ _NEWLINE
+args: [arg ("," arg)*]
+?arg: expr
 
-    %ignore COMMENT
+call: var "(" args ")" -> call_args
+     | atom _IS var     -> call_is
+     | atom _IS var "(" args ")" -> call_is_args
 
-    %import common.INT
-    %import common.WS_INLINE
-    %import common.ESCAPED_STRING
+int: INT -> const
 
-    %ignore WS_INLINE
-    """
+var: VAR -> var_tok
+
+?string: ESCAPED_STRING -> escaped_str
+
+PROP_VAL: "sometimes"i | "true"i | "false"i // case insensitive
+
+_NE: "!=" | "/=" | "≠"
+_COMP: "!" | "~" | "¬" | "not"
+_GE: ">=" | "≥"
+_LE: "<=" | "≤"
+
+_IMPLIES: "=>" | "⇒" | "⟹ " | "->"
+_IFF: "<=>" | "⟺" | "⇔"
+
+_ELSE: "else" | "otherwise"
+
+_EQ: "=" | "=="
+
+_CONJ: "&" | "/\\\\" | "∧" | "and"
+_DISJ: "|" | "\\\\/" | "∨" | "or"
+
+?forall_sym: "forall" | "∀"
+?exists_sym: "exists" | "∃"
+
+_NEWLINE: /\\n/
+
+VAR: /(?!(if|then|else|otherwise|only|iff|is|are|forall|exists|not|or|and|sometimes|true|false)\\b)[a-zA-Z_][a-zA-Z_0-9]*/i
+
+COMMENT: "//" /(.)+/ _NEWLINE
+
+%ignore COMMENT
+
+%import common.INT
+%import common.WS_INLINE
+%import common.ESCAPED_STRING
+
+%ignore WS_INLINE
+"""
 
 @v_args(inline=True)
 class PecanTransformer(Transformer):

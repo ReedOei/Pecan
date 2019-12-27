@@ -25,14 +25,14 @@ real_less(a, b) := integral_less(a, b) | (integral_equal(a, b) &
                                             ((negative(a) & negative(b) & fractional_less(b, a)) |
                                              (positive(a) & positive(b) & fractional_less(a, b))))
 
-#load("real/real_add_pos.txt", "pecan", real_add_pos(a, b, c))
+#load("real/real_add_same_sign.txt", "pecan", real_add_same_sign(a, b, c))
 
 real_leq(a, b) := real_less(a, b) | a = b
 
-real_add_dif_sign(a, b, c) := negative(a) & positive(b) & ((real_less(b, negate(a)) & negate(real_add_pos(_, b, negate(a)), c)) |
-                                                          (real_leq(negate(a), b) & real_add_pos(c, negate(a), b)))
+real_add_dif_sign(a, b, c) := negative(a) & positive(b) & ((real_less(b, negate(a)) & negate(real_add_same_sign(_, b, negate(a)), c)) |
+                                                          (real_leq(negate(a), b) & real_add_same_sign(c, negate(a), b)))
 
-real_add(a, b, c) := (real_add_pos(a, b, c) | real_add_dif_sign(a, b, c) | real_add_dif_sign(b, a, c))
+real_add(a, b, c) := (real_add_same_sign(a, b, c) | real_add_dif_sign(a, b, c) | real_add_dif_sign(b, a, c))
 
 #type(real, {
     "adder": real_add(any, any, any),
