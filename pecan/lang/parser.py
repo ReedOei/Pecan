@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
 from functools import reduce
@@ -33,44 +34,45 @@ pecan_grammar = """
 ?directive: "Definition" app ":=" _NEWLINE* term "." -> praline_def
           | "Execute" term "."             -> praline_execute
           | "Display" term "."             -> praline_display
-          | "Verify" term "."              -> praline_verify
 
-?term: "if" term "then" term "else" term
+?term: "if" term "then" term "else" term -> praline_if
      | praline_operator
-     | "\\\\" app "->" term
-     | "let" var "be" pecan_term "in" term
-     | "let" var ":=" term "in" term
-     | "match" term "with" _NEWLINE* (match_arm)+ _NEWLINE* "end"
+     | "\\\\" app "->" term -> praline_lambda
+     | "let" var "be" pecan_term "in" term -> praline_pecan_let
+     | "let" var ":=" term "in" term -> praline_let
+     | "match" term "with" _NEWLINE* (match_arm)+ _NEWLINE* "end" -> praline_match
 
-?match_arm: "case" match_expr "->" term _NEWLINE*
+?match_arm: "case" match_expr "=>" term _NEWLINE* -> praline_match_arm
 
-?match_expr: int
-    | string
-    | var
-    | "[" "]"
-    | match_expr "::" match_expr
-    | praline_tuple
+?match_expr: int -> praline_match_int
+    | string -> praline_match_string
+    | var -> praline_match_var
+    | "[" [ match_expr ("," match_expr)* ] "]" -> praline_match_list
+    | match_expr "::" match_expr -> praline_match_prepend
+    // | praline_tuple -> praline_match_tuple
+    // TODO: Add praline_tuple back here...
 
 ?praline_operator: praline_sub
 
-?praline_sub: praline_add ("-" _NEWLINE* praline_add)*
-?praline_add: praline_mul ("+" _NEWLINE* praline_mul)*
-?praline_mul: praline_div ("*" _NEWLINE* praline_div)*
-?praline_div: praline_exponent ("/" _NEWLINE* praline_exponent)*
+?praline_sub: praline_add ("-" _NEWLINE* praline_add)* -> praline_sub
+?praline_add: praline_mul ("+" _NEWLINE* praline_mul)* -> praline_add
+?praline_mul: praline_div ("*" _NEWLINE* praline_div)* -> praline_mul
+?praline_div: praline_exponent ("/" _NEWLINE* praline_exponent)* -> praline_div
 
-?praline_exponent: praline_prepend "^" praline_prepend
+?praline_exponent: praline_prepend "^" praline_prepend -> praline_exponent
                  | praline_prepend
 
-?praline_prepend: praline_compose "::" praline_compose
+?praline_prepend: praline_compose "::" praline_compose -> praline_prepend
                 | praline_compose
 
-?praline_compose: app "∘" app
+?praline_compose: app "∘" app -> praline_compose
                 | app
 
-?app: [app] praline_atom
+?app: app praline_atom -> praline_app
+    | praline_atom
 
 ?praline_atom: var -> var_ref
-     | "-" praline_atom
+     | "-" praline_atom -> praline_neg
      | int
      | string
      | "(" term ")"
@@ -78,10 +80,10 @@ pecan_grammar = """
      | praline_tuple
      | pecan_term
 
-?pecan_term: "{" pred "}"
+?pecan_term: "{" pred "}" -> praline_pecan_term
 
-?praline_list: "[" [ term ("," term)* ] "]"
-             | "[" term "." "." ["."] term "]"
+?praline_list: "[" [ term ("," term)* ] "]" -> praline_list_literal
+             | "[" term "." "." ["."] term "]" -> praline_list_gen
 
 ?praline_tuple: "(" (term ",")+ [term] ")"
 
@@ -203,6 +205,53 @@ class PecanTransformer(Transformer):
     varlist = lambda self, *vals: list(map(VarRef, list(vals)))
     args = lambda self, *args: list(args)
     formals = lambda self, *args: list(args)
+
+    praline_def = PralineDef
+    praline_display = PralineDisplay
+    praline_execute = PralineExecute
+
+    praline_if = PralineIf
+
+    praline_add = lambda self, *args: reduce(PralineAdd, args)
+    praline_sub = lambda self, *args: reduce(PralineSub, args)
+    praline_div = lambda self, *args: reduce(PralineDiv, args)
+    praline_mul = lambda self, *args: reduce(PralineMul, args)
+
+    praline_neg = PralineNeg
+    praline_app = PralineApp
+    praline_compose = PralineCompose
+    praline_prepend = PralineList
+    praline_exponent = PralineExponent
+    praline_match = lambda self, t, *arms: PralineMatch(t, list(arms))
+    praline_match_arm = PralineMatchArm
+
+    praline_match_int = PralineMatchInt
+    praline_match_string = PralineMatchString
+    praline_match_var = PralineMatchVar
+    praline_pecan_term = PralinePecanTerm
+
+    praline_lambda = PralineLambda
+
+    def praline_match_list(self, *args):
+        res = PralineMatchList(None, None)
+
+        for arg in args[::-1]:
+            res = PralineMatchList(arg, res)
+
+        return res
+
+    praline_match_prepend = PralineMatchList
+
+    def praline_list_gen(self, start, end):
+        return PralineApp(PralineApp(VarRef('enumFromTo'), start), end)
+
+    def praline_list_literal(self, *args):
+        res = PralineList(None, None)
+
+        for arg in args[::-1]:
+            res = PralineList(arg, res)
+
+        return res
 
     restrict_is = lambda self, varlist, var_ref: Restriction(varlist, Call(var_ref, []))
     restrict_call = lambda self, varlist, call_name, call_arg_vars: Restriction(varlist, Call(call_name, call_arg_vars))
