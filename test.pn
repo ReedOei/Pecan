@@ -11,8 +11,8 @@ Display graph identity [1..10].
 
 Definition map f l :=
     match l with
-    case [] => []
-    case x :: xs => f x :: map f xs
+    case [] -> []
+    case x :: xs -> f x :: map f xs
     end.
 
 Definition square x := x * x .

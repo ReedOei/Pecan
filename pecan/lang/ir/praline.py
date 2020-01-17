@@ -1,19 +1,13 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from pecan.lang.ast.base import *
+from pecan.lang.ir.base import *
 
-def app_to_list(app):
-    if type(app) is PralineApp:
-        return app_to_list(app.receiver) + [app.arg]
-    else:
-        return [app]
-
-class PralineTerm(ASTNode):
+class PralineTerm(IRNode):
     def __init__(self):
         super().__init__()
 
-class PralineDisplay(ASTNode):
+class PralineDisplay(IRNode):
     def __init__(self, term):
         super().__init__()
         self.term = term
@@ -24,7 +18,7 @@ class PralineDisplay(ASTNode):
     def show(self):
         return 'Display {} .'.format(self.term)
 
-class PralineExecute(ASTNode):
+class PralineExecute(IRNode):
     def __init__(self, term):
         super().__init__()
         self.term = term
@@ -35,11 +29,10 @@ class PralineExecute(ASTNode):
     def show(self):
         return 'Execute {} .'.format(self.term)
 
-class PralineDef(ASTNode):
-    def __init__(self, def_id, body):
-        def_params = app_to_list(def_id)
-        self.name = def_params[0]
-        self.args = def_params[1:]
+class PralineDef(IRNode):
+    def __init__(self, name, args, body):
+        self.name = name
+        self.args = args
         self.body = body
 
     def transform(self, transformer):
@@ -170,7 +163,7 @@ class PralineMatch(PralineTerm):
     def show(self):
         return 'match {} with\n{}\nend'.format(self.t, '\n'.join(map(repr, self.arms)))
 
-class PralineMatchArm(ASTNode):
+class PralineMatchArm(IRNode):
     def __init__(self, pat, expr):
         super().__init__()
         self.pat = pat
@@ -182,7 +175,7 @@ class PralineMatchArm(ASTNode):
     def show(self):
         return 'case {} => {}'.format(self.pat, self.expr)
 
-class PralineMatchPat(ASTNode):
+class PralineMatchPat(IRNode):
     def __init__(self):
         super().__init__()
 
@@ -258,7 +251,7 @@ class PralinePecanTerm(PralineTerm):
 class PralineLambda(PralineTerm):
     def __init__(self, params, body):
         super().__init__()
-        self.params = app_to_list(params)
+        self.params = params
         self.body = body
 
     def transform(self, transformer):

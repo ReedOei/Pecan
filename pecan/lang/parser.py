@@ -42,7 +42,7 @@ pecan_grammar = """
      | "let" var ":=" term "in" term -> praline_let
      | "match" term "with" _NEWLINE* (match_arm)+ _NEWLINE* "end" -> praline_match
 
-?match_arm: "case" match_expr "=>" term _NEWLINE* -> praline_match_arm
+?match_arm: "case" match_expr "->" term _NEWLINE* -> praline_match_arm
 
 ?match_expr: int -> praline_match_int
     | string -> praline_match_string

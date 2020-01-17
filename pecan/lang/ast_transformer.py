@@ -163,3 +163,75 @@ class AstTransformer:
     def transform_FunctionExpression(self, node):
         return FunctionExpression(node.pred_name, list(map(self.transform, node.args)), node.val_idx)
 
+    def transform_PralineDisplay(self, node):
+        return PralineDisplay(self.transform(node.term))
+
+    def transform_PralineExecute(self, node):
+        return PralineExecute(self.transform(node.term))
+
+    def transform_PralineDef(self, node):
+        return PralineDef(reduce(PralineApp, [self.transform(node.name)] + list(map(self.transform, node.args))), self.transform(node.body))
+
+    def transform_PralineCompose(self, node):
+        return PralineCompose(self.transform(node.f), self.transform(node.g))
+
+    def transform_PralineApp(self, node):
+        return PralineApp(self.transform(node.receiver), self.transform(node.arg))
+
+    def transform_PralineAdd(self, node):
+        return PralineAdd(self.transform(node.a), self.transform(node.b))
+
+    def transform_PralineDiv(self, node):
+        return PralineDiv(self.transform(node.a), self.transform(node.b))
+
+    def transform_PralineSub(self, node):
+        return PralineSub(self.transform(node.a), self.transform(node.b))
+
+    def transform_PralineMul(self, node):
+        return PralineMul(self.transform(node.a), self.transform(node.b))
+
+    def transform_PralineExponent(self, node):
+        return PralineExponent(self.transform(node.a), self.transform(node.b))
+
+    def transform_PralineNeg(self, node):
+        return PralineNeg(self.transform(node.a))
+
+    def transform_PralineList(self, node):
+        return PralineList(self.transform(node.head), self.transform(node.tail))
+
+    def transform_PralineMatch(self, node):
+        return PralineMatch(self.transform(node.t), list(map(self.transform, node.arms)))
+
+    def transform_PralineMatchArm(self, node):
+        return PralineMatchArm(self.transform(node.pat), self.transform(node.expr))
+
+    def transform_PralineMatchInt(self, node):
+        return PralineMatchInt(self.transform(node.val))
+
+    def transform_PralineMatchString(self, node):
+        return PralineMatchString(self.transform(node.val))
+
+    def transform_PralineMatchList(self, node):
+        return PralineMatchList(self.transform(node.head), self.transform(node.tail))
+
+    def transform_PralineMatchVar(self, node):
+        return PralineMatchVar(self.transform(node.var))
+
+    def transform_PralineIf(self, node):
+        return PralineIf(self.transform(node.cond), self.transform(node.e1), self.transform(node.e2))
+
+    def transform_PralinePecanTerm(self, node):
+        return PralinePecanTerm(self.transform(node.pecan_term))
+
+    def transform_PralineLambda(self, node):
+        return PralineLambda(reduce(PralineApp, list(map(self.transform, node.params))), self.transform(node.body))
+
+    def transform_PralineLetPecan(self, node):
+        return PralineLetPecan(self.transform(node.var), self.transform(node.pecan_term), self.transform(node.body))
+
+    def transform_PralineLet(self, node):
+        return PralineLetPecan(self.transform(node.var), self.transform(node.expr), self.transform(node.body))
+
+    def transform_PralineTuple(self, node):
+        return PralineTuple(list(map(self.transform, node.vals)))
+
