@@ -1,0 +1,8 @@
+Definition id x := x.
+
+Display id 1.
+
+Definition square x := x * x.
+
+Display square 4 .
+

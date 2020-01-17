@@ -71,10 +71,12 @@ pecan_grammar = """
 ?app: app praline_atom -> praline_app
     | praline_atom
 
-?praline_atom: var -> var_ref
+?praline_atom: var -> praline_var
      | "-" praline_atom -> praline_neg
-     | int
-     | string
+     | INT -> praline_int
+     | string -> praline_string
+     | "true" -> praline_true
+     | "false" -> praline_false
      | "(" term ")"
      | praline_list
      | praline_tuple
@@ -216,6 +218,8 @@ class PecanTransformer(Transformer):
 
     praline_tuple = lambda self, *args: PralineTuple(args)
 
+    praline_var = PralineVar
+
     praline_add = lambda self, *args: reduce(PralineAdd, args)
     praline_sub = lambda self, *args: reduce(PralineSub, args)
     praline_div = lambda self, *args: reduce(PralineDiv, args)
@@ -235,6 +239,17 @@ class PecanTransformer(Transformer):
     praline_pecan_term = PralinePecanTerm
 
     praline_lambda = PralineLambda
+
+    def praline_int(self, const):
+        if const.type != "INT":
+            raise AutomatonArithmeticError("Constants need to be integers: " + const)
+        const = int(const.value)
+        return PralineInt(const)
+
+    praline_string = PralineString
+
+    praline_true = lambda self: PralineBool(True)
+    praline_false = lambda self: PralineBool(False)
 
     def praline_match_list(self, *args):
         res = PralineMatchList(None, None)

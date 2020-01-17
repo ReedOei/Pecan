@@ -210,3 +210,15 @@ class IRTransformer:
     def transform_PralineTuple(self, node):
         return PralineTuple(list(map(self.transform, node.vals)))
 
+    def transform_PralineVar(self, node):
+        return PralineVar(node.var_name)
+
+    def transform_PralineInt(self, node):
+        return PralineInt(node.val)
+
+    def transform_PralineString(self, node):
+        return PralineString(node.val)
+
+    def transform_PralineBool(self, node):
+        return PralineBool(node.val)
+

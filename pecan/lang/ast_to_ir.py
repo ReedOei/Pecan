@@ -343,3 +343,15 @@ class ASTToIR(AstTransformer):
     def transform_PralineTuple(self, node):
         return ir.PralineTuple(list(map(self.transform, node.vals)))
 
+    def transform_PralineVar(self, node):
+        return ir.PralineVar(node.var_name)
+
+    def transform_PralineInt(self, node):
+        return ir.PralineInt(node.val)
+
+    def transform_PralineString(self, node):
+        return ir.PralineString(node.val)
+
+    def transform_PralineBool(self, node):
+        return ir.PralineBool(node.val)
+

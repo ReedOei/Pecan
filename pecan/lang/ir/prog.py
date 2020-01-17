@@ -280,8 +280,37 @@ class Program(IRNode):
         self.result = kwargs.get('result', None)
         self.search_paths = kwargs.get('search_paths', [])
 
+        self.praline_envs = []
+        self.praline_defs = {}
+
         from pecan.lang.type_inference import TypeInferer
         self.type_inferer = TypeInferer(self)
+
+    def enter_praline_env(self, new_env=None):
+        if new_env is None:
+            self.praline_envs.append({})
+        else:
+            self.praline_envs.append(new_env)
+
+    def exit_praline_env(self):
+        return self.praline_envs.pop()
+
+    def praline_lookup(self, name):
+        for env in self.praline_envs[::-1]:
+            if name in env:
+                return env[name]
+
+        # TODO: Handle error
+        return self.praline_defs[name]
+
+    def praline_env_clone(self):
+        return dict(self.praline_envs[-1])
+
+    def praline_define(self, name, val):
+        self.praline_defs[name] = val
+
+    def praline_local_define(self, name, val):
+        self.praline_envs[-1][name] = val
 
     def copy_defaults(self, other_prog):
         self.context = other_prog.context
@@ -301,6 +330,7 @@ class Program(IRNode):
 
     def run_type_inference(self):
         from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle
+        from pecan.lang.ir.praline import PralineDef, PralineExecute, PralineDisplay
 
         # TODO: Cleanup this part relative to evaluate below (e.g., lots of repeated if tree). Instead we could add a evaluate_type method or something, and let dispatch handle it for us
         for i, d in enumerate(self.defs):
@@ -321,6 +351,12 @@ class Program(IRNode):
                 d.evaluate(self)
             elif type(d) is DirectiveShuffle:
                 d.evaluate(self)
+            elif type(d) is PralineDef:
+                d.evaluate(self)
+            elif type(d) is PralineExecute:
+                d.evaluate(self)
+            elif type(d) is PralineDisplay:
+                d.evaluate(self)
 
         # Clear all restrictions. All relevant restrictions will be held inside the restriction_env of the relevant predicates.
         # Having them also in our restrictions list just leads to double restricting, which is a waste of computation time
@@ -330,6 +366,7 @@ class Program(IRNode):
 
     def evaluate(self, old_env=None):
         from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle
+        from pecan.lang.ir.praline import PralineDef, PralineExecute, PralineDisplay
 
         if old_env is not None:
             self.include(old_env)
@@ -341,6 +378,7 @@ class Program(IRNode):
             settings.log(0, d)
 
             # Ignore these constructs because we should have run them earlier in run_type_inference
+            # TODO: Fix here and above in run_type_inferences, all these passes are probably somewhat inefficient for larger programs and it doesn't scale particularly well
             if type(d) is NamedPred:
                 # If we already computed it, it doesn't matter if we replace it with a more efficient version
                 if self.preds[d.name].body_evaluated is None:
@@ -356,6 +394,12 @@ class Program(IRNode):
             elif type(d) is DirectiveImport:
                 pass
             elif type(d) is DirectiveShuffle:
+                pass
+            elif type(d) is PralineDef:
+                pass
+            elif type(d) is PralineExecute:
+                pass
+            elif type(d) is PralineDisplay:
                 pass
 
             else:

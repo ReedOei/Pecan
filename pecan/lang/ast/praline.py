@@ -72,6 +72,17 @@ class PralineApp(PralineTerm):
     def show(self):
         return '({} {})'.format(self.receiver, self.arg)
 
+class PralineVar(PralineTerm):
+    def __init__(self, var_name):
+        super().__init__()
+        self.var_name = var_name
+
+    def transform(self, transformer):
+        return transformer.transform_PralineVar(self)
+
+    def show(self):
+        return '{}'.format(self.var_name)
+
 class PralineBinaryOp(PralineTerm):
     def __init__(self, a, b):
         super().__init__()
@@ -302,4 +313,37 @@ class PralineTuple(PralineTerm):
 
     def show(self):
         return '({})'.format(','.join(map(repr, self.vals)))
+
+class PralineInt(PralineTerm):
+    def __init__(self, val):
+        super().__init__()
+        self.val = val
+
+    def transform(self, transformer):
+        return transformer.transform_PralineInt(self)
+
+    def show(self):
+        return 'PralineInt({})'.format(self.val)
+
+class PralineString(PralineTerm):
+    def __init__(self, val):
+        super().__init__()
+        self.val = val
+
+    def transform(self, transformer):
+        return transformer.transform_PralineString(self)
+
+    def show(self):
+        return 'PralineString({})'.format(self.val)
+
+class PralineBool(PralineTerm):
+    def __init__(self, val):
+        super().__init__()
+        self.val = val
+
+    def transform(self, transformer):
+        return transformer.transform_PralineBool(self)
+
+    def show(self):
+        return 'PralineBool({})'.format(self.val)
 

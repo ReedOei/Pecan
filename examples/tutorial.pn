@@ -1,0 +1,8 @@
+#import("integers.pn")
+
+is_even(x is int) := exists y is int. x = 2*y
+// #accepting_word(is_even)
+
+test() := forall x is int. is_even(x) | !is_even(x)
+#assert_prop(true, test)
+
