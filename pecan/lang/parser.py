@@ -31,7 +31,7 @@ pecan_grammar = """
     | "#" "shuffle_or" "(" formal "," formal "," formal ")" -> directive_shuffle_or
     | directive
 
-?directive: "Definition" app ":=" _NEWLINE* term "." -> praline_def
+?directive: "Define" app ":=" _NEWLINE* term "." -> praline_def
           | "Execute" term "."             -> praline_execute
           | "Display" term "."             -> praline_display
 
@@ -73,7 +73,7 @@ pecan_grammar = """
 
 ?praline_atom: var -> praline_var
      | "-" praline_atom -> praline_neg
-     | INT -> praline_int
+     | int -> praline_int
      | string -> praline_string
      | "true" -> praline_true
      | "false" -> praline_false
@@ -147,7 +147,7 @@ formal: var -> formal_var
 ?div_expr: atom ("/" _NEWLINE* atom)* -> div
 
 ?atom: var -> var_ref
-     | int
+     | int -> int_const
      | "-" atom  -> neg
      | "(" arith ")"
      | call
@@ -159,7 +159,7 @@ call: var "(" args ")" -> call_args
      | atom _IS var     -> call_is
      | atom _IS var "(" args ")" -> call_is_args
 
-int: INT -> const
+int: INT -> int_tok
 
 var: VAR -> var_tok
 
@@ -206,6 +206,12 @@ class PecanTransformer(Transformer):
     escaped_str = lambda self, v: str(v[1:-1]) # Remove the quotes, which are the first and last characters
     varlist = lambda self, *vals: list(map(VarRef, list(vals)))
     args = lambda self, *args: list(args)
+
+    def int_tok(self, const):
+        if const.type != "INT":
+            raise AutomatonArithmeticError("Constants need to be integers: " + const)
+        return int(const.value)
+
     formals = lambda self, *args: list(args)
 
     praline_def = PralineDef
@@ -234,17 +240,14 @@ class PecanTransformer(Transformer):
     praline_match_arm = PralineMatchArm
 
     praline_match_int = PralineMatchInt
+
     praline_match_string = PralineMatchString
     praline_match_var = PralineMatchVar
     praline_pecan_term = PralinePecanTerm
 
     praline_lambda = PralineLambda
 
-    def praline_int(self, const):
-        if const.type != "INT":
-            raise AutomatonArithmeticError("Constants need to be integers: " + const)
-        const = int(const.value)
-        return PralineInt(const)
+    praline_int = PralineInt
 
     praline_string = PralineString
 
@@ -353,11 +356,7 @@ class PecanTransformer(Transformer):
 
     neg = Neg
 
-    def const(self, const):
-        if const.type != "INT":
-            raise AutomatonArithmeticError("Constants need to be integers: " + const)
-        const = int(const.value)
-        return IntConst(const)
+    int_const = IntConst
 
     index = Index
     index_range = IndexRange

@@ -296,11 +296,9 @@ class Program(IRNode):
         return self.praline_envs.pop()
 
     def praline_lookup(self, name):
-        for env in self.praline_envs[::-1]:
-            if name in env:
-                return env[name]
+        if name in self.praline_envs[-1]:
+            return self.praline_envs[-1][name]
 
-        # TODO: Handle error
         return self.praline_defs[name]
 
     def praline_env_clone(self):
@@ -311,6 +309,13 @@ class Program(IRNode):
 
     def praline_local_define(self, name, val):
         self.praline_envs[-1][name] = val
+
+    def praline_local_define_all(self, env):
+        self.praline_envs[-1].update(env)
+
+    def praline_local_cleanup(self, names):
+        for name in names:
+            self.praline_envs[-1].pop(name)
 
     def copy_defaults(self, other_prog):
         self.context = other_prog.context

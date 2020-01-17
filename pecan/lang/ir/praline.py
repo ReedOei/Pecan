@@ -8,16 +8,6 @@ class PralineTerm(IRNode):
         super().__init__()
         self.evaluated_value = None
 
-    def evaluate(self, prog):
-        if self.evaluated_value is None:
-            self.evaluated_value = self.evaluate_term(prog)
-
-        # print(type(self), ':', self, '->', self.evaluated_value)
-        return self.evaluated_value
-
-    def evaluate_term(self, prog):
-        raise NotImplementedError
-
     def is_bool(self):
         return False
 
@@ -93,14 +83,18 @@ class PralineDef(IRNode):
         self.body = body
 
     def evaluate(self, prog):
-        res = Closure({}, self.args, self.body)
+        if len(self.args) == 0:
+            res = self.body
+        else:
+            res = Closure({}, self.args, self.body)
+
         prog.praline_define(self.name.var_name, res)
 
     def transform(self, transformer):
         return transformer.transform_PralineDef(self)
 
     def __repr__(self):
-        return 'Definition {} {} := {} .'.format(self.name, self.args, self.body)
+        return 'Define {} {} := {} .'.format(self.name, self.args, self.body)
 
     def __eq__(self, other):
         return other is not None and type(other) is self.__class__ and self.name == other.name and self.args == other.args and self.body == other.body
@@ -126,7 +120,7 @@ class PralineCompose(PralineTerm):
     def __hash__(self):
         return hash((self.f, self.g))
 
-    def evaluate_term(self, prog):
+    def evaluate(self, prog):
         return PralineCompose(self.f.evaluate(prog), self.g.evaluate(prog))
 
     def apply(self, prog, arg):
@@ -137,7 +131,7 @@ class PralineVar(PralineTerm):
         super().__init__()
         self.var_name = var_name
 
-    def evaluate_term(self, prog):
+    def evaluate(self, prog):
         return prog.praline_lookup(self.var_name)
 
     def transform(self, transformer):
@@ -158,8 +152,8 @@ class PralineApp(PralineTerm):
         self.receiver = receiver
         self.arg = arg
 
-    def evaluate_term(self, prog):
-        return self.receiver.evaluate(prog).apply(prog, self.arg).evaluate(prog)
+    def evaluate(self, prog):
+        return self.receiver.evaluate(prog).apply(prog, self.arg.evaluate(prog)).evaluate(prog)
 
     def transform(self, transformer):
         return transformer.transform_PralineApp(self)
@@ -195,7 +189,7 @@ class PralineAdd(PralineBinaryOp):
     def __repr__(self):
         return '({} + {})'.format(self.a, self.b)
 
-    def evaluate_term(self, prog):
+    def evaluate(self, prog):
         eval_a = self.a.evaluate(prog)
         eval_b = self.b.evaluate(prog)
 
@@ -214,7 +208,7 @@ class PralineDiv(PralineBinaryOp):
     def __repr__(self):
         return '({} / {})'.format(self.a, self.b)
 
-    def evaluate_term(self, prog):
+    def evaluate(self, prog):
         eval_a = self.a.evaluate(prog)
         eval_b = self.b.evaluate(prog)
 
@@ -233,7 +227,7 @@ class PralineSub(PralineBinaryOp):
     def __repr__(self):
         return '({} - {})'.format(self.a, self.b)
 
-    def evaluate_term(self, prog):
+    def evaluate(self, prog):
         eval_a = self.a.evaluate(prog)
         eval_b = self.b.evaluate(prog)
 
@@ -252,7 +246,7 @@ class PralineMul(PralineBinaryOp):
     def __repr__(self):
         return '({} * {})'.format(self.a, self.b)
 
-    def evaluate_term(self, prog):
+    def evaluate(self, prog):
         eval_a = self.a.evaluate(prog)
         eval_b = self.b.evaluate(prog)
 
@@ -271,7 +265,7 @@ class PralineExponent(PralineBinaryOp):
     def __repr__(self):
         return '({} ^ {})'.format(self.a, self.b)
 
-    def evaluate_term(self, prog):
+    def evaluate(self, prog):
         eval_a = self.a.evaluate(prog)
         eval_b = self.b.evaluate(prog)
 
@@ -303,7 +297,7 @@ class PralineNeg(PralineUnaryOp):
     def __repr__(self):
         return '(-{})'.format(self.a)
 
-    def evaluate_term(self, prog):
+    def evaluate(self, prog):
         temp = self.a.evaluate(prog)
 
         if not temp.is_int():
@@ -324,7 +318,17 @@ class PralineList(PralineBinaryOp):
         else:
             return '({} :: {})'.format(self.a, self.b)
 
-    def evaluate_term(self, prog):
+    def display(self):
+        elems = []
+        cur = self
+
+        while cur.a is not None:
+            elems.append(cur.a)
+            cur = cur.b
+
+        return '[{}]'.format(','.join([e.display() for e in elems]))
+
+    def evaluate(self, prog):
         if self.a is not None:
             new_a = self.a.evaluate(prog)
         else:
@@ -349,9 +353,19 @@ class PralineMatch(PralineTerm):
     def __repr__(self):
         return 'match {} with\n{}\nend'.format(self.t, '\n'.join(map(repr, self.arms)))
 
-    # TODO: DO THIS
-    def evaluate_term(self, prog):
-        raise NotImplementedError
+    def evaluate(self, prog):
+        eval_t = self.t.evaluate(prog)
+
+        for arm in self.arms:
+            match_env = arm.match(eval_t)
+
+            if match_env is not None:
+                prog.praline_local_define_all(match_env)
+                result = arm.expr.evaluate(prog)
+                prog.praline_local_cleanup(match_env.keys())
+                return result
+
+        raise Exception('Inexhaustive match arms in "{}" (got "{}")'.format(self, eval_t))
 
     def __eq__(self, other):
         return other is not None and type(other) is self.__class__ and self.t == other.t and self.arms == other.arms
@@ -364,6 +378,9 @@ class PralineMatchArm(IRNode):
         super().__init__()
         self.pat = pat
         self.expr = expr
+
+    def match(self, term):
+        return self.pat.match(term)
 
     def transform(self, transformer):
         return transformer.transform_PralineMatchArm(self)
@@ -386,6 +403,12 @@ class PralineMatchInt(PralineMatchPat):
         super().__init__()
         self.val = val
 
+    def match(self, term):
+        if term.is_int() and term.get_value() == self.val:
+            return {}
+        else:
+            return None
+
     def transform(self, transformer):
         return transformer.transform_PralineMatchInt(self)
 
@@ -402,6 +425,12 @@ class PralineMatchString(PralineMatchPat):
     def __init__(self, val):
         super().__init__()
         self.val = val
+
+    def match(self, term):
+        if term.is_string() and term.get_value() == self.val:
+            return {}
+        else:
+            return None
 
     def transform(self, transformer):
         return transformer.transform_PralineMatchString(self)
@@ -421,6 +450,23 @@ class PralineMatchList(PralineMatchPat):
         self.head = head
         self.tail = tail
 
+    def match(self, term):
+        if not type(term) is PralineList:
+            return None
+
+        if self.head is None or term.a is None:
+            if self.head is None and term.a is None:
+                return {}
+            else:
+                return None
+
+        head_match_env = self.head.match(term.a)
+        tail_match_env = self.tail.match(term.b)
+
+        head_match_env.update(tail_match_env)
+
+        return head_match_env
+
     def transform(self, transformer):
         return transformer.transform_PralineMatchList(self)
 
@@ -437,6 +483,9 @@ class PralineMatchVar(PralineMatchPat):
     def __init__(self, var):
         super().__init__()
         self.var = var
+
+    def match(self, term):
+        return {self.var: term}
 
     def transform(self, transformer):
         return transformer.transform_PralineMatchVar(self)
@@ -463,7 +512,7 @@ class PralineIf(PralineTerm):
     def __repr__(self):
         return '(if {} then {} else {})'.format(self.cond, self.e1, self.e2)
 
-    def evaluate_term(self, prog):
+    def evaluate(self, prog):
         cond_eval = self.cond.evaluate(prog)
         if cond_eval.is_bool():
             if cond_eval.get_value():
@@ -490,7 +539,7 @@ class PralinePecanTerm(PralineTerm):
     def __repr__(self):
         return '{{ {} }}'.format(self.pecan_term)
 
-    def evaluate_term(self, prog):
+    def evaluate(self, prog):
         return self
 
     def __eq__(self, other):
@@ -511,7 +560,7 @@ class PralineLambda(PralineTerm):
     def __repr__(self):
         return '(\\ {} -> {})'.format(self.params, self.body)
 
-    def evaluate_term(self, prog):
+    def evaluate(self, prog):
         return Closure(prog.praline_env_clone(), self.params, self.body)
 
     def __eq__(self, other):
@@ -534,7 +583,7 @@ class PralineLetPecan(PralineTerm):
         return '(let {} be {} in {})'.format(self.var, self.pecan_term, self.body)
 
     # TODO
-    def evaluate_term(self, prog):
+    def evaluate(self, prog):
         raise NotImplementedError
 
     def __eq__(self, other):
@@ -555,11 +604,10 @@ class PralineLet(PralineTerm):
     def __repr__(self):
         return '(let {} := {} in {})'.format(self.var, self.expr, self.body)
 
-    def evaluate_term(self, prog):
-        prog.enter_praline_env()
+    def evaluate(self, prog):
         prog.praline_local_define(self.var.var_name, self.expr)
         result = self.body.evaluate(prog)
-        prog.exit_praline_env()
+        prog.praline_local_cleanup(self.var.var_name)
         return result
 
     def __eq__(self, other):
@@ -579,7 +627,7 @@ class PralineTuple(PralineTerm):
     def __repr__(self):
         return '({})'.format(','.join(map(repr, self.vals)))
 
-    def evaluate_term(self, prog):
+    def evaluate(self, prog):
         return PralineTuple([v.evaluate(prog) for v in self.vals])
 
     def __eq__(self, other):
@@ -588,6 +636,9 @@ class PralineTuple(PralineTerm):
     def __hash__(self):
         return hash((self.vals))
 
+    def display(self):
+        return '({})'.format(','.join([v.display() for v in self.vals]))
+
 class Closure(PralineTerm):
     def __init__(self, env, args, body):
         super().__init__()
@@ -595,7 +646,7 @@ class Closure(PralineTerm):
         self.args = args
         self.body = body
 
-    def evaluate_term(self, prog):
+    def evaluate(self, prog):
         return self
 
     def transform(self, transformer):
@@ -637,7 +688,7 @@ class PralineInt(PralineTerm):
     def __repr__(self):
         return 'PralineInt({})'.format(self.val)
 
-    def evaluate_term(self, prog):
+    def evaluate(self, prog):
         return self
 
     def get_value(self):
@@ -653,7 +704,7 @@ class PralineInt(PralineTerm):
         return hash((self.args, self.body))
 
     def display(self):
-        return self.val
+        return '{}'.format(self.val)
 
 class PralineString(PralineTerm):
     def __init__(self, val):
@@ -666,7 +717,7 @@ class PralineString(PralineTerm):
     def __repr__(self):
         return 'PralineString({})'.format(self.val)
 
-    def evaluate_term(self, prog):
+    def evaluate(self, prog):
         return self
 
     def get_value(self):
@@ -682,7 +733,7 @@ class PralineString(PralineTerm):
         return hash((self.args, self.body))
 
     def display(self):
-        return self.val
+        return '{}'.format(self.val)
 
 class PralineBool(PralineTerm):
     def __init__(self, val):
@@ -695,7 +746,7 @@ class PralineBool(PralineTerm):
     def __repr__(self):
         return 'PralineBool({})'.format(self.val)
 
-    def evaluate_term(self, prog):
+    def evaluate(self, prog):
         return self
 
     def get_value(self):
@@ -711,5 +762,5 @@ class PralineBool(PralineTerm):
         return hash((self.args, self.body))
 
     def display(self):
-        return self.val
+        return '{}'.format(self.val)
 

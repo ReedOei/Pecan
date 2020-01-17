@@ -46,7 +46,7 @@ class PralineDef(ASTNode):
         return transformer.transform_PralineDef(self)
 
     def show(self):
-        return 'Definition {} {} := {} .'.format(self.name, self.args, self.body)
+        return 'Define {} {} := {} .'.format(self.name, self.args, self.body)
 
 class PralineCompose(PralineTerm):
     def __init__(self, f, g):

@@ -1,0 +1,18 @@
+Define length l :=
+    match l with
+    case [] -> 0
+    case x :: xs -> 1 + length xs
+    end.
+
+Display length [1,2,3,4].
+
+Define map f l :=
+    match l with
+    case [] -> []
+    case x :: xs -> f x :: map f xs
+    end.
+
+Define square x := x * x .
+
+Display map square [1,2,3,4].
+

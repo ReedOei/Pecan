@@ -8,7 +8,9 @@ class AstTransformer:
         pass
 
     def transform(self, node):
-        if type(node) is str:
+        if node is None:
+            return None
+        elif type(node) is str:
             return node
         else:
             return node.transform(self)

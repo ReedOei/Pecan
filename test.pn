@@ -1,24 +1,24 @@
-Definition boolToInt b := if b then 1 else 0.
-Definition checkToInt := bool_to_int ∘ check.
-Definition makeWord W low high := map (\i -> checkToInt { W[idx] = 1 } ) [low..high].
+Define boolToInt b := if b then 1 else 0.
+Define checkToInt := bool_to_int ∘ check.
+Define makeWord W low high := map (\i -> checkToInt { W[idx] = 1 } ) [low..high].
 
 Display makeWord T 0 100.
 
-Definition graphPoint F x := let y be { F(x, y) } in (x, y).
-Definition graph F := map (graphPoint F).
+Define graphPoint F x := let y be { F(x, y) } in (x, y).
+Define graph F := map (graphPoint F).
 
 Display graph identity [1..10].
 
-Definition map f l :=
+Define map f l :=
     match l with
     case [] -> []
     case x :: xs -> f x :: map f xs
     end.
 
-Definition square x := x * x .
-Definition square2 x := x^2.
+Define square x := x * x .
+Define square2 x := x^2.
 
-Definition digits := [0,1,2,3,4,5,6,7,8,9] .
+Define digits := [0,1,2,3,4,5,6,7,8,9] .
 
-Definition concat a b := a ^ b.
+Define concat a b := a ^ b.
 

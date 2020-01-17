@@ -172,7 +172,7 @@ class IRTransformer:
         return PralineNeg(self.transform(node.a))
 
     def transform_PralineList(self, node):
-        return PralineList(self.transform(node.head), self.transform(node.tail))
+        return PralineList(self.transform(node.a), self.transform(node.b))
 
     def transform_PralineMatch(self, node):
         return PralineMatch(self.transform(node.t), list(map(self.transform, node.arms)))
