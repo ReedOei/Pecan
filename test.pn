@@ -13,7 +13,7 @@ Definition map f l :=
     match l with
     case [] => []
     case x :: xs => f x :: map f xs
-end.
+    end.
 
 Definition square x := x * x .
 Definition square2 x := x^2.

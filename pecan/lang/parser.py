@@ -38,7 +38,7 @@ pecan_grammar = """
 ?term: "if" term "then" term "else" term -> praline_if
      | praline_operator
      | "\\\\" app "->" term -> praline_lambda
-     | "let" var "be" pecan_term "in" term -> praline_pecan_let
+     | "let" var "be" pecan_term "in" term -> praline_let_pecan
      | "let" var ":=" term "in" term -> praline_let
      | "match" term "with" _NEWLINE* (match_arm)+ _NEWLINE* "end" -> praline_match
 
@@ -211,6 +211,10 @@ class PecanTransformer(Transformer):
     praline_execute = PralineExecute
 
     praline_if = PralineIf
+    praline_let_pecan = PralineLetPecan
+    praline_let = PralineLet
+
+    praline_tuple = lambda self, *args: PralineTuple(args)
 
     praline_add = lambda self, *args: reduce(PralineAdd, args)
     praline_sub = lambda self, *args: reduce(PralineSub, args)
