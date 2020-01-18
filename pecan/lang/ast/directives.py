@@ -134,8 +134,8 @@ class DirectiveShowWord(ASTNode):
             else:
                 self.index_type = index_type
 
-        self.start_index = start_index.evaluate_int(None)
-        self.end_index = end_index.evaluate_int(None)
+        self.start_index = start_index
+        self.end_index = end_index
 
     def transform(self, transformer):
         return transformer.transform_DirectiveShowWord(self)

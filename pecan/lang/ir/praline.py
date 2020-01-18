@@ -124,7 +124,7 @@ class PralineCompose(PralineTerm):
         return PralineCompose(self.f.evaluate(prog), self.g.evaluate(prog))
 
     def apply(self, prog, arg):
-        return f.apply(prog, g.apply(prog, arg))
+        return self.f.evaluate(prog).apply(prog, self.g.evaluate(prog).apply(prog, arg))
 
 class PralineVar(PralineTerm):
     def __init__(self, var_name):
