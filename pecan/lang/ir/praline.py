@@ -87,7 +87,6 @@ class PralineDef(IRNode):
             res = self.body
         else:
             res = Closure({}, self.args, self.body)
-
         prog.praline_define(self.name.var_name, res)
 
     def transform(self, transformer):
@@ -763,4 +762,25 @@ class PralineBool(PralineTerm):
 
     def display(self):
         return '{}'.format(self.val)
+
+class Builtin(PralineTerm):
+    def __init__(self, name, args):
+        super().__init__()
+        self.name = name
+        self.args = args
+
+    def transform(self, transformer):
+        return transformer.transform_Builtin(self)
+
+    def show(self):
+        return 'BUILTIN({})'.format(self.name)
+
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.name == other.name and self.args == other.args
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def definition(self):
+        return PralineDef(self.name, self.args, self)
 

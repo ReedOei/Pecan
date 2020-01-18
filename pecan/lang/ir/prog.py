@@ -337,8 +337,10 @@ class Program(IRNode):
         from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle
         from pecan.lang.ir.praline import PralineDef, PralineExecute, PralineDisplay
 
+        from pecan.lib.praline.builtins import builtins
+
         # TODO: Cleanup this part relative to evaluate below (e.g., lots of repeated if tree). Instead we could add a evaluate_type method or something, and let dispatch handle it for us
-        for i, d in enumerate(self.defs):
+        for i, d in enumerate(builtins + self.defs):
             if type(d) is NamedPred:
                 self.defs[i] = self.type_inferer.reset().transform(d).with_parent(self)
                 self.preds[d.name] = self.defs[i]

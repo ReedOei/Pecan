@@ -25,3 +25,6 @@ class PralineTest(unittest.TestCase):
     def test_praline_compose(self):
         self.run_file('examples/test_praline_compose.pn', '1\n0\n2\n')
 
+    def test_praline_builtins(self):
+        self.run_file('examples/test_praline_builtins.pn', '7\n')
+
