@@ -1,0 +1,10 @@
+Define abs x := if x >= 0 then x else -x .
+
+Display abs 10.
+Display abs -10.
+
+Define strTest a b := if a ^ b = "testing" then "success" else "fail".
+
+Display strTest "test" "ing".
+Display strTest "fail" "ing".
+

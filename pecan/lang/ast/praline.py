@@ -347,3 +347,63 @@ class PralineBool(PralineTerm):
     def show(self):
         return 'PralineBool({})'.format(self.val)
 
+class PralineEq(PralineBinaryOp):
+    def __init__(self, a, b):
+        super().__init__(a, b)
+
+    def transform(self, transformer):
+        return transformer.transform_PralineEq(self)
+
+    def show(self):
+        return '({} = {})'.format(self.a, self.b)
+
+class PralineNe(PralineBinaryOp):
+    def __init__(self, a, b):
+        super().__init__(a, b)
+
+    def transform(self, transformer):
+        return transformer.transform_PralineNe(self)
+
+    def show(self):
+        return '({} ≠ {})'.format(self.a, self.b)
+
+class PralineGe(PralineBinaryOp):
+    def __init__(self, a, b):
+        super().__init__(a, b)
+
+    def transform(self, transformer):
+        return transformer.transform_PralineGe(self)
+
+    def show(self):
+        return '({} ≥ {})'.format(self.a, self.b)
+
+class PralineLe(PralineBinaryOp):
+    def __init__(self, a, b):
+        super().__init__(a, b)
+
+    def transform(self, transformer):
+        return transformer.transform_PralineLe(self)
+
+    def show(self):
+        return '({} ≤ {})'.format(self.a, self.b)
+
+class PralineGt(PralineBinaryOp):
+    def __init__(self, a, b):
+        super().__init__(a, b)
+
+    def transform(self, transformer):
+        return transformer.transform_PralineGt(self)
+
+    def show(self):
+        return '({} > {})'.format(self.a, self.b)
+
+class PralineLt(PralineBinaryOp):
+    def __init__(self, a, b):
+        super().__init__(a, b)
+
+    def transform(self, transformer):
+        return transformer.transform_PralineLt(self)
+
+    def show(self):
+        return '({} < {})'.format(self.a, self.b)
+

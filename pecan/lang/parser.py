@@ -36,11 +36,11 @@ pecan_grammar = """
           | "Display" term "."             -> praline_display
 
 ?term: "if" term "then" term "else" term -> praline_if
-     | praline_operator
      | "\\\\" app "->" term -> praline_lambda
      | "let" var "be" pecan_term "in" term -> praline_let_pecan
      | "let" var ":=" term "in" term -> praline_let
      | "match" term "with" _NEWLINE* (match_arm)+ _NEWLINE* "end" -> praline_match
+     | praline_compare
 
 ?match_arm: "case" match_expr "->" term _NEWLINE* -> praline_match_arm
 
@@ -51,6 +51,14 @@ pecan_grammar = """
     | match_expr "::" match_expr -> praline_match_prepend
     // | praline_tuple -> praline_match_tuple
     // TODO: Add praline_tuple back here...
+
+?praline_compare: praline_operator _EQ praline_operator -> praline_eq
+                | praline_operator _NE praline_operator -> praline_ne
+                | praline_operator _LE praline_operator -> praline_le
+                | praline_operator _GE praline_operator -> praline_ge
+                | praline_operator "<" praline_operator -> praline_lt
+                | praline_operator ">" praline_operator -> praline_gt
+                | praline_operator
 
 ?praline_operator: praline_sub
 
@@ -253,6 +261,13 @@ class PecanTransformer(Transformer):
 
     praline_true = lambda self: PralineBool(True)
     praline_false = lambda self: PralineBool(False)
+
+    praline_eq = PralineEq
+    praline_ne = PralineNe
+    praline_le = PralineLe
+    praline_ge = PralineGe
+    praline_lt = PralineLt
+    praline_gt = PralineGt
 
     def praline_match_list(self, *args):
         res = PralineMatchList(None, None)

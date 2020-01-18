@@ -355,3 +355,21 @@ class ASTToIR(AstTransformer):
     def transform_PralineBool(self, node):
         return ir.PralineBool(node.val)
 
+    def transform_PralineEq(self, node):
+        return ir.PralineEq(self.transform(node.a), self.transform(node.b))
+
+    def transform_PralineNe(self, node):
+        return ir.PralineNe(self.transform(node.a), self.transform(node.b))
+
+    def transform_PralineGe(self, node):
+        return ir.PralineGe(self.transform(node.a), self.transform(node.b))
+
+    def transform_PralineLe(self, node):
+        return ir.PralineLe(self.transform(node.a), self.transform(node.b))
+
+    def transform_PralineGt(self, node):
+        return ir.PralineGt(self.transform(node.a), self.transform(node.b))
+
+    def transform_PralineLt(self, node):
+        return ir.PralineLt(self.transform(node.a), self.transform(node.b))
+

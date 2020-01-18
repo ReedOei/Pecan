@@ -249,3 +249,21 @@ class AstTransformer:
     def transform_PralineBool(self, node):
         return PralineBool(node.val)
 
+    def transform_PralineEq(self, node):
+        return PralineEq(self.transform(node.a), self.transform(node.b))
+
+    def transform_PralineNe(self, node):
+        return PralineNe(self.transform(node.a), self.transform(node.b))
+
+    def transform_PralineGe(self, node):
+        return PralineGe(self.transform(node.a), self.transform(node.b))
+
+    def transform_PralineLe(self, node):
+        return PralineLe(self.transform(node.a), self.transform(node.b))
+
+    def transform_PralineGt(self, node):
+        return PralineGt(self.transform(node.a), self.transform(node.b))
+
+    def transform_PralineLt(self, node):
+        return PralineLt(self.transform(node.a), self.transform(node.b))
+
