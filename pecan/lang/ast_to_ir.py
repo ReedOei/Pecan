@@ -83,9 +83,6 @@ class ASTToIR(AstTransformer):
     def transform_DirectiveType(self, node):
         return ir.DirectiveType(self.transform_decl_type(node.pred_ref), {self.transform(k): self.transform(v) for k, v, in node.val_dict.items()})
 
-    def transform_DirectiveShowWord(self, node):
-        return ir.DirectiveShowWord(self.transform(node.word_name), self.transform_decl_type(node.index_type), node.start_index, node.end_index)
-
     def transform_DirectiveAcceptingWord(self, node):
         return ir.DirectiveAcceptingWord(node.pred_name)
 
@@ -279,9 +276,6 @@ class ASTToIR(AstTransformer):
 
     def transform_PralineDef(self, node):
         return ir.PralineDef(self.transform(node.name), list(map(self.transform, node.args)), self.transform(node.body))
-
-    def transform_PralineCompose(self, node):
-        return ir.PralineCompose(self.transform(node.f), self.transform(node.g))
 
     def transform_PralineApp(self, node):
         return ir.PralineApp(self.transform(node.receiver), self.transform(node.arg))

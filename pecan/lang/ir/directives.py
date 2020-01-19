@@ -259,56 +259,6 @@ class DirectiveType(IRNode):
     def __hash__(self):
         return hash((self.pred_ref, self.val_dict))
 
-class DirectiveShowWord(IRNode):
-    def __init__(self, word_name, index_type, start_index, end_index):
-        super().__init__()
-        self.word_name = word_name
-
-        self.index_type = index_type if index_type is not None else None
-
-        self.start_index = start_index
-        self.end_index = end_index
-
-    def evaluate(self, prog):
-        from pecan.lang.ir.words import EqualsCompareIndex, Index
-        from pecan.lang.ir.arith import IntConst
-        from pecan.lang.typed_ir_lowering import TypedIRLowering
-
-        lowerer = TypedIRLowering()
-
-        # We are going to introduce new variables, via constants, and they'll need a scope to live in
-        prog.enter_scope()
-
-        # TODO: Eventually, optimize this. Or add procedures and just eliminate it altogether
-        index_expr = lambda idx_val: lowerer.transform(EqualsCompareIndex(True, Index(self.word_name, IntConst(idx_val).with_type(self.index_type)), FormulaTrue()))
-
-        for idx in range(self.start_index, self.end_index + 1):
-            if TruthValue(index_expr(idx)).truth_value(prog) == 'true':
-                sys.stdout.write('1')
-                sys.stdout.flush()
-            else:
-                sys.stdout.write('0')
-                sys.stdout.flush()
-
-        sys.stdout.write('\n')
-
-        prog.exit_scope()
-
-        return None
-
-    def transform(self, transformer):
-        return transformer.transform_DirectiveShowWord(self)
-
-    def __repr__(self):
-        return '#show_word({}, {}, {}, {})'.format(self.word_name, self.index_type, self.start_index, self.end_index)
-
-    def __eq__(self, other):
-        return other is not None and type(other) is self.__class__ and \
-               self.word_name == other.word_name and self.index_type == other.index_type and self.start_index == other.start_index and self.end_index == other.end_index
-
-    def __hash__(self):
-        return hash((self.word_name, self.index_type, self.start_index, self.end_index))
-
 class DirectiveAcceptingWord(IRNode):
     def __init__(self, pred_name):
         super().__init__()

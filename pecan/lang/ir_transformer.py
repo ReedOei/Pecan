@@ -57,9 +57,6 @@ class IRTransformer:
     def transform_DirectiveType(self, node):
         return node
 
-    def transform_DirectiveShowWord(self, node):
-        return node
-
     def transform_DirectiveAcceptingWord(self, node):
         return node
 
@@ -148,9 +145,6 @@ class IRTransformer:
 
     def transform_PralineDef(self, node):
         return PralineDef(self.transform(node.name), list(map(self.transform, node.args)), self.transform(node.body))
-
-    def transform_PralineCompose(self, node):
-        return PralineCompose(self.transform(node.f), self.transform(node.g))
 
     def transform_PralineApp(self, node):
         return PralineApp(self.transform(node.receiver), self.transform(node.arg))

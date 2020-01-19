@@ -123,26 +123,6 @@ class DirectiveType(ASTNode):
     def __repr__(self):
         return '#type({}, {})'.format(self.pred_ref, self.val_dict)
 
-class DirectiveShowWord(ASTNode):
-    def __init__(self, word_name, index_type, start_index, end_index):
-        super().__init__()
-        self.word_name = word_name
-
-        if index_type is not None:
-            if type(index_type) is VarRef:
-                self.index_type = Call(index_type.var_name, [])
-            else:
-                self.index_type = index_type
-
-        self.start_index = start_index
-        self.end_index = end_index
-
-    def transform(self, transformer):
-        return transformer.transform_DirectiveShowWord(self)
-
-    def __repr__(self):
-        return '#show_word({}, {}, {}, {})'.format(self.word_name, self.index_type, self.start_index, self.end_index)
-
 class DirectiveAcceptingWord(ASTNode):
     def __init__(self, pred_name):
         super().__init__()

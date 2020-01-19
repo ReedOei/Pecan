@@ -15,5 +15,3 @@ Define showWord word idxs := concatenate (map (\i -> checkToInt { word(i) }) idx
 
 Display showWord T [0..100].
 
-#show_word(T, binary, 0, 100)
-

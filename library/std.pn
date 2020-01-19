@@ -60,3 +60,5 @@ Define concatenate xs :=
     case x :: xs -> toString x ^ concatenate xs
     end.
 
+Define compose f g x := f (g x).
+

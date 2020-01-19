@@ -83,10 +83,7 @@ class PralineDef(IRNode):
         self.body = body
 
     def evaluate(self, prog):
-        if len(self.args) == 0:
-            res = self.body
-        else:
-            res = Closure({}, self.args, self.body)
+        res = Closure({}, self.args, self.body)
         prog.praline_define(self.name.var_name, res)
 
     def transform(self, transformer):
@@ -101,37 +98,13 @@ class PralineDef(IRNode):
     def __hash__(self):
         return hash((self.name, self.args, self.body))
 
-class PralineCompose(PralineTerm):
-    def __init__(self, f, g):
-        super().__init__()
-        self.f = f
-        self.g = g
-
-    def transform(self, transformer):
-        return transformer.transform_PralineCompose(self)
-
-    def __repr__(self):
-        return '({} ∘ {})'.format(self.f, self.g)
-
-    def __eq__(self, other):
-        return other is not None and type(other) is self.__class__ and self.f == other.f and self.g == other.g
-
-    def __hash__(self):
-        return hash((self.f, self.g))
-
-    def evaluate(self, prog):
-        return PralineCompose(self.f.evaluate(prog), self.g.evaluate(prog))
-
-    def apply(self, prog, arg):
-        return self.f.evaluate(prog).apply(prog, self.g.evaluate(prog).apply(prog, arg))
-
 class PralineVar(PralineTerm):
     def __init__(self, var_name):
         super().__init__()
         self.var_name = var_name
 
     def evaluate(self, prog):
-        return prog.praline_lookup(self.var_name)
+        return prog.praline_lookup(self.var_name).evaluate(prog)
 
     def transform(self, transformer):
         return transformer.transform_PralineVar(self)

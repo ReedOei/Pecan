@@ -25,7 +25,6 @@ pecan_grammar = """
     | "#" "import" "(" string ")" -> directive_import
     | "#" "forget" "(" var ")" -> directive_forget
     | "#" "type" "(" formal "," val_dict ")" -> directive_type
-    | "#" "show_word" "(" var "," formal "," int "," int ")" -> directive_show_word
     | "#" "accepting_word" "(" var ")" -> directive_accepting_word
     | "#" "shuffle" "(" formal "," formal "," formal ")" -> directive_shuffle
     | "#" "shuffle_or" "(" formal "," formal "," formal ")" -> directive_shuffle_or
@@ -241,7 +240,7 @@ class PecanTransformer(Transformer):
 
     praline_neg = PralineNeg
     praline_app = PralineApp
-    praline_compose = PralineCompose
+    praline_compose = lambda self, f, g: PralineApp(PralineApp(PralineVar('compose'), f), g)
     praline_prepend = PralineList
     praline_exponent = PralineExponent
     praline_match = lambda self, t, *arms: PralineMatch(t, list(arms))
@@ -315,7 +314,6 @@ class PecanTransformer(Transformer):
 
     directive_assert_prop = DirectiveAssertProp
     directive_type = DirectiveType
-    directive_show_word = DirectiveShowWord
     directive_save_aut = DirectiveSaveAut
     directive_accepting_word = DirectiveAcceptingWord
     directive_save_aut_img = DirectiveSaveAutImage

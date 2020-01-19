@@ -63,9 +63,6 @@ class AstTransformer:
     def transform_DirectiveType(self, node):
         return node
 
-    def transform_DirectiveShowWord(self, node):
-        return node
-
     def transform_DirectiveAcceptingWord(self, node):
         return node
 
