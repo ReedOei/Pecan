@@ -1,4 +1,4 @@
-n, m, a, b, c ∈ nat
+Restrict n, m, a, b, c ∈ nat.
 
 purchasable(n) := n ∈ nat ∧ ∃a. ∃b. ∃c. n = 6*a + 9*b + 20*c
 non_purchasable(n) := n ∈ nat ∧ ¬purchasable(n)

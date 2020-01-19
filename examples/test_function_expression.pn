@@ -12,7 +12,7 @@ double(x is nat, out is nat) := out = 2*x
 my_even(x is nat) := exists y is nat. x = double(y)
 my_odd(x is nat) := exists y is nat. x = double(y) + 1
 
-x is nat
+Restrict x is nat.
 test3() := forall x. my_even(x) | my_odd(x)
 #assert_prop(true, test3)
 

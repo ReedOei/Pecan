@@ -6,10 +6,10 @@ import io
 from pecan import program
 
 class PralineTest(unittest.TestCase):
-    def run_file(self, filename, expected_output):
+    def run_file(self, filename, expected_output, run_quiet=True):
         f = io.StringIO()
         with redirect_stdout(f):
-            prog = program.load(filename, quiet=True)
+            prog = program.load(filename, quiet=run_quiet)
             self.assertTrue(prog.evaluate().result.succeeded())
         self.assertEqual(f.getvalue().strip(), expected_output.strip())
 
@@ -33,4 +33,8 @@ class PralineTest(unittest.TestCase):
 
     def test_praline_do(self):
         self.run_file('examples/test_praline_do.pn', '1\n2\n')
+
+    def test_praline_emit(self):
+        self.run_file('examples/test_praline_emit.pn', '[INFO] Checking if self_equals_tautology is true.\nself_equals_tautology is true.\n', run_quiet=False)
+
 

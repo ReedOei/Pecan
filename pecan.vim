@@ -12,10 +12,10 @@ endif
 
 let b:current_syntax = "pecan"
 
-syntax keyword keywords is are forall exists not or and sometimes if then match end case else only with let in be
+syntax keyword keywords is are forall exists not or and if then match end case else only with let in be do
 syntax match keyword_op '∀\|∃'
-syntax keyword bool true false
-syntax keyword directive save_aut save_aut_img save_pred context end_context load assert_prop import forget type accepting_word shuffle
+syntax keyword bool true false sometimes
+syntax keyword directive save_aut save_aut_img save_pred context end_context load assert_prop import forget type accepting_word shuffle Restrict
 syntax match directiveOp '#'
 
 syntax keyword praline_directive Display Execute Define

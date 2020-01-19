@@ -2,7 +2,7 @@ thue_morse(x) := odd_ones(x)
 // A conveniently short alias for the Thue-Morse word
 T(x) := thue_morse(x)
 
-i, j, n are binary
+Restrict i, j, n are binary.
 
 tm(i, j) := thue_morse(i) <=> thue_morse(j)
 test_equality(i, j) := T[i] = T[j]

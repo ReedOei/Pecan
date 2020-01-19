@@ -1,4 +1,4 @@
-x, y are nat
+Restrict x, y are nat.
 
 test() := forall x. x is even or x is odd
 #assert_prop(true, test)

@@ -1,6 +1,6 @@
 #import("integers.pn")
 
-x,y,z are int
+Restrict x,y,z are int.
 
 test() := forall x. (if x is positive then negate(x) is negative) & (if x is negative then negate(x) is positive)
 #assert_prop(true, test)

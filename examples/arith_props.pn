@@ -1,4 +1,4 @@
-x, y, z are nat
+Restrict x, y, z are nat.
 
 add_zero_id() := forall x. x + 0 = x
 add_comm() := forall x. forall y. x + y = y + x

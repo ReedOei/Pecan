@@ -8,8 +8,8 @@ gt(n, a, b) := a > n & b > n
     "valid": gt(n, any, any)
 })
 
-k is nat
-x, y are nat_gt(k)
+Restrict k is nat.
+Restrict x, y are nat_gt(k).
 test() := forall k. forall x. forall y. valid(x, y) <=> gt(k, x, y)
 #assert_prop(true, test)
 
@@ -25,9 +25,9 @@ test_b() := forall k. forall x. forall y. gt(k, x, y)
 test2() := forall k. forall x. forall y. gt(k, x, y)
 #assert_prop(false, test2)
 
-k is nat
-x are nat_gt(k)
-a are nat_gt(x)
+Restrict k is nat.
+Restrict x are nat_gt(k).
+Restrict a are nat_gt(x).
 test3() := forall k. forall x. forall a. valid(a, a) <=> gt(k, a, a)
 #assert_prop(true, test3)
 

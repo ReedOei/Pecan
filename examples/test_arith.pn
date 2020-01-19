@@ -1,4 +1,4 @@
-x,y,z are binary
+Restrict x,y,z are binary.
 
 double(x, y) := x+x=y
 

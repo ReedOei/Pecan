@@ -1,6 +1,6 @@
 #load("sturmian_bin.txt", "walnut", sturmian_bin(n))
 
-a is binary
+Restrict a is binary.
 
 // TODO: note that, until we have better type inference (e.g., we use the input types of predicates to infer types),
 // we have to use exists below so that Pecan can figure out what type `1`/`2` should be

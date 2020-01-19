@@ -11,9 +11,12 @@ class AstTransformer:
         if node is None:
             return None
         elif type(node) is str:
-            return node
+            return self.transform_str(node)
         else:
             return node.transform(self)
+
+    def transform_str(self, node):
+        return node
 
     def transform_Conjunction(self, node):
         return Conjunction(self.transform(node.a), self.transform(node.b))
@@ -37,37 +40,38 @@ class AstTransformer:
         return node
 
     def transform_DirectiveSaveAut(self, node):
-        return node
+        return DirectiveSaveAut(self.transform(node.filename), self.transform(node.pred_name))
 
     def transform_DirectiveSaveAutImage(self, node):
-        return node
+        return DirectiveSaveAutImage(self.transform(node.filename), self.transform(node.pred_name))
 
     def transform_DirectiveContext(self, node):
-        return node
+        return DirectiveContext(self.transform(node.context_key), self.transform(node.context_val))
 
     def transform_DirectiveEndContext(self, node):
-        return node
+        return DirectiveEndContext(self.transform(node.context_key))
 
     def transform_DirectiveAssertProp(self, node):
-        return node
+        return DirectiveAssertProp(self.transform(node.truth_val), self.transform(node.pred_name))
 
     def transform_DirectiveLoadAut(self, node):
-        return node
+        return DirectiveLoadAut(self.transform(node.filename), self.transform(node.aut_format), self.transform(node.pred))
 
     def transform_DirectiveImport(self, node):
-        return node
+        return DirectiveImport(self.transform(node.filename))
 
     def transform_DirectiveForget(self, node):
-        return node
+        return DirectiveForget(self.transform(node.var_name))
 
     def transform_DirectiveType(self, node):
-        return node
+        return DirectiveType(self.transform(node.pred_ref),
+                {self.transform(k): self.transform(v) for k, v in node.val_dict.items()})
 
     def transform_DirectiveAcceptingWord(self, node):
-        return node
+        return DirectiveAcceptingWord(self.transform(node.pred_name))
 
     def transform_DirectiveShuffle(self, node):
-        return node
+        return DirectiveShuffle(node.disjunction, self.transform(node.pred_a), self.transform(node.pred_b), self.transform(node.output_pred))
 
     def transform_Add(self, node):
         return Add(self.transform(node.a), self.transform(node.b))
@@ -226,10 +230,10 @@ class AstTransformer:
         return PralineLambda(reduce(PralineApp, list(map(self.transform, node.params))), self.transform(node.body))
 
     def transform_PralineLetPecan(self, node):
-        return PralineLetPecan(self.transform(node.var), self.transform(node.pecan_term), self.transform(node.body))
+        return PralineLetPecan(self.transform(node.var_name), self.transform(node.pecan_term), self.transform(node.body))
 
     def transform_PralineLet(self, node):
-        return PralineLetPecan(self.transform(node.var), self.transform(node.expr), self.transform(node.body))
+        return PralineLet(self.transform(node.var_name), self.transform(node.expr), self.transform(node.body))
 
     def transform_PralineTuple(self, node):
         return PralineTuple(list(map(self.transform, node.vals)))

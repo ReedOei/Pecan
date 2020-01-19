@@ -10,7 +10,7 @@ x is nat := finite_num(x)
 // binary is, for the moment, a synonym for nat; eventually we may decouple the two
 x is binary := finite_num(x)
 
-x is binary
+Restrict x is binary.
 bin_even(x) := x is binary & exists y is binary. x = 2*y
 bin_odd(x) := x is binary & ¬bin_even(x)
 #forget(x)

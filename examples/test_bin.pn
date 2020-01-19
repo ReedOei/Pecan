@@ -2,11 +2,7 @@
 
 double(x, y) := bin_add(x, x, y)
 
-
-
 is_even(x) := exists y. double(y, x)
-
-
 
 finite_num(x) := "F(G(!x))"
 test() := forall x. (finite_num(x) & is_even(x)) => (exists y. exists z. bin_add(y, y, x) & y = z)

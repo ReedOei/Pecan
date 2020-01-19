@@ -1,6 +1,6 @@
 // The nth digit of the thue_morse word is 1 iff n in binary has an odd number of ones
 T(x) := odd_ones(x)
-i, j, n are binary
+Restrict i, j, n are binary.
 
 square(i, n) := n > 0 & T[i..i+n] = T[i+n..i+2*n]
 squares_exist() := exists i. exists n. square(i, n)

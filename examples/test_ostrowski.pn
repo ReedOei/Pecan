@@ -1,1 +1,0 @@
-test(a, b, c) := b +_a c = c +_a b

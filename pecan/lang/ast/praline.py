@@ -278,9 +278,9 @@ class PralineLambda(PralineTerm):
         return '(\\ {} -> {})'.format(self.params, self.body)
 
 class PralineLetPecan(PralineTerm):
-    def __init__(self, var, pecan_term, body):
+    def __init__(self, var_name, pecan_term, body):
         super().__init__()
-        self.var = var
+        self.var_name = var_name
         self.pecan_term = pecan_term
         self.body = body
 
@@ -288,11 +288,12 @@ class PralineLetPecan(PralineTerm):
         return transformer.transform_PralineLetPecan(self)
 
     def show(self):
-        return '(let {} be {} in {})'.format(self.var, self.pecan_term, self.body)
+        return '(let {} be {} in {})'.format(self.var_name, self.pecan_term, self.body)
 
 class PralineLet(PralineTerm):
-    def __init__(self, var, expr, body):
-        self.var = var
+    def __init__(self, var_name, expr, body):
+        super().__init__()
+        self.var_name = var_name
         self.expr = expr
         self.body = body
 
@@ -300,7 +301,7 @@ class PralineLet(PralineTerm):
         return transformer.transform_PralineLet(self)
 
     def show(self):
-        return '(let {} := {} in {})'.format(self.var, self.expr, self.body)
+        return '(let {} := {} in {})'.format(self.var_name, self.expr, self.body)
 
 class PralineTuple(PralineTerm):
     def __init__(self, vals):

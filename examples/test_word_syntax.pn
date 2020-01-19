@@ -1,6 +1,6 @@
 // This file is to test that usign the "word" version of connectives works (e.g., "if P then Q" instead of "P => Q")
 
-x, y, z are nat
+Restrict x, y, z are nat.
 
 test() := forall x. forall y. x < y if and only if (exists z. x + z = y & z > 0)
 #assert_prop(true, test)

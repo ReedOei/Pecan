@@ -181,9 +181,6 @@ class Call(IRPredicate):
 
                 new_var = VarRef(prog.fresh_name()).with_type(arg.get_type())
 
-                # if type(arg) is FunctionExpression:
-                #     arg_preds.append((arg.to_call(new_var), new_var))
-                # else:
                 aut, res_var = new_var.evaluate(prog)
                 arg_preds.append((Equals(arg, new_var), new_var))
 
@@ -283,6 +280,10 @@ class Program(IRNode):
         self.praline_envs = kwargs.get('praline_envs', [])
         self.praline_defs = kwargs.get('praline_defs', {})
 
+        # The current to-process index in self.defs
+        # This is used for emitting new definitions via Praline (see Program.emit_definition and pecan.lib.praline.builtins.Emit)
+        self.idx = None
+
         from pecan.lang.type_inference import TypeInferer
         self.type_inferer = TypeInferer(self)
 
@@ -345,6 +346,9 @@ class Program(IRNode):
     def type_infer(self, node):
         return self.type_inferer.reset().transform(node)
 
+    def emit_definition(self, d):
+        self.defs.insert(self.idx + 1, d)
+
     def run_type_inference(self):
         from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle
         from pecan.lang.ir.praline import PralineDef, PralineExecute, PralineDisplay
@@ -354,11 +358,15 @@ class Program(IRNode):
         for builtin in builtins:
             builtin.evaluate(self)
 
+        self.idx = 0
+
         # TODO: Cleanup this part relative to evaluate below (e.g., lots of repeated if tree). Instead we could add a evaluate_type method or something, and let dispatch handle it for us
-        for i, d in enumerate(self.defs):
+        while self.idx < len(self.defs):
+            d = self.defs[self.idx]
+
             if type(d) is NamedPred:
-                self.defs[i] = self.type_infer(d).with_parent(self)
-                self.preds[d.name] = self.defs[i]
+                self.defs[self.idx] = self.type_infer(d).with_parent(self)
+                self.preds[d.name] = self.defs[self.idx]
                 self.preds[d.name].evaluate(self)
                 settings.log(0, self.preds[d.name])
             elif type(d) is Restriction:
@@ -380,9 +388,13 @@ class Program(IRNode):
             elif type(d) is PralineDisplay:
                 d.evaluate(self)
 
+            self.idx += 1
+
         # Clear all restrictions. All relevant restrictions will be held inside the restriction_env of the relevant predicates.
         # Having them also in our restrictions list just leads to double restricting, which is a waste of computation time
         self.restrictions.clear()
+
+        self.idx = None
 
         return self
 
@@ -615,5 +627,5 @@ class Restriction(IRNode):
         return transformer.transform_Restriction(self)
 
     def __repr__(self):
-        return '{} are {}'.format(', '.join(map(repr, self.restrict_vars)), self.pred)
+        return 'Restrict {} are {}.'.format(', '.join(map(repr, self.restrict_vars)), self.pred)
 

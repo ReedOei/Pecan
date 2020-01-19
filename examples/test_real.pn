@@ -1,6 +1,6 @@
 #import("reals.pn")
 
-x, y, z, w are real
+Restrict x, y, z, w are real.
 
 integral_less_irrefl() := forall x. !integral_less(x, x)
 #assert_prop(true, integral_less_irrefl)

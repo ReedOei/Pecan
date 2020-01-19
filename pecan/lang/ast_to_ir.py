@@ -57,34 +57,35 @@ class ASTToIR(AstTransformer):
         return ir.FormulaFalse()
 
     def transform_DirectiveSaveAut(self, node):
-        return ir.DirectiveSaveAut(node.filename, node.pred_name)
+        return ir.DirectiveSaveAut(self.transform(node.filename), self.transform(node.pred_name))
 
     def transform_DirectiveSaveAutImage(self, node):
-        return ir.DirectiveSaveAutImage(node.filename, node.pred_name)
+        return ir.DirectiveSaveAutImage(self.transform(node.filename), self.transform(node.pred_name))
 
     def transform_DirectiveContext(self, node):
-        return ir.DirectiveContext(node.context_key, node.context_val)
+        return ir.DirectiveContext(self.transform(node.context_key), self.transform(node.context_val))
 
     def transform_DirectiveEndContext(self, node):
-        return ir.DirectiveEndContext(node.context_key)
+        return ir.DirectiveEndContext(self.transform(node.context_key))
 
     def transform_DirectiveAssertProp(self, node):
-        return ir.DirectiveAssertProp(node.truth_val, node.pred_name)
+        return ir.DirectiveAssertProp(self.transform(node.truth_val), self.transform(node.pred_name))
 
     def transform_DirectiveLoadAut(self, node):
-        return ir.DirectiveLoadAut(node.filename, node.aut_format, self.transform(node.pred))
+        return ir.DirectiveLoadAut(self.transform(node.filename), self.transform(node.aut_format), self.transform(node.pred))
 
     def transform_DirectiveImport(self, node):
-        return ir.DirectiveImport(node.filename)
+        return ir.DirectiveImport(self.transform(node.filename))
 
     def transform_DirectiveForget(self, node):
-        return ir.DirectiveForget(node.var_name)
+        return ir.DirectiveForget(self.transform(node.var_name))
 
     def transform_DirectiveType(self, node):
-        return ir.DirectiveType(self.transform_decl_type(node.pred_ref), {self.transform(k): self.transform(v) for k, v, in node.val_dict.items()})
+        return ir.DirectiveType(self.transform_decl_type(node.pred_ref),
+                {self.transform(k): self.transform(v) for k, v in node.val_dict.items()})
 
     def transform_DirectiveAcceptingWord(self, node):
-        return ir.DirectiveAcceptingWord(node.pred_name)
+        return ir.DirectiveAcceptingWord(self.transform(node.pred_name))
 
     def transform_DirectiveShuffle(self, node):
         return ir.DirectiveShuffle(node.disjunction, self.transform(node.pred_a), self.transform(node.pred_b), self.transform(node.output_pred))
@@ -332,10 +333,10 @@ class ASTToIR(AstTransformer):
         return ir.PralineLambda(list(map(self.transform, node.params)), self.transform(node.body))
 
     def transform_PralineLetPecan(self, node):
-        return ir.PralineLetPecan(self.transform(node.var), self.transform(node.pecan_term), self.transform(node.body))
+        return ir.PralineLetPecan(self.transform(node.var_name), self.transform(node.pecan_term), self.transform(node.body))
 
     def transform_PralineLet(self, node):
-        return ir.PralineLetPecan(self.transform(node.var), self.transform(node.expr), self.transform(node.body))
+        return ir.PralineLet(self.transform(node.var_name), self.transform(node.expr), self.transform(node.body))
 
     def transform_PralineTuple(self, node):
         return ir.PralineTuple(list(map(self.transform, node.vals)))

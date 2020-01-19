@@ -1,5 +1,5 @@
 // This test just tests that we can write `x is nat` instead of `x are nat`
-x is nat
+Restrict x is nat.
 
 test() := exists x. !finite_num(x)
 #assert_prop(false, test)

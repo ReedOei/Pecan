@@ -1,7 +1,7 @@
 x is nat_gt(n) := x is nat & x > n
 
-k is nat
-y is nat_gt(k)
+Restrict k is nat.
+Restrict y is nat_gt(k).
 
 test() := forall k. forall y. y > k
 

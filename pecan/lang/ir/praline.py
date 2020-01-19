@@ -578,9 +578,9 @@ class PralineLambda(PralineTerm):
         return hash((self.params, self.body))
 
 class PralineLetPecan(PralineTerm):
-    def __init__(self, var, pecan_term, body):
+    def __init__(self, var_name, pecan_term, body):
         super().__init__()
-        self.var = var
+        self.var_name = var_name
         self.pecan_term = pecan_term
         self.body = body
 
@@ -588,24 +588,25 @@ class PralineLetPecan(PralineTerm):
         return transformer.transform_PralineLetPecan(self)
 
     def __repr__(self):
-        return '(let {} be {} in {})'.format(self.var, self.pecan_term, self.body)
+        return '(let {} be {} in {})'.format(self.var_name, self.pecan_term, self.body)
 
     def evaluate(self, prog):
         result_node = self.pecan_term.evaluate(prog).pecan_term
-        prog.praline_local_define(self.var.var_name, PralineAutomaton(result_node.evaluate(prog)))
+        prog.praline_local_define(self.var_name, PralineAutomaton(result_node.evaluate(prog)))
         result = self.body.evaluate(prog)
-        prog.praline_local_cleanup(self.var.var_name)
+        prog.praline_local_cleanup([self.var_name])
         return result
 
     def __eq__(self, other):
-        return other is not None and type(other) is self.__class__ and self.var == other.var and self.pecan_term == other.pecan_term and self.body == other.body
+        return other is not None and type(other) is self.__class__ and self.var_name == other.var_name and self.pecan_term == other.pecan_term and self.body == other.body
 
     def __hash__(self):
-        return hash((self.var, self.pecan_term, self.body))
+        return hash((self.var_name, self.pecan_term, self.body))
 
 class PralineLet(PralineTerm):
-    def __init__(self, var, expr, body):
-        self.var = var
+    def __init__(self, var_name, expr, body):
+        super().__init__()
+        self.var_name = var_name
         self.expr = expr
         self.body = body
 
@@ -613,19 +614,19 @@ class PralineLet(PralineTerm):
         return transformer.transform_PralineLet(self)
 
     def __repr__(self):
-        return '(let {} := {} in {})'.format(self.var, self.expr, self.body)
+        return '(let {} := {} in {})'.format(self.var_name, self.expr, self.body)
 
     def evaluate(self, prog):
-        prog.praline_local_define(self.var.var_name, self.expr)
+        prog.praline_local_define(self.var_name, self.expr.evaluate(prog))
         result = self.body.evaluate(prog)
-        prog.praline_local_cleanup(self.var.var_name)
+        prog.praline_local_cleanup([self.var_name])
         return result
 
     def __eq__(self, other):
-        return other is not None and type(other) is self.__class__ and self.var == other.var and self.expr == other.expr and self.body == other.body
+        return other is not None and type(other) is self.__class__ and self.var_name == other.var_name and self.expr == other.expr and self.body == other.body
 
     def __hash__(self):
-        return hash((self.var, self.expr, self.body))
+        return hash((self.var_name, self.expr, self.body))
 
 class PralineTuple(PralineTerm):
     def __init__(self, vals):

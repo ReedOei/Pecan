@@ -15,29 +15,31 @@ pecan_grammar = """
      | def _NEWLINE+ defs -> multi_def
 
 ?def: pred_definition
-    | restriction
     | "#" "save_aut" "(" string "," var ")" -> directive_save_aut
     | "#" "save_aut_img" "(" string "," var ")" -> directive_save_aut_img
     | "#" "context" "(" string "," string ")" -> directive_context
     | "#" "end_context" "(" string ")" -> directive_end_context
     | "#" "load" "(" string "," string "," formal ")" -> directive_load_aut
-    | "#" "assert_prop" "(" PROP_VAL "," var ")" -> directive_assert_prop
+    | "#" "assert_prop" "(" prop_val "," var ")" -> directive_assert_prop
     | "#" "import" "(" string ")" -> directive_import
     | "#" "forget" "(" var ")" -> directive_forget
     | "#" "type" "(" formal "," val_dict ")" -> directive_type
     | "#" "accepting_word" "(" var ")" -> directive_accepting_word
     | "#" "shuffle" "(" formal "," formal "," formal ")" -> directive_shuffle
     | "#" "shuffle_or" "(" formal "," formal "," formal ")" -> directive_shuffle_or
-    | directive
+    | "Restrict" restriction "."
+    | praline
 
-?directive: "Define" app ":=" _NEWLINE* term "." -> praline_def
-          | "Execute" term "."             -> praline_execute
-          | "Display" term "."             -> praline_display
+prop_val: PROP_VAL -> prop_val_tok
+
+?praline: "Define" app ":=" _NEWLINE* term "." -> praline_def
+        | "Execute" term "."             -> praline_execute
+        | "Display" term "."             -> praline_display
 
 ?term: "if" term "then" _NEWLINE* term _NEWLINE* "else" _NEWLINE* term -> praline_if
      | "\\\\" app "->" term -> praline_lambda
-     | "let" var "be" pecan_term "in" _NEWLINE* term -> praline_let_pecan
-     | "let" var ":=" term "in" _NEWLINE* term -> praline_let
+     | "let" var "be" _NEWLINE* pecan_term _NEWLINE* "in" _NEWLINE* term -> praline_let_pecan
+     | "let" var ":=" _NEWLINE* term _NEWLINE* "in" _NEWLINE* term -> praline_let
      | "match" term "with" _NEWLINE* (match_arm)+ _NEWLINE* "end" -> praline_match
      | praline_compare
      | "do" _NEWLINE* (term _NEWLINE*)+ -> praline_do
@@ -90,6 +92,7 @@ pecan_grammar = """
      | pecan_term
 
 ?pecan_term: "{" pred "}" -> praline_pecan_term
+           | "{" def "}" -> praline_pecan_term
 
 ?praline_list: "[" [ term ("," term)* ] "]" -> praline_list_literal
              | "[" term "." "." ["."] term "]" -> praline_list_gen
@@ -101,19 +104,19 @@ pecan_grammar = """
 
 ?restriction: varlist ("are" | _IS) var -> restrict_is
             | varlist ("are" | _IS) var "(" varlist ")" -> restrict_call
-varlist: var ("," var)*
 
 _IS: "is" | "∈"
 
-?pred_definition: var "(" formals ")" ":=" _NEWLINE* pred -> def_pred_standard
-                | var _IS var [":=" _NEWLINE* pred] -> def_pred_is
-                | var _IS var "(" formals ")" [":=" _NEWLINE* pred] -> def_pred_is_call
+?pred_definition: var "(" args ")" ":=" _NEWLINE* pred -> def_pred_standard
+                | var _IS var ":=" _NEWLINE* pred -> def_pred_is
+                | var _IS var "(" args ")" ":=" _NEWLINE* pred -> def_pred_is_call
 
-formals: [formal ("," formal)*]
 formal: var -> formal_var
       | var "(" varlist ")" -> formal_call
       | var _IS var -> formal_is
       | var _IS var "(" varlist ")" -> formal_is_call
+
+varlist: var ("," var)*
 
 ?pred: bool
      | pred _IMPLIES _NEWLINE* pred                -> implies
@@ -210,6 +213,7 @@ COMMENT: "//" /(.)+/ _NEWLINE
 @v_args(inline=True)
 class PecanTransformer(Transformer):
     var_tok = str
+    prop_val_tok = str
     escaped_str = lambda self, v: str(v[1:-1]) # Remove the quotes, which are the first and last characters
     varlist = lambda self, *vals: list(map(VarRef, list(vals)))
     args = lambda self, *args: list(args)
@@ -352,16 +356,10 @@ class PecanTransformer(Transformer):
     # If the body is not provided, then we just treat it as a restriction.
     # TODO: Fix?
     def def_pred_is(self, var_name, pred_name, body=None):
-        if body is None:
-            return self.restrict_is([VarRef(var_name)], pred_name)
-        else:
-            return NamedPred(pred_name, [VarRef(var_name)], body)
+        return NamedPred(pred_name, [VarRef(var_name)], body)
 
     def def_pred_is_call(self, var_name, pred_name, pred_args, body=None):
-        if body is None:
-            return self.restrict_call([VarRef(var_name)], pred_name, pred_args)
-        else:
-            return NamedPred(pred_name, [VarRef(var_name)] + pred_args, body)
+        return NamedPred(pred_name, [VarRef(var_name)] + pred_args, body)
 
     def var(self, letter, *args):
         return letter + ''.join(args)

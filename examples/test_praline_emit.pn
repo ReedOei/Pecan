@@ -1,0 +1,11 @@
+Define tautology P :=
+    let ID := P ^ "_tautology"
+    in do
+        emit { ID() := forall x. P(x) }
+        emit { #assert_prop(true, ID) }
+    .
+
+self_equals(x) := x = x
+
+Execute tautology self_equals.
+
