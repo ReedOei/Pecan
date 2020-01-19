@@ -40,6 +40,7 @@ pecan_grammar = """
      | "let" var ":=" term "in" _NEWLINE* term -> praline_let
      | "match" term "with" _NEWLINE* (match_arm)+ _NEWLINE* "end" -> praline_match
      | praline_compare
+     | "do" _NEWLINE* (term _NEWLINE*)+ -> praline_do
 
 ?match_arm: "case" match_expr "->" term _NEWLINE* -> praline_match_arm
 
@@ -278,6 +279,8 @@ class PecanTransformer(Transformer):
         return res
 
     praline_match_prepend = PralineMatchList
+
+    praline_do = lambda self, *terms: PralineDo(list(terms))
 
     def praline_list_gen(self, start, end):
         return PralineApp(PralineApp(PralineVar('enumFromTo'), start), end)

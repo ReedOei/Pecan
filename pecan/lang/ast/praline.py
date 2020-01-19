@@ -406,3 +406,14 @@ class PralineLt(PralineBinaryOp):
     def show(self):
         return '({} < {})'.format(self.a, self.b)
 
+class PralineDo(PralineTerm):
+    def __init__(self, terms):
+        super().__init__()
+        self.terms = terms
+
+    def transform(self, transformer):
+        return transformer.transform_PralineDo(self)
+
+    def show(self):
+        return 'do\n    {}'.format('\n    '.join(map(repr, self.terms)))
+

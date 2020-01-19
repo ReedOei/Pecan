@@ -251,3 +251,6 @@ class IRTransformer:
     def transform_Builtin(self, node):
         return node
 
+    def transform_PralineDo(self, node):
+        return PralineDo([self.transform(t) for t in node.terms])
+

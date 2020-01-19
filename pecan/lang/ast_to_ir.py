@@ -370,3 +370,6 @@ class ASTToIR(AstTransformer):
     def transform_PralineLt(self, node):
         return ir.PralineLt(self.transform(node.a), self.transform(node.b))
 
+    def transform_PralineDo(self, node):
+        return ir.PralineDo([self.transform(t) for t in node.terms])
+

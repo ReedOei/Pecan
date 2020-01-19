@@ -1,0 +1,6 @@
+Define printTwo a b := do
+    print a
+    print b .
+
+Execute printTwo 1 2.
+

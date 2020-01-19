@@ -264,3 +264,6 @@ class AstTransformer:
     def transform_PralineLt(self, node):
         return PralineLt(self.transform(node.a), self.transform(node.b))
 
+    def transform_PralineDo(self, node):
+        return PralineDo([self.transform(t) for t in node.terms])
+

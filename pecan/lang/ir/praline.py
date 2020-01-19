@@ -924,3 +924,28 @@ class PralineAutomaton(PralineTerm):
     def evaluate(self, prog):
         return self
 
+class PralineDo(PralineTerm):
+    def __init__(self, terms):
+        super().__init__()
+        self.terms = terms
+
+    def transform(self, transformer):
+        return transformer.transform_PralineDo(self)
+
+    def __repr__(self):
+        return 'do\n    {}'.format('\n    '.join(map(repr, self.terms)))
+
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.terms == other.terms
+
+    def __hash__(self):
+        return hash((self.terms))
+
+    def evaluate(self, prog):
+        result = None
+
+        for term in self.terms:
+            result = term.evaluate(prog)
+
+        return result
+
