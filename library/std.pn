@@ -54,15 +54,13 @@ Define map f l :=
     case x :: xs -> f x :: map f xs
     end.
 
-// Define foldl f init xs :=
-//     match xs with
-
-
-Define concatenate xs :=
-    match xs with
-    case [] -> ""
-    case x :: xs -> toString x ^ concatenate xs
+Define foldl f init l :=
+    match l with
+    case [] -> init
+    case x :: xs -> foldl f (f init x) xs
     end.
+
+Define concatenate xs := foldl (\a b -> a ^ toString b) "" xs.
 
 Define compose f g x := f (g x).
 
