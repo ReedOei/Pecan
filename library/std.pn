@@ -42,3 +42,21 @@ default_equal(x, y) := "G((x -> y) & (y -> x))"
     "odd": bin_odd(any)
 })
 
+Define enumFromTo low high :=
+    if low > high then
+        []
+    else
+        low :: enumFromTo (low + 1) high .
+
+Define map f l :=
+    match l with
+    case [] -> []
+    case x :: xs -> f x :: map f xs
+    end.
+
+Define concatenate xs :=
+    match xs with
+    case [] -> ""
+    case x :: xs -> toString x ^ concatenate xs
+    end.
+

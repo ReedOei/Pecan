@@ -125,6 +125,8 @@ class IRTransformer:
         self.current_program.restrictions = [{k: list(map(self.transform, v)) for k, v in restrictions.items()} for restrictions in node.restrictions]
         self.current_program.types = dict([self.transform_type(k, v) for k, v in node.types.items()])
         self.current_program.preds = {k: self.transform(d) for k, d in node.preds.items()}
+        self.current_program.praline_defs = {k: self.transform(d) for k, d in node.praline_defs.items()}
+        self.current_program.praline_envs = [{k: self.transform(d) for k, d in env} for env in node.praline_envs]
         new_program = self.current_program
         self.current_program = None
         return new_program
@@ -239,4 +241,16 @@ class IRTransformer:
 
     def transform_PralineLt(self, node):
         return PralineLt(self.transform(node.a), self.transform(node.b))
+
+    def transform_PralineAutomaton(self, node):
+        return PralineAutomaton(node.aut)
+
+    def transform_Closure(self, node):
+        new_env = {k: self.transform(v) for k, v in node.env.items()}
+        new_args = [self.transform(arg) for arg in node.args]
+        new_body = self.transform(node.body)
+        return Closure(new_env, new_args, new_body)
+
+    def transform_Builtin(self, node):
+        return node
 

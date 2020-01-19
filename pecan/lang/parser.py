@@ -35,10 +35,10 @@ pecan_grammar = """
           | "Execute" term "."             -> praline_execute
           | "Display" term "."             -> praline_display
 
-?term: "if" term "then" term "else" term -> praline_if
+?term: "if" term "then" _NEWLINE* term _NEWLINE* "else" _NEWLINE* term -> praline_if
      | "\\\\" app "->" term -> praline_lambda
-     | "let" var "be" pecan_term "in" term -> praline_let_pecan
-     | "let" var ":=" term "in" term -> praline_let
+     | "let" var "be" pecan_term "in" _NEWLINE* term -> praline_let_pecan
+     | "let" var ":=" term "in" _NEWLINE* term -> praline_let
      | "match" term "with" _NEWLINE* (match_arm)+ _NEWLINE* "end" -> praline_match
      | praline_compare
 
@@ -280,7 +280,7 @@ class PecanTransformer(Transformer):
     praline_match_prepend = PralineMatchList
 
     def praline_list_gen(self, start, end):
-        return PralineApp(PralineApp(VarRef('enumFromTo'), start), end)
+        return PralineApp(PralineApp(PralineVar('enumFromTo'), start), end)
 
     def praline_list_literal(self, *args):
         res = PralineList(None, None)

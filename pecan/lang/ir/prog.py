@@ -280,8 +280,8 @@ class Program(IRNode):
         self.result = kwargs.get('result', None)
         self.search_paths = kwargs.get('search_paths', [])
 
-        self.praline_envs = []
-        self.praline_defs = {}
+        self.praline_envs = kwargs.get('praline_envs', [])
+        self.praline_defs = kwargs.get('praline_defs', {})
 
         from pecan.lang.type_inference import TypeInferer
         self.type_inferer = TypeInferer(self)
@@ -299,7 +299,14 @@ class Program(IRNode):
         if name in self.praline_envs[-1]:
             return self.praline_envs[-1][name]
 
-        return self.praline_defs[name]
+        if name in self.praline_defs:
+            return self.praline_defs[name]
+
+        if name in self.preds:
+            from pecan.lang.ir.praline import PralineString
+            return PralineString(name)
+
+        raise Exception('Unknown symbol: "{}"'.format(name))
 
     def praline_env_clone(self):
         return dict(self.praline_envs[-1])
@@ -330,8 +337,13 @@ class Program(IRNode):
         self.context.update(other_prog.context)
         self.types.update({k: {pred_k: pred_v.with_parent(self) for pred_k, pred_v in v.items()} for k, v in other_prog.types.items()})
 
+        self.praline_defs.update(other_prog.praline_defs)
+
     def declare_type(self, pred_ref, val_dict):
         self.types[pred_ref] = val_dict
+
+    def type_infer(self, node):
+        return self.type_inferer.reset().transform(node)
 
     def run_type_inference(self):
         from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle
@@ -345,7 +357,7 @@ class Program(IRNode):
         # TODO: Cleanup this part relative to evaluate below (e.g., lots of repeated if tree). Instead we could add a evaluate_type method or something, and let dispatch handle it for us
         for i, d in enumerate(self.defs):
             if type(d) is NamedPred:
-                self.defs[i] = self.type_inferer.reset().transform(d).with_parent(self)
+                self.defs[i] = self.type_infer(d).with_parent(self)
                 self.preds[d.name] = self.defs[i]
                 self.preds[d.name].evaluate(self)
                 settings.log(0, self.preds[d.name])

@@ -539,7 +539,12 @@ class PralinePecanTerm(PralineTerm):
         return '{{ {} }}'.format(self.pecan_term)
 
     def evaluate(self, prog):
-        return self
+        from pecan.lang.ir_substitution import IRSubstitution
+        from pecan.lang.praline_to_pecan import PralineToPecan
+
+        temp_node = PralinePecanTerm(PralineToPecan().transform(IRSubstitution(prog.praline_env_clone()).transform(self.pecan_term)))
+
+        return prog.type_infer(temp_node)
 
     def __eq__(self, other):
         return other is not None and type(other) is self.__class__ and self.pecan_term == other.pecan_term
@@ -581,9 +586,12 @@ class PralineLetPecan(PralineTerm):
     def __repr__(self):
         return '(let {} be {} in {})'.format(self.var, self.pecan_term, self.body)
 
-    # TODO
     def evaluate(self, prog):
-        raise NotImplementedError
+        result_node = self.pecan_term.evaluate(prog).pecan_term
+        prog.praline_local_define(self.var.var_name, PralineAutomaton(result_node.evaluate(prog)))
+        result = self.body.evaluate(prog)
+        prog.praline_local_cleanup(self.var.var_name)
+        return result
 
     def __eq__(self, other):
         return other is not None and type(other) is self.__class__ and self.var == other.var and self.pecan_term == other.pecan_term and self.body == other.body
@@ -646,7 +654,14 @@ class Closure(PralineTerm):
         self.body = body
 
     def evaluate(self, prog):
-        return self
+        # Evaluate as though we are in the environment specified
+        if len(self.args) == 0:
+            prog.praline_local_define_all(self.env)
+            result = self.body.evaluate(prog)
+            prog.praline_local_cleanup(self.env.keys())
+            return result
+        else:
+            return self
 
     def transform(self, transformer):
         return transformer.transform_Closure(self)
@@ -655,9 +670,8 @@ class Closure(PralineTerm):
         return 'Closure({}, {}, {})'.format(self.env, self.args, self.body)
 
     def apply(self, prog, arg):
-        # TODO: This should probably never happen?
         if len(self.args) == 0:
-            raise Exception('Clousre accepts no arguments!')
+            raise Exception('Closure accepts no arguments!')
 
         new_env = dict(self.env)
         new_env[self.args[0].var_name] = arg
@@ -729,7 +743,7 @@ class PralineString(PralineTerm):
         return other is not None and type(other) is self.__class__ and self.val == other.val
 
     def __hash__(self):
-        return hash((self.args, self.body))
+        return hash((self.val))
 
     def display(self):
         return '{}'.format(self.val)
@@ -885,4 +899,24 @@ class PralineLt(PralineBinaryOp):
             return PralineBool(eval_a.get_value() < eval_b.get_value())
         else:
             raise TypeError('Both operands should be integers in "{}"'.format(self))
+
+class PralineAutomaton(PralineTerm):
+    def __init__(self, aut):
+        super().__init__()
+        self.aut = aut
+
+    def transform(self, transformer):
+        return transformer.transform_PralineAutomaton(self)
+
+    def __repr__(self):
+        return 'AUTOMATON LITERAL'
+
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.aut == other.aut
+
+    def __hash__(self):
+        return hash((self.aut))
+
+    def evaluate(self, prog):
+        return self
 

@@ -28,3 +28,6 @@ class PralineTest(unittest.TestCase):
     def test_praline_builtins(self):
         self.run_file('examples/test_praline_builtins.pn', '7\n')
 
+    def test_praline_pecan_interop(self):
+        self.run_file('examples/test_praline_pecan_interop.pn', 'False\nTrue\nFalse\n01101001100101101001011001101001100101100110100101101001100101101001011001101001011010011001011001101\n')
+
