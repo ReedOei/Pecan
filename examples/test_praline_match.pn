@@ -16,3 +16,10 @@ Define square x := x * x .
 
 Display map square [1,2,3,4].
 
+Define addPair p :=
+    match p with
+    case (a, b) -> a + b
+    end.
+
+Display addPair (42, -91).
+

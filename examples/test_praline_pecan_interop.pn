@@ -9,9 +9,5 @@ Display checkEven 27.
 thue_morse(x) := odd_ones(x)
 T(x) := thue_morse(x)
 
-Define boolToInt b := if b then 1 else 0.
-Define checkToInt := boolToInt ∘ check.
-Define showWord word idxs := concatenate (map (\i -> checkToInt { word(i) }) idxs).
-
 Display showWord T [0..100].
 

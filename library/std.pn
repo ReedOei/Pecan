@@ -62,3 +62,7 @@ Define concatenate xs :=
 
 Define compose f g x := f (g x).
 
+Define boolToInt b := if b then 1 else 0.
+Define checkToInt := boolToInt ∘ check.
+Define showWord word idxs := concatenate (map (\i -> checkToInt { word(i) }) idxs).
+

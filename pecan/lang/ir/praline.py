@@ -451,6 +451,37 @@ class PralineMatchList(PralineMatchPat):
     def __hash__(self):
         return hash((self.head, self.tail))
 
+class PralineMatchTuple(PralineMatchPat):
+    def __init__(self, vals):
+        super().__init__()
+        self.vals = vals
+
+    def transform(self, transformer):
+        return transformer.transform_PralineMatchTuple(self)
+
+    def __repr__(self):
+        return 'PralineMatchTuple({})'.format(','.join(map(repr, self.vals)))
+
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.vals == other.vals
+
+    def __hash__(self):
+        return hash((self.vals))
+
+    def match(self, term):
+        if not type(term) is PralineTuple:
+            return None
+
+        if len(self.vals) != len(term.vals):
+            return None
+
+        match_env = {}
+
+        for pat, t in zip(self.vals, term.vals):
+            match_env.update(pat.match(t))
+
+        return match_env
+
 class PralineMatchVar(PralineMatchPat):
     def __init__(self, var):
         super().__init__()

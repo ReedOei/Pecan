@@ -185,6 +185,9 @@ class IRTransformer:
     def transform_PralineMatchList(self, node):
         return PralineMatchList(self.transform(node.head), self.transform(node.tail))
 
+    def transform_PralineMatchTuple(self, node):
+        return PralineMatchTuple([self.transform(v) for v in node.vals])
+
     def transform_PralineMatchVar(self, node):
         return PralineMatchVar(self.transform(node.var))
 

@@ -219,6 +219,17 @@ class PralineMatchList(PralineMatchPat):
     def show(self):
         return 'PralineMatchList({}, {})'.format(self.head, self.tail)
 
+class PralineMatchTuple(PralineMatchPat):
+    def __init__(self, vals):
+        super().__init__()
+        self.vals = vals
+
+    def transform(self, transformer):
+        return transformer.transform_PralineMatchTuple(self)
+
+    def show(self):
+        return 'PralineMatchTuple({})'.format(','.join(map(repr, self.vals)))
+
 class PralineMatchVar(PralineMatchPat):
     def __init__(self, var):
         super().__init__()

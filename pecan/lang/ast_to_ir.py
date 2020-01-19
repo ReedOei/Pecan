@@ -316,6 +316,9 @@ class ASTToIR(AstTransformer):
     def transform_PralineMatchList(self, node):
         return ir.PralineMatchList(self.transform(node.head), self.transform(node.tail))
 
+    def transform_PralineMatchTuple(self, node):
+        return ir.PralineMatchTuple([self.transform(v) for v in node.vals])
+
     def transform_PralineMatchVar(self, node):
         return ir.PralineMatchVar(self.transform(node.var))
 

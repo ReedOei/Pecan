@@ -48,8 +48,7 @@ pecan_grammar = """
     | var -> praline_match_var
     | "[" [ match_expr ("," match_expr)* ] "]" -> praline_match_list
     | match_expr "::" match_expr -> praline_match_prepend
-    // | praline_tuple -> praline_match_tuple
-    // TODO: Add praline_tuple back here...
+    | "(" (match_expr ",")+ [match_expr] ")" -> praline_match_tuple
 
 ?praline_compare: praline_operator _EQ praline_operator -> praline_eq
                 | praline_operator _NE praline_operator -> praline_ne
@@ -229,7 +228,7 @@ class PecanTransformer(Transformer):
     praline_let_pecan = PralineLetPecan
     praline_let = PralineLet
 
-    praline_tuple = lambda self, *args: PralineTuple(args)
+    praline_tuple = lambda self, *args: PralineTuple(list(args))
 
     praline_var = PralineVar
 
@@ -247,6 +246,8 @@ class PecanTransformer(Transformer):
     praline_match_arm = PralineMatchArm
 
     praline_match_int = PralineMatchInt
+
+    praline_match_tuple = lambda self, *args: PralineMatchTuple(list(args))
 
     praline_match_string = PralineMatchString
     praline_match_var = PralineMatchVar
