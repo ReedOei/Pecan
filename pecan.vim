@@ -12,13 +12,15 @@ endif
 
 let b:current_syntax = "pecan"
 
-syntax keyword keywords is are forall exists not or and sometimes
+syntax keyword keywords is are forall exists not or and sometimes if then match end case else only with let in be
 syntax match keyword_op '∀\|∃'
 syntax keyword bool true false
-syntax keyword directive save_aut save_aut_img save_pred context end_context load assert_prop import forget type show_word accepting_word shuffle
+syntax keyword directive save_aut save_aut_img save_pred context end_context load assert_prop import forget type accepting_word shuffle
 syntax match directiveOp '#'
 
-syntax match operator '+\|-\|=\|:=\|=>\|*\|/\|!\|\.\|>\|<\||\|&\|∧\|:\|∈\|≠\|¬\|⟺\|≤\|≥\|⇒\|⟹\|⇔\|∨'
+syntax keyword praline_directive Display Execute Define
+
+syntax match operator '+\|-\|=\|:=\|=>\|*\|/\|!\|\.\|>\|<\||\|&\|∧\|:\|∈\|≠\|¬\|⟺\|≤\|≥\|⇒\|⟹\|⇔\|∨\|\^\|\\\|∘'
 
 syntax match comment "//.*$"
 syntax match todo "TODO"
@@ -27,6 +29,8 @@ syntax match num '\<#\?[-+]\?\d\+\.\?\d*'
 
 syntax region string start='"' end='"' skip='\\"'
 syntax region string start='\'' end='\'' skip='\\\''
+
+hi def link praline_directive PreProc
 
 hi def link keywords Function
 hi def link keyword_op Function

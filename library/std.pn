@@ -54,6 +54,10 @@ Define map f l :=
     case x :: xs -> f x :: map f xs
     end.
 
+// Define foldl f init xs :=
+//     match xs with
+
+
 Define concatenate xs :=
     match xs with
     case [] -> ""
@@ -65,4 +69,14 @@ Define compose f g x := f (g x).
 Define boolToInt b := if b then 1 else 0.
 Define checkToInt := boolToInt ∘ check.
 Define showWord word idxs := concatenate (map (\i -> checkToInt { word(i) }) idxs).
+
+Define fst pair :=
+    match pair with
+    case (a, b) -> a
+    end.
+
+Define snd pair :=
+    match pair with
+    case (a, b) -> b
+    end.
 

@@ -20,7 +20,7 @@ class PralineTest(unittest.TestCase):
         self.run_file('examples/test_praline_list.pn', '[1,2,3,4]\n')
 
     def test_praline_match(self):
-        self.run_file('examples/test_praline_match.pn', '4\n[1,4,9,16]\n')
+        self.run_file('examples/test_praline_match.pn', '4\n[1,4,9,16]\n-49\n')
 
     def test_praline_compose(self):
         self.run_file('examples/test_praline_compose.pn', '1\n0\n2\n')
