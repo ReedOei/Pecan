@@ -171,9 +171,6 @@ class AstTransformer:
     def transform_PralineDef(self, node):
         return PralineDef(reduce(PralineApp, [self.transform(node.name)] + list(map(self.transform, node.args))), self.transform(node.body))
 
-    def transform_PralineCompose(self, node):
-        return PralineCompose(self.transform(node.f), self.transform(node.g))
-
     def transform_PralineApp(self, node):
         return PralineApp(self.transform(node.receiver), self.transform(node.arg))
 

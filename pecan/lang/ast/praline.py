@@ -48,18 +48,6 @@ class PralineDef(ASTNode):
     def show(self):
         return 'Define {} {} := {} .'.format(self.name, self.args, self.body)
 
-class PralineCompose(PralineTerm):
-    def __init__(self, f, g):
-        super().__init__()
-        self.f = f
-        self.g = g
-
-    def transform(self, transformer):
-        return transformer.transform_PralineCompose(self)
-
-    def show(self):
-        return '({} ∘ {})'.format(self.f, self.g)
-
 class PralineApp(PralineTerm):
     def __init__(self, receiver, arg):
         super().__init__()
