@@ -35,6 +35,5 @@ class PralineTest(unittest.TestCase):
         self.run_file('examples/test_praline_do.pn', '1\n2\n')
 
     def test_praline_emit(self):
-        self.run_file('examples/test_praline_emit.pn', '[INFO] Checking if self_equals_tautology is true.\nself_equals_tautology is true.\n', run_quiet=False)
-
+        self.run_file('examples/test_praline_emit.pn', '[INFO] Checking if self_equals_tautology is true.\n\x1b[32mself_equals_tautology is true.\x1b[0m\n', run_quiet=False)
 
