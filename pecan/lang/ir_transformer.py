@@ -68,9 +68,6 @@ class IRTransformer:
         return DirectiveType(self.transform_decl_type(node.pred_ref),
                 {self.transform(k): self.transform(v) for k, v in node.val_dict.items()})
 
-    def transform_DirectiveAcceptingWord(self, node):
-        return DirectiveAcceptingWord(self.transform(node.pred_name))
-
     def transform_DirectiveShuffle(self, node):
         return DirectiveShuffle(node.disjunction, self.transform(node.pred_a), self.transform(node.pred_b), self.transform(node.output_pred))
 

@@ -48,10 +48,10 @@ Define enumFromTo low high :=
     else
         low :: enumFromTo (low + 1) high .
 
-Define map f l :=
+Define isEmpty l :=
     match l with
-    case [] -> []
-    case x :: xs -> f x :: map f xs
+    case [] -> true
+    case x :: xs -> false
     end.
 
 Define foldl f init l :=
@@ -60,7 +60,30 @@ Define foldl f init l :=
     case x :: xs -> foldl f (f init x) xs
     end.
 
-Define concatenate xs := foldl (\a b -> a ^ toString b) "" xs.
+Define foldr f init l :=
+    match l with
+    case [] -> init
+    case x :: xs -> f x (foldr f init xs)
+    end.
+
+Define length := foldl (\cur _ -> cur + 1) 0.
+Define map f := foldr (\x rest -> f x :: rest) [].
+Define filter f := foldr (\x rest -> if f x then x :: rest else rest) [].
+
+Define split n l :=
+    if n = 0 then ([], l)
+    else match l with
+         case [] -> ([], l)
+         case x :: xs ->
+            match split (n - 1) xs with
+            case (before, after) -> (x :: before, after)
+            end
+         end.
+
+Define take n l := fst (split n l).
+Define drop n l := snd (split n l).
+
+Define concatenate := foldl (\a b -> a ^ toString b) "".
 
 Define compose f g x := f (g x).
 

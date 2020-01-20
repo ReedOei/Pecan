@@ -356,6 +356,7 @@ class Program(IRNode):
         from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle
         from pecan.lang.ir.praline import PralineDef, PralineExecute, PralineDisplay
 
+        # TODO: Cleanup this part relative to evaluate below (e.g., lots of repeated if tree). Instead we could add a evaluate_type method or something, and let dispatch handle it for us
         if type(d) is NamedPred:
             self.defs[i] = self.type_infer(d).with_parent(self)
             self.preds[d.name] = self.defs[i]
@@ -388,7 +389,6 @@ class Program(IRNode):
 
         self.idx = 0
 
-        # TODO: Cleanup this part relative to evaluate below (e.g., lots of repeated if tree). Instead we could add a evaluate_type method or something, and let dispatch handle it for us
         while self.idx < len(self.defs):
             self.emit_offset = 0
             d = self.defs[self.idx]

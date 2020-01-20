@@ -24,7 +24,6 @@ pecan_grammar = """
     | "#" "import" "(" string ")" -> directive_import
     | "#" "forget" "(" var ")" -> directive_forget
     | "#" "type" "(" formal "," val_dict ")" -> directive_type
-    | "#" "accepting_word" "(" var ")" -> directive_accepting_word
     | "#" "shuffle" "(" formal "," formal "," formal ")" -> directive_shuffle
     | "#" "shuffle_or" "(" formal "," formal "," formal ")" -> directive_shuffle_or
     | "Restrict" restriction "."
@@ -37,14 +36,14 @@ prop_val: PROP_VAL -> prop_val_tok
         | "Display" term "."             -> praline_display
 
 ?term: "if" term "then" _NEWLINE* term _NEWLINE* "else" _NEWLINE* term -> praline_if
-     | "\\\\" app "->" term -> praline_lambda
+     | "\\\\" app "->" _NEWLINE* term -> praline_lambda
      | "let" var "be" _NEWLINE* pecan_term _NEWLINE* "in" _NEWLINE* term -> praline_let_pecan
      | "let" var ":=" _NEWLINE* term _NEWLINE* "in" _NEWLINE* term -> praline_let
-     | "match" term "with" _NEWLINE* (match_arm)+ _NEWLINE* "end" -> praline_match
+     | "match" term "with" _NEWLINE* (match_arm)+ _NEWLINE* "end" _NEWLINE* -> praline_match
      | praline_compare
      | "do" _NEWLINE* (term _NEWLINE*)+ -> praline_do
 
-?match_arm: "case" match_expr "->" term _NEWLINE* -> praline_match_arm
+?match_arm: "case" match_expr "->" _NEWLINE* term _NEWLINE* -> praline_match_arm
 
 ?match_expr: int -> praline_match_int
     | string -> praline_match_string
@@ -61,7 +60,8 @@ prop_val: PROP_VAL -> prop_val_tok
                 | praline_operator ">" praline_operator -> praline_gt
                 | praline_operator
 
-?praline_operator: praline_sub
+?praline_operator: "-" praline_sub -> praline_neg
+                 | praline_sub
 
 ?praline_sub: praline_add ("-" _NEWLINE* praline_add)* -> praline_sub
 ?praline_add: praline_mul ("+" _NEWLINE* praline_mul)* -> praline_add
@@ -81,7 +81,6 @@ prop_val: PROP_VAL -> prop_val_tok
     | praline_atom
 
 ?praline_atom: var -> praline_var
-     | "-" praline_atom -> praline_neg
      | int -> praline_int
      | string -> praline_string
      | "true" -> praline_true
@@ -323,7 +322,6 @@ class PecanTransformer(Transformer):
     directive_assert_prop = DirectiveAssertProp
     directive_type = DirectiveType
     directive_save_aut = DirectiveSaveAut
-    directive_accepting_word = DirectiveAcceptingWord
     directive_save_aut_img = DirectiveSaveAutImage
     directive_context = DirectiveContext
     directive_end_context = DirectiveEndContext

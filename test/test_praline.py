@@ -34,3 +34,16 @@ class PralineTest(unittest.TestCase):
     def test_praline_do(self):
         self.run_file('examples/test_praline_do.pn', '1\n2\n')
 
+    def test_praline_split(self):
+        self.run_file('examples/test_praline_split.pn', '''
+([1,2,3,4],[5,6,7,8,9,10])
+[1,2,3,4]
+[1,2,3,4,5,6,7,8,9,10]
+''')
+
+    def test_praline_accepting_word(self):
+        self.run_file('examples/test_praline_accepting_word.pn', '''
+[(x,([],[False]))]
+[(x,([False,False,True,True,True,False,True],[False]))]
+''')
+

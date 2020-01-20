@@ -1,0 +1,4 @@
+Display split 4 [1..10].
+Display take 4 [1..10].
+Display drop 0 [1..10].
+

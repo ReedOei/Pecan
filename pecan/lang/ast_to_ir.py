@@ -84,9 +84,6 @@ class ASTToIR(AstTransformer):
         return ir.DirectiveType(self.transform_decl_type(node.pred_ref),
                 {self.transform(k): self.transform(v) for k, v in node.val_dict.items()})
 
-    def transform_DirectiveAcceptingWord(self, node):
-        return ir.DirectiveAcceptingWord(self.transform(node.pred_name))
-
     def transform_DirectiveShuffle(self, node):
         return ir.DirectiveShuffle(node.disjunction, self.transform(node.pred_a), self.transform(node.pred_b), self.transform(node.output_pred))
 
