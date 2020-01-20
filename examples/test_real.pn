@@ -2,42 +2,15 @@
 
 Restrict x, y, z, w are real.
 
-integral_less_irrefl() := forall x. !integral_less(x, x)
-#assert_prop(true, integral_less_irrefl)
-
-integral_less_antisym() := forall x. forall y. if integral_less(x, y) & integral_less(y, x) then integral_equal(x, y)
-#assert_prop(true, integral_less_antisym)
-
-integral_less_trans() := forall x. forall y. forall z. if integral_less(x, y) & integral_less(y, z) then integral_less(x, z)
-#assert_prop(true, integral_less_trans)
-
-integral_less_total() := forall x. forall y. integral_less(x, y) | integral_equal(x, y) | integral_less(y, x)
-#assert_prop(true, integral_less_total)
-
-real_equal_refl() := forall x. real_equal(x, x)
-#assert_prop(true, real_equal_refl)
-
-real_equal_sym() := forall x. forall y. real_equal(x, y) <=> real_equal(y, x)
-#assert_prop(true, real_equal_sym)
-
-real_equal_trans() := forall x. forall y. forall z. (real_equal(x, y) & real_equal(y, z)) => real_equal(x, z)
-#assert_prop(true, real_equal_trans)
+Execute equivalenceRelationCheck integral_equal real.
+Execute totalOrderCheck integral_less integral_equal real.
+Execute equivalenceRelationCheck real_equal real.
 
 real_less(a, b) := integral_less(a, b) | (integral_equal(a, b) &
                                             ((negative(a) & negative(b) & fractional_less(b, a)) |
                                              (positive(a) & positive(b) & fractional_less(a, b))))
 
-real_less_irrefl() := forall x. !real_less(x, x)
-#assert_prop(true, real_less_irrefl)
-
-real_less_antisym() := forall x. forall y. if real_less(x, y) & real_less(y, x) then x = y
-#assert_prop(true, real_less_antisym)
-
-real_less_trans() := forall x. forall y. forall z. if real_less(x, y) & real_less(y, z) then real_less(x, z)
-#assert_prop(true, real_less_trans)
-
-real_less_total() := forall x. forall y. real_less(x, y) | x = y | real_less(y, x)
-#assert_prop(true, real_less_total)
+Execute totalOrderCheck real_less real_equal real.
 
 real_add_same_sign_closed() := forall x. x is positive => forall y. y is positive => exists z. real_add_same_sign(x, y, z)
 #assert_prop(true, real_add_same_sign_closed)

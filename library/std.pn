@@ -78,3 +78,47 @@ Define snd pair :=
     case (a, b) -> b
     end.
 
+Define partialOrderCheck R EQ T :=
+    let VAR1 := freshVar in
+    let VAR2 := freshVar in
+    let VAR3 := freshVar in
+    let IRREFL_ID := R ^ "_irrefl" in
+    let ANTISYM_ID := R ^ "_antisym" in
+    let TRANS_ID := R ^ "_trans" in do
+        emit { IRREFL_ID() := forall VAR1 is T. !R(VAR1, VAR1) }
+        emit { #assert_prop(true, IRREFL_ID) }
+
+        emit { ANTISYM_ID() := forall VAR1 is T. forall VAR2 is T. if R(VAR1, VAR2) & R(VAR2, VAR1) then EQ(VAR1, VAR2) }
+        emit { #assert_prop(true, ANTISYM_ID) }
+
+        emit { TRANS_ID() := forall VAR1 is T. forall VAR2 is T. forall VAR3 is T. if R(VAR1, VAR2) & R(VAR2, VAR3) then R(VAR1, VAR3) }
+        emit { #assert_prop(true, TRANS_ID) }
+    .
+
+Define totalOrderCheck R EQ T :=
+    let VAR1 := freshVar in
+    let VAR2 := freshVar in
+    let TOTAL_ID := R ^ "_total" in do
+        partialOrderCheck R EQ T
+
+        emit { TOTAL_ID() := forall VAR1 is T. forall VAR2 is T. R(VAR1, VAR2) | EQ(VAR1, VAR2) | R(VAR2, VAR1) }
+        emit { #assert_prop(true, TOTAL_ID) }
+    .
+
+Define equivalenceRelationCheck EQ T :=
+    let VAR1 := freshVar in
+    let VAR2 := freshVar in
+    let VAR3 := freshVar in
+    let REFL_ID := EQ ^ "_refl" in
+    let SYM_ID := EQ ^ "_sym" in
+    let TRANS_ID := EQ ^ "_trans" in do
+        emit { REFL_ID() := forall VAR1 is T. EQ(VAR1, VAR1) }
+        emit { #assert_prop(true, REFL_ID) }
+
+        emit { SYM_ID() := forall VAR1 is T. forall VAR2 is T. EQ(VAR1, VAR2) <=> EQ(VAR2, VAR1) }
+        emit { #assert_prop(true, SYM_ID) }
+
+        emit { TRANS_ID() := forall VAR1 is T. forall VAR2 is T. forall VAR3 is T. if EQ(VAR1, VAR2) & EQ(VAR2, VAR3) then EQ(VAR1, VAR3) }
+        emit { #assert_prop(true, TRANS_ID) }
+    .
+

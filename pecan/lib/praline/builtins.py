@@ -5,6 +5,8 @@ from pecan.lang.ir.praline import *
 
 from pecan.tools.automaton_tools import TruthValue
 
+from pecan.settings import settings
+
 class Check(Builtin):
     def __init__(self):
         super().__init__(PralineVar('check'), [PralineVar('t')])
@@ -46,6 +48,7 @@ class Emit(Builtin):
     def evaluate(self, prog):
         # TODO: Finish this
         term = prog.praline_lookup('pecanTerm').evaluate(prog).pecan_term
+        settings.log(0, '[DEBUG] Emitted: "{}"'.format(term))
         prog.emit_definition(term)
         return PralineBool(True)
 

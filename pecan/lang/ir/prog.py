@@ -283,6 +283,7 @@ class Program(IRNode):
         # The current to-process index in self.defs
         # This is used for emitting new definitions via Praline (see Program.emit_definition and pecan.lib.praline.builtins.Emit)
         self.idx = None
+        self.emit_offset = 0
 
         from pecan.lang.type_inference import TypeInferer
         self.type_inferer = TypeInferer(self)
@@ -347,7 +348,8 @@ class Program(IRNode):
         return self.type_inferer.reset().transform(node)
 
     def emit_definition(self, d):
-        self.defs.insert(self.idx + 1, d)
+        self.emit_offset += 1
+        self.defs.insert(self.idx + self.emit_offset, d)
 
     def run_type_inference(self):
         from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle
@@ -362,6 +364,7 @@ class Program(IRNode):
 
         # TODO: Cleanup this part relative to evaluate below (e.g., lots of repeated if tree). Instead we could add a evaluate_type method or something, and let dispatch handle it for us
         while self.idx < len(self.defs):
+            self.emit_offset = 0
             d = self.defs[self.idx]
 
             if type(d) is NamedPred:
