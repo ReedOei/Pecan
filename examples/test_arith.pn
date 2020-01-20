@@ -1,5 +1,7 @@
 Restrict x,y,z are binary.
 
+Execute monoidCheck bin_add binary.
+
 double(x, y) := x+x=y
 
 is_even(x) := exists y. double(y, x)
