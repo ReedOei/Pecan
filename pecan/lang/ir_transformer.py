@@ -146,7 +146,7 @@ class IRTransformer:
         return Restriction(list(map(self.transform, node.restrict_vars)), self.transform(node.pred))
 
     def transform_FunctionExpression(self, node):
-        return FunctionExpression(node.pred_name, [self.transform(arg) for arg in node.args], node.val_idx).with_type(node.get_type())
+        return FunctionExpression(self.transform(node.pred_name), [self.transform(arg) for arg in node.args], node.val_idx).with_type(node.get_type())
 
     def transform_PralineDisplay(self, node):
         return PralineDisplay(self.transform(node.term))

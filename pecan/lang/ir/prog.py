@@ -350,11 +350,37 @@ class Program(IRNode):
     def emit_definition(self, d):
         self.emit_offset += 1
         self.defs.insert(self.idx + self.emit_offset, d)
+        self.run_definition(self.idx + self.emit_offset, d)
 
-    def run_type_inference(self):
+    def run_definition(self, i, d):
         from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle
         from pecan.lang.ir.praline import PralineDef, PralineExecute, PralineDisplay
 
+        if type(d) is NamedPred:
+            self.defs[i] = self.type_infer(d).with_parent(self)
+            self.preds[d.name] = self.defs[i]
+            self.preds[d.name].evaluate(self)
+            settings.log(0, self.preds[d.name])
+        elif type(d) is Restriction:
+            d.evaluate(self)
+        elif type(d) is DirectiveForget:
+            d.evaluate(self)
+        elif type(d) is DirectiveType:
+            d.evaluate(self)
+        elif type(d) is DirectiveLoadAut:
+            d.evaluate(self)
+        elif type(d) is DirectiveImport:
+            d.evaluate(self)
+        elif type(d) is DirectiveShuffle:
+            d.evaluate(self)
+        elif type(d) is PralineDef:
+            d.evaluate(self)
+        elif type(d) is PralineExecute:
+            d.evaluate(self)
+        elif type(d) is PralineDisplay:
+            d.evaluate(self)
+
+    def run_type_inference(self):
         from pecan.lib.praline.builtins import builtins
 
         for builtin in builtins:
@@ -367,29 +393,7 @@ class Program(IRNode):
             self.emit_offset = 0
             d = self.defs[self.idx]
 
-            if type(d) is NamedPred:
-                self.defs[self.idx] = self.type_infer(d).with_parent(self)
-                self.preds[d.name] = self.defs[self.idx]
-                self.preds[d.name].evaluate(self)
-                settings.log(0, self.preds[d.name])
-            elif type(d) is Restriction:
-                d.evaluate(self)
-            elif type(d) is DirectiveForget:
-                d.evaluate(self)
-            elif type(d) is DirectiveType:
-                d.evaluate(self)
-            elif type(d) is DirectiveLoadAut:
-                d.evaluate(self)
-            elif type(d) is DirectiveImport:
-                d.evaluate(self)
-            elif type(d) is DirectiveShuffle:
-                d.evaluate(self)
-            elif type(d) is PralineDef:
-                d.evaluate(self)
-            elif type(d) is PralineExecute:
-                d.evaluate(self)
-            elif type(d) is PralineDisplay:
-                d.evaluate(self)
+            self.run_definition(self.idx, d)
 
             self.idx += 1
 

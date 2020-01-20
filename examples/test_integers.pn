@@ -5,20 +5,10 @@ Restrict x,y,z are int.
 test() := forall x. (if x is positive then negate(x) is negative) & (if x is negative then negate(x) is positive)
 #assert_prop(true, test)
 
-add_closed_int() := forall x. forall y. (x + y) is int
-#assert_prop(true, add_closed_int)
-
-add_comm_int() := forall x. forall y. x + y = y + x
-#assert_prop(true, add_comm_int)
-
-add_assoc_int() := forall x. forall y. forall z. x + (y + z) = (x + y) + z
-#assert_prop(true, add_assoc_int)
+Execute abelianGroupCheck int_add int.
 
 negatives_exist() := forall x. forall y. exists z. x - y = z
 #assert_prop(true, negatives_exist)
-
-add_inv_exist() := forall x. exists y. x + y = 0
-#assert_prop(true, add_inv_exist)
 
 negatives_dont_exist_for_nat() := forall n is nat. forall m is nat. exists p is nat. n - m = p
 #assert_prop(false, negatives_dont_exist_for_nat)

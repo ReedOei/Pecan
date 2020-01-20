@@ -57,7 +57,7 @@ class FreshVar(Builtin):
         super().__init__(PralineVar('freshVar'), [])
 
     def evaluate(self, prog):
-        return PralineVar(prog.fresh_name())
+        return PralineString(prog.fresh_name())
 
 builtins = [
     StrLength().definition(),

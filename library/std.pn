@@ -78,6 +78,11 @@ Define snd pair :=
     case (a, b) -> b
     end.
 
+Define theoremCheck ID BODY := do
+    emit { ID() := BODY }
+    emit { #assert_prop(true, ID) }
+    .
+
 Define partialOrderCheck R EQ T :=
     let VAR1 := freshVar in
     let VAR2 := freshVar in
@@ -85,14 +90,9 @@ Define partialOrderCheck R EQ T :=
     let IRREFL_ID := R ^ "_irrefl" in
     let ANTISYM_ID := R ^ "_antisym" in
     let TRANS_ID := R ^ "_trans" in do
-        emit { IRREFL_ID() := forall VAR1 is T. !R(VAR1, VAR1) }
-        emit { #assert_prop(true, IRREFL_ID) }
-
-        emit { ANTISYM_ID() := forall VAR1 is T. forall VAR2 is T. if R(VAR1, VAR2) & R(VAR2, VAR1) then EQ(VAR1, VAR2) }
-        emit { #assert_prop(true, ANTISYM_ID) }
-
-        emit { TRANS_ID() := forall VAR1 is T. forall VAR2 is T. forall VAR3 is T. if R(VAR1, VAR2) & R(VAR2, VAR3) then R(VAR1, VAR3) }
-        emit { #assert_prop(true, TRANS_ID) }
+        theoremCheck IRREFL_ID { forall VAR1 is T. !R(VAR1, VAR1) }
+        theoremCheck ANTISYM_ID { forall VAR1 is T. forall VAR2 is T. if R(VAR1, VAR2) & R(VAR2, VAR1) then EQ(VAR1, VAR2) }
+        theoremCheck TRANS_ID { forall VAR1 is T. forall VAR2 is T. forall VAR3 is T. if R(VAR1, VAR2) & R(VAR2, VAR3) then R(VAR1, VAR3) }
     .
 
 Define totalOrderCheck R EQ T :=
@@ -100,9 +100,7 @@ Define totalOrderCheck R EQ T :=
     let VAR2 := freshVar in
     let TOTAL_ID := R ^ "_total" in do
         partialOrderCheck R EQ T
-
-        emit { TOTAL_ID() := forall VAR1 is T. forall VAR2 is T. R(VAR1, VAR2) | EQ(VAR1, VAR2) | R(VAR2, VAR1) }
-        emit { #assert_prop(true, TOTAL_ID) }
+        theoremCheck TOTAL_ID { forall VAR1 is T. forall VAR2 is T. R(VAR1, VAR2) | EQ(VAR1, VAR2) | R(VAR2, VAR1) }
     .
 
 Define equivalenceRelationCheck EQ T :=
@@ -112,13 +110,44 @@ Define equivalenceRelationCheck EQ T :=
     let REFL_ID := EQ ^ "_refl" in
     let SYM_ID := EQ ^ "_sym" in
     let TRANS_ID := EQ ^ "_trans" in do
-        emit { REFL_ID() := forall VAR1 is T. EQ(VAR1, VAR1) }
-        emit { #assert_prop(true, REFL_ID) }
+        theoremCheck REFL_ID { forall VAR1 is T. EQ(VAR1, VAR1) }
+        theoremCheck SYM_ID { forall VAR1 is T. forall VAR2 is T. EQ(VAR1, VAR2) <=> EQ(VAR2, VAR1) }
+        theoremCheck TRANS_ID { forall VAR1 is T. forall VAR2 is T. forall VAR3 is T. if EQ(VAR1, VAR2) & EQ(VAR2, VAR3) then EQ(VAR1, VAR3) }
+    .
 
-        emit { SYM_ID() := forall VAR1 is T. forall VAR2 is T. EQ(VAR1, VAR2) <=> EQ(VAR2, VAR1) }
-        emit { #assert_prop(true, SYM_ID) }
+Define createTypedAdder ADD T :=
+    let TYPED_ADDER := freshVar in do
+        emit { TYPED_ADDER(x is T, y is T, z is T) := ADD(x, y, z) }
+        TYPED_ADDER
+    .
 
-        emit { TRANS_ID() := forall VAR1 is T. forall VAR2 is T. forall VAR3 is T. if EQ(VAR1, VAR2) & EQ(VAR2, VAR3) then EQ(VAR1, VAR3) }
-        emit { #assert_prop(true, TRANS_ID) }
+Define monoidCheck ADD T :=
+    let TYPED_ADDER := createTypedAdder ADD T in
+    let VAR1 := freshVar in
+    let VAR2 := freshVar in
+    let VAR3 := freshVar in
+    let CLOSED_ID := ADD ^ "_closed" in
+    let ASSOC_ID := ADD ^ "_assoc" in
+    let ZERO_ID_ID := ADD ^ "_zero_id" in do // Not a typo
+        theoremCheck CLOSED_ID { forall VAR1 is T. forall VAR2 is T. exists VAR3 is T. TYPED_ADDER(VAR1, VAR2, VAR3) }
+        theoremCheck ASSOC_ID { forall VAR1 is T. forall VAR2 is T. forall VAR3 is T. TYPED_ADDER(VAR1, TYPED_ADDER(VAR2, VAR3)) = TYPED_ADDER(TYPED_ADDER(VAR1, VAR2), VAR3) }
+        theoremCheck ZERO_ID_ID { forall VAR1 is T. TYPED_ADDER(VAR1, 0, VAR1) & TYPED_ADDER(0, VAR1, VAR1) }
+    .
+
+Define groupCheck ADD T :=
+    let TYPED_ADDER := createTypedAdder ADD T in
+    let VAR1 := freshVar in
+    let VAR2 := freshVar in
+    let INVERSE_ID := ADD ^ "_inverse" in do
+        monoidCheck ADD T
+        theoremCheck INVERSE_ID { forall VAR1 is T. exists VAR2 is T. TYPED_ADDER(VAR1, VAR2, 0) }
+    .
+
+Define abelianGroupCheck ADD T :=
+    let VAR1 := freshVar in
+    let VAR2 := freshVar in
+    let COMM_ID := ADD ^ "_comm" in do
+        groupCheck ADD T
+        theoremCheck COMM_ID { forall VAR1 is T. forall VAR2 is T. ADD(VAR1, VAR2) = ADD(VAR2, VAR1) }
     .
 
