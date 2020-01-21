@@ -1,211 +1,11 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
+import ast
+
 from functools import reduce
 
-from lark import Lark, Transformer, v_args
-
 from pecan.lang.ast import *
-
-pecan_grammar = """
-?start: _NEWLINE* defs  -> prog
-
-?defs:          -> nil_def
-     | def -> single_def
-     | def _NEWLINE+ defs -> multi_def
-
-?def: pred_definition
-    | "#" "save_aut" "(" string "," var ")" -> directive_save_aut
-    | "#" "save_aut_img" "(" string "," var ")" -> directive_save_aut_img
-    | "#" "context" "(" string "," string ")" -> directive_context
-    | "#" "end_context" "(" string ")" -> directive_end_context
-    | "#" "load" "(" string "," string "," formal ")" -> directive_load_aut
-    | "#" "assert_prop" "(" prop_val "," var ")" -> directive_assert_prop
-    | "#" "import" "(" string ")" -> directive_import
-    | "#" "forget" "(" var ")" -> directive_forget
-    | "#" "type" "(" formal "," val_dict ")" -> directive_type
-    | "#" "shuffle" "(" formal "," formal "," formal ")" -> directive_shuffle
-    | "#" "shuffle_or" "(" formal "," formal "," formal ")" -> directive_shuffle_or
-    | "Restrict" restriction "."
-    | praline
-
-prop_val: PROP_VAL -> prop_val_tok
-
-?praline: "Define" app ":=" _NEWLINE* term "." -> praline_def
-        | "Execute" term "."             -> praline_execute
-        | "Display" term "."             -> praline_display
-
-?term: "if" term "then" _NEWLINE* term _NEWLINE* "else" _NEWLINE* term -> praline_if
-     | "\\\\" app "->" _NEWLINE* term -> praline_lambda
-     | "let" var "be" _NEWLINE* pecan_term _NEWLINE* "in" _NEWLINE* term -> praline_let_pecan
-     | "let" var ":=" _NEWLINE* term _NEWLINE* "in" _NEWLINE* term -> praline_let
-     | "match" term "with" _NEWLINE* (match_arm)+ _NEWLINE* "end" _NEWLINE* -> praline_match
-     | praline_compare
-     | "do" _NEWLINE* (term _NEWLINE*)+ -> praline_do
-
-?match_arm: "case" match_expr "->" _NEWLINE* term _NEWLINE* -> praline_match_arm
-
-?match_expr: int -> praline_match_int
-    | string -> praline_match_string
-    | var -> praline_match_var
-    | "[" [ match_expr ("," match_expr)* ] "]" -> praline_match_list
-    | match_expr "::" match_expr -> praline_match_prepend
-    | "(" (match_expr ",")+ [match_expr] ")" -> praline_match_tuple
-
-?praline_compare: praline_operator _EQ praline_operator -> praline_eq
-                | praline_operator _NE praline_operator -> praline_ne
-                | praline_operator _LE praline_operator -> praline_le
-                | praline_operator _GE praline_operator -> praline_ge
-                | praline_operator "<" praline_operator -> praline_lt
-                | praline_operator ">" praline_operator -> praline_gt
-                | praline_operator
-
-?praline_operator: "-" praline_sub -> praline_neg
-                 | praline_sub
-
-?praline_sub: praline_add ("-" _NEWLINE* praline_add)* -> praline_sub
-?praline_add: praline_mul ("+" _NEWLINE* praline_mul)* -> praline_add
-?praline_mul: praline_div ("*" _NEWLINE* praline_div)* -> praline_mul
-?praline_div: praline_exponent ("/" _NEWLINE* praline_exponent)* -> praline_div
-?praline_exponent: praline_prepend ("^" _NEWLINE* praline_prepend)* -> praline_exponent
-
-?praline_prepend: praline_compose "::" praline_compose -> praline_prepend
-                | praline_compose
-
-?praline_compose: app "∘" app -> praline_compose
-                | app
-
-?app: app praline_atom -> praline_app
-    | praline_atom
-
-?praline_atom: var -> praline_var
-     | int -> praline_int
-     | string -> praline_string
-     | "true" -> praline_true
-     | "false" -> praline_false
-     | "(" _NEWLINE* term _NEWLINE* ")"
-     | praline_list
-     | praline_tuple
-     | pecan_term
-
-?pecan_term: "{" pred "}" -> praline_pecan_term
-           | "{" def "}" -> praline_pecan_term
-
-?praline_list: "[" [ term ("," term)* ] "]" -> praline_list_literal
-             | "[" term "." "." ["."] term "]" -> praline_list_gen
-
-?praline_tuple: "(" (term ",")+ [term] ")"
-
-?val_dict: "{" [_NEWLINE* kv_pair _NEWLINE* ("," _NEWLINE* kv_pair _NEWLINE*)*] "}"
-?kv_pair: string ":" var "(" args ")" -> kv_pair
-
-?restriction: varlist ("are" | _IS) var -> restrict_is
-            | varlist ("are" | _IS) var "(" varlist ")" -> restrict_call
-
-_IS: "is" | "∈"
-
-?pred_definition: var "(" args ")" ":=" _NEWLINE* pred -> def_pred_standard
-                | var _IS var ":=" _NEWLINE* pred -> def_pred_is
-                | var _IS var "(" args ")" ":=" _NEWLINE* pred -> def_pred_is_call
-
-formal: var -> formal_var
-      | var "(" varlist ")" -> formal_call
-      | var _IS var -> formal_is
-      | var _IS var "(" varlist ")" -> formal_is_call
-
-varlist: var ("," var)*
-
-?pred: bool
-     | pred _IMPLIES _NEWLINE* pred                -> implies
-     | "if" pred "then" _NEWLINE* pred             -> implies
-     | "if" pred "then" _NEWLINE* pred _ELSE _NEWLINE* pred -> if_then_else
-     | bool _IFF _NEWLINE* pred                    -> iff
-     | bool "if" "and" "only" "if" _NEWLINE* pred  -> iff
-     | bool "iff" pred                   -> iff
-     | bool _DISJ _NEWLINE* pred -> disj
-     | bool _CONJ _NEWLINE* pred -> conj
-     | forall_sym formal "." _NEWLINE* pred       -> forall
-     | exists_sym formal "." _NEWLINE* pred       -> exists
-     | _COMP pred -> comp
-
-?bool: expr
-     | "true"  -> formula_true
-     | "false" -> formal_false
-     | string                           -> spot_formula
-     | "(" pred ")"
-     | comparison
-
-?comparison: expr _EQ expr                     -> equal
-           | expr _NE expr                     -> not_equal
-           | expr "<" expr                     -> less
-           | expr ">" expr                     -> greater
-           | expr _LE expr                     -> less_equal
-           | expr _GE expr                     -> greater_equal
-
-?expr: arith
-     | var "[" arith "]"  -> index
-     | var "[" arith "." "." ["."] arith "]" -> index_range
-
-?arith: sub_expr
-
-?sub_expr: add_expr ("-" _NEWLINE* add_expr)* -> sub
-?add_expr: mul_expr ("+" _NEWLINE* mul_expr)* -> add
-?mul_expr: div_expr ("*" _NEWLINE* div_expr)* -> mul
-?div_expr: atom ("/" _NEWLINE* atom)* -> div
-
-?atom: var -> var_ref
-     | int -> int_const
-     | "-" atom  -> neg
-     | "(" arith ")"
-     | call
-
-args: [arg ("," arg)*]
-?arg: expr
-
-call: var "(" args ")" -> call_args
-     | atom _IS var     -> call_is
-     | atom _IS var "(" args ")" -> call_is_args
-
-int: INT -> int_tok
-
-var: VAR -> var_tok
-
-?string: ESCAPED_STRING -> escaped_str
-
-PROP_VAL: "sometimes"i | "true"i | "false"i // case insensitive
-
-_NE: "!=" | "/=" | "≠"
-_COMP: "!" | "~" | "¬" | "not"
-_GE: ">=" | "≥"
-_LE: "<=" | "≤"
-
-_IMPLIES: "=>" | "⇒" | "⟹ " | "->"
-_IFF: "<=>" | "⟺" | "⇔"
-
-_ELSE: "else" | "otherwise"
-
-_EQ: "=" | "=="
-
-_CONJ: "&" | "/\\\\" | "∧" | "and"
-_DISJ: "|" | "\\\\/" | "∨" | "or"
-
-?forall_sym: "forall" | "∀"
-?exists_sym: "exists" | "∃"
-
-_NEWLINE: /\\n/
-
-VAR: /(?!(if|then|else|otherwise|only|iff|is|are|forall|exists|not|or|and|sometimes|true|false)\\b)[a-zA-Z_][a-zA-Z_0-9]*/i
-
-COMMENT: "//" /(.)+/ _NEWLINE
-
-%ignore COMMENT
-
-%import common.INT
-%import common.WS_INLINE
-%import common.ESCAPED_STRING
-
-%ignore WS_INLINE
-"""
 
 @v_args(inline=True)
 class PecanTransformer(Transformer):
@@ -225,6 +25,18 @@ class PecanTransformer(Transformer):
     praline_def = PralineDef
     praline_display = PralineDisplay
     praline_execute = PralineExecute
+
+    def operator_sym(self, *syms):
+        return PralineVar(''.join(str(sym) for sym in syms))
+
+    def praline_operator(self, a, op, b):
+        return PralineApp(PralineApp(op, a), b)
+
+    def partial_op_fst(self, a, op):
+        return PralineApp(op, a)
+
+    def partial_op_snd(self, op, b):
+        return PralineApp(PralineApp(PralineVar('flip'), op), b)
 
     praline_if = PralineIf
     praline_let_pecan = PralineLetPecan
@@ -410,9 +222,15 @@ class PecanTransformer(Transformer):
 
     iff = Iff
     implies = Implies
-    conj = Conjunction
-    disj = Disjunction
-    comp = Complement
+
+    def conj(self, a, sym, b):
+        return Conjunction(a, b)
+
+    def disj(self, a, sym, b):
+        return Disjunction(a, b)
+
+    def comp(self, sym, a):
+        return Complement(a)
 
     def forall(self, quant, var_name, pred):
         return Forall(var_name, pred)
@@ -428,6 +246,7 @@ class PecanTransformer(Transformer):
 
     spot_formula = SpotFormula
 
-pecan_parser = Lark(pecan_grammar, parser='lalr', transformer=PecanTransformer(), propagate_positions=True)
-pred_parser = Lark(pecan_grammar, parser='lalr', transformer=PecanTransformer(), propagate_positions=True, start='pred')
+from pecan.lang.lark.parser import Lark_StandAlone
+
+pecan_parser = Lark_StandAlone(transformer=PecanTransformer())
 

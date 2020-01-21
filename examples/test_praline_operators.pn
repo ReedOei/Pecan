@@ -1,0 +1,13 @@
+Display false & false.
+Display true & false.
+Display false & true.
+Display true & true.
+
+Display false | false.
+Display true | false.
+Display false | true.
+Display true | true.
+
+Display map (& true) [true, false].
+Display map (| true) [true, false].
+

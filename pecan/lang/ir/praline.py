@@ -784,7 +784,10 @@ class PralineBool(PralineTerm):
         return hash((self.args, self.body))
 
     def display(self):
-        return '{}'.format(self.val)
+        if self.val:
+            return 'true'
+        else:
+            return 'false'
 
 class Builtin(PralineTerm):
     def __init__(self, name, args):

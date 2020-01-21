@@ -1,9 +1,13 @@
+from lark import Lark, Transformer, v_args
+
 import unittest
 
 from pecan.lang.optimizer.tools import *
 from pecan.lang.ir import *
-from pecan.lang.parser import pred_parser
+from pecan.lang.parser import PecanTransformer
 from pecan.lang.ast_to_ir import ASTToIR
+
+pred_parser = Lark.open('pecan/lang/lark/pecan_grammar.lark', parser='lalr', transformer=PecanTransformer(), propagate_positions=True, start='pred')
 
 def expr_str(s):
     return ASTToIR().transform(pred_parser.parse(s))

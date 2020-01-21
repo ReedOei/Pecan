@@ -29,7 +29,7 @@ class PralineTest(unittest.TestCase):
         self.run_file('examples/test_praline_builtins.pn', '7\n')
 
     def test_praline_pecan_interop(self):
-        self.run_file('examples/test_praline_pecan_interop.pn', 'False\nTrue\nFalse\n01101001100101101001011001101001100101100110100101101001100101101001011001101001011010011001011001101\n')
+        self.run_file('examples/test_praline_pecan_interop.pn', 'false\ntrue\nfalse\n01101001100101101001011001101001100101100110100101101001100101101001011001101001011010011001011001101\n')
 
     def test_praline_do(self):
         self.run_file('examples/test_praline_do.pn', '1\n2\n')
@@ -43,10 +43,24 @@ class PralineTest(unittest.TestCase):
 
     def test_praline_accepting_word(self):
         self.run_file('examples/test_praline_accepting_word.pn', '''
-[(x,([],[False]))]
-[(x,([False,False,True,True,True,False,True],[False]))]
+[(x,([],[false]))]
+[(x,([false,false,true,true,true,false,true],[false]))]
 ''')
 
     def test_praline_examples(self):
         self.run_file('examples/test_praline_examples.pn', '[x: -2]\n')
+
+    def test_praline_operators(self):
+        self.run_file('examples/test_praline_operators.pn', '''
+false
+false
+false
+true
+false
+true
+true
+true
+[true,false]
+[true,true]
+''')
 

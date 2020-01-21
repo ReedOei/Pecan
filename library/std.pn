@@ -48,6 +48,8 @@ Define enumFromTo low high :=
     else
         low :: enumFromTo (low + 1) high .
 
+Define flip f a b := f b a.
+
 Define isEmpty l :=
     match l with
     case [] -> true
@@ -72,6 +74,12 @@ Define filter f := foldr (\x rest -> if f x then x :: rest else rest) [].
 
 Define id x := x.
 
+Define a & b := if a then b else false.
+Define a | b := if a then true else b.
+
+Define compose f g x := f (g x).
+Define f ∘ g := compose f g.
+
 Define bimap f g pair :=
     match pair with
     case (a, b) -> (f a, g b)
@@ -91,8 +99,6 @@ Define take n l := fst (split n l).
 Define drop n l := snd (split n l).
 
 Define concatenate := foldl (\a b -> a ^ toString b) "".
-
-Define compose f g x := f (g x).
 
 Define boolToInt b := if b then 1 else 0.
 Define checkToInt := boolToInt ∘ check.
