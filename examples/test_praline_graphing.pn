@@ -1,0 +1,7 @@
+#import("integers.pn")
+
+Restrict x, y are int.
+
+double_f(x, y) := 2*x = y
+Display graph intFormat double_f [-10..10].
+

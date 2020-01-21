@@ -101,6 +101,30 @@ Define split n l :=
 Define take n l := fst (split n l).
 Define drop n l := snd (split n l).
 
+Define head l :=
+    match l with
+    case x :: _ -> x
+    end.
+
+Define tail l :=
+    match l with
+    case _ :: xs -> xs
+    end.
+
+Define find f l :=
+    match l with
+    case [] -> []
+    case x :: xs -> if f x then [x] else find f xs
+    end.
+
+Define lookup key assocs :=
+    match find (\kv -> fst kv = key) assocs with
+    case [] -> []
+    case [x] -> snd x
+    end.
+
+Define delete key := filter (\kv -> fst kv != key).
+
 Define concatenate := foldl (\a b -> a ^ toString b) "".
 
 Define boolToInt b := if b then 1 else 0.
@@ -112,21 +136,29 @@ Define wordToBinary inputWord :=
     case (var, (prefix, cycle)) -> (var, (map boolToInt prefix, map boolToInt cycle))
     end.
 
-// Note this function converts from/to **LSD** binary
+// Note this function converts from **LSD** binary
 Define fromBinary := foldr (\a b -> a + 2*b) 0.
 
-Define stdFormat var prefix cycle := var ^ ": " ^ concatenate prefix ^ "(" ^ concatenate cycle ^ ")^w".
+Define stdFormat var prefix cycle := (var, concatenate prefix ^ "(" ^ concatenate cycle ^ ")^w").
 
-// TODO: Add exception/error stuff?
-// TODO: Make sure the cycle is empty
-Define natFormat var prefix cycle := var ^ ": " ^ (if isEmpty prefix then "0" else toString (fromBinary prefix)).
-Define intFormat var prefix cycle := var ^ ": " ^ (
-    if isEmpty prefix then "0"
-    else match prefix with
-         case 0 :: digits -> toString (fromBinary digits)
-         case 1 :: digits -> "-" ^ toString (fromBinary digits)
-         end
-    ).
+Define natFormat var prefix cycle :=
+    if cycle = [0] then
+        (var, if isEmpty prefix then "0" else toString (fromBinary prefix))
+    else
+        stdFormat var prefix cycle ^ " (NOT A VALID NATURAL NUMBER)"
+    .
+Define intFormat var prefix cycle :=
+    if cycle = [0] then
+        (var,
+            if isEmpty prefix then "0"
+            else match prefix with
+                 case 0 :: digits -> toString (fromBinary digits)
+                 case 1 :: digits -> "-" ^ toString (fromBinary digits)
+                 end
+        )
+    else
+        stdFormat var prefix cycle ^ " (NOT A VALID INTEGER)"
+    .
 
 Define runFormat format inputWord :=
     match inputWord with
@@ -134,6 +166,11 @@ Define runFormat format inputWord :=
     end.
 
 Define example format t := map (runFormat format ∘ wordToBinary) (acceptingWord t).
+
+Define graphPoint format F x :=
+    let y be { F(x, y) } in
+    (x, lookup "y" (example format y)).
+Define graph format F := map (graphPoint format F).
 
 Define fst pair :=
     match pair with

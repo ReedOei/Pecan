@@ -239,26 +239,24 @@ class TypeInferer(IRTransformer):
 
         final_args = []
         for formal, arg in zip(resolved_pred.args, new_args):
-            found = False
+            if formal.var_name in resolved_pred.restriction_env:
+                # TODO: We choose the "last" one, because there is generally only one, and the last one is usually the most specific. This is not always right, however.
+                restrictions = resolved_pred.restriction_env[formal.var_name]
+                restriction = restrictions[-1]
 
-            for formal_var, restriction in resolved_pred.arg_restrictions.items():
-                if formal_var.var_name == formal.var_name:
-                    found = True
-
-                    restriction = restriction.pred.insert_first(formal)
-                    res_type = temp_type_env.unify(formal.with_type(RestrictionType(restriction)), arg)
-                    final_args.append(arg.with_type(res_type))
-
-            if not found:
+                res_type = temp_type_env.unify(formal.with_type(RestrictionType(restriction)), arg)
+                final_args.append(arg.with_type(res_type))
+            else:
                 final_args.append(arg)
 
         return Call(node.name, final_args)
 
     def transform_NamedPred(self, node):
-        self.prog.enter_scope()
+        self.prog.enter_scope(node.restriction_env)
 
         for _, arg_restriction in node.arg_restrictions.items():
             arg_restriction.evaluate(self.prog)
+
         res = super().transform_NamedPred(node)
 
         self.prog.exit_scope()

@@ -1,8 +1,7 @@
-Display acceptingWord { bin_even(x) }.
-
 c92(x is nat) := x = 92
 
 Restrict x is nat.
 
+Display acceptingWord { bin_even(x) }.
 Display acceptingWord { c92(x) }.
 

@@ -22,7 +22,7 @@ class Add(BinaryIRExpression):
             return '({} + {})'.format(self.a, self.b)
 
     def evaluate_node(self, prog):
-        if self.is_int:
+        if self.is_int and self.evaluate_int(prog) >= 0:
             return IntConst(self.evaluate_int(prog)).with_type(self.get_type()).evaluate(prog)
 
         (aut_a, val_a) = self.a.evaluate(prog)
@@ -55,7 +55,7 @@ class Sub(BinaryIRExpression):
         return '({} - {})'.format(self.a, self.b)
 
     def evaluate_node(self, prog):
-        if self.is_int:
+        if self.is_int and self.evaluate_int(prog) >= 0:
             return IntConst(self.evaluate_int(prog)).with_type(self.get_type()).evaluate(prog)
 
         (aut_a, val_a) = self.a.evaluate(prog)
@@ -94,7 +94,7 @@ class Div(BinaryIRExpression):
         return '({} / {})'.format(self.a, self.b)
 
     def evaluate_node(self, prog):
-        if self.is_int:
+        if self.is_int and self.evaluate_int(prog) >= 0:
             return IntConst(self.evaluate_int(prog)).with_type(self.get_type()).evaluate(prog)
 
         assert False
@@ -128,6 +128,9 @@ class IntConst(IRExpression):
         self.label = "__constant{}".format(self.val)
 
     def evaluate_node(self,prog):
+        if self.val < 0:
+            return Sub(IntConst(0), IntConst(-self.val)).with_type(self.get_type()).evaluate(prog)
+
         zero_const_var = VarRef("__constant0").with_type(self.get_type())
         zero_const = IntConst(0).with_type(self.get_type())
         one_const_var = VarRef("__constant1").with_type(self.get_type())
@@ -153,7 +156,7 @@ class IntConst(IRExpression):
                 res = prog.call('one', [self.label_var()])
                 constants_map[(self.val, self.get_type())] = (res, self.label_var())
         else:
-            assert self.val >= 2, "constant here should be greater than or equal to 1, while it is {}".format(self.val)
+            assert self.val >= 2, "constant here should be greater than or equal to 2, while it is {}".format(self.val)
 
             if self.val & (self.val - 1) == 0:
                 half = IntConst(self.val // 2)

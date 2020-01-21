@@ -596,7 +596,9 @@ class PralineLetPecan(PralineTerm):
 
     def evaluate(self, prog):
         result_node = self.pecan_term.evaluate(prog).pecan_term
-        prog.praline_local_define(self.var_name, PralineAutomaton(result_node.evaluate(prog)))
+
+        from pecan.lang.ir.prog import AutLiteral
+        prog.praline_local_define(self.var_name, PralinePecanTerm(AutLiteral(result_node.evaluate(prog))))
         result = self.body.evaluate(prog)
         prog.praline_local_cleanup([self.var_name])
         return result
@@ -911,26 +913,6 @@ class PralineLt(PralineBinaryOp):
             return PralineBool(eval_a.get_value() < eval_b.get_value())
         else:
             raise TypeError('Both operands should be integers in "{}"'.format(self))
-
-class PralineAutomaton(PralineTerm):
-    def __init__(self, aut):
-        super().__init__()
-        self.aut = aut
-
-    def transform(self, transformer):
-        return transformer.transform_PralineAutomaton(self)
-
-    def __repr__(self):
-        return 'AUTOMATON LITERAL'
-
-    def __eq__(self, other):
-        return other is not None and type(other) is self.__class__ and self.aut == other.aut
-
-    def __hash__(self):
-        return hash((self.aut))
-
-    def evaluate(self, prog):
-        return self
 
 class PralineDo(PralineTerm):
     def __init__(self, terms):

@@ -48,7 +48,9 @@ class PralineTest(unittest.TestCase):
 ''')
 
     def test_praline_examples(self):
-        self.run_file('examples/test_praline_examples.pn', '[x: -2]\n')
+        self.run_file('examples/test_praline_examples.pn', '''
+[(x,-2)]
+''')
 
     def test_praline_operators(self):
         self.run_file('examples/test_praline_operators.pn', '''
@@ -62,5 +64,10 @@ true
 true
 [true,false]
 [true,true]
+''')
+
+    def test_praline_graphing(self):
+        self.run_file('examples/test_praline_graphing.pn', '''
+[(-10,-20),(-9,-18),(-8,-16),(-7,-14),(-6,-12),(-5,-10),(-4,-8),(-3,-6),(-2,-4),(-1,-2),(0,0),(1,2),(2,4),(3,6),(4,8),(5,10),(6,12),(7,14),(8,16),(9,18),(10,20)]
 ''')
 

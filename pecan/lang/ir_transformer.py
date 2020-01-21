@@ -247,9 +247,6 @@ class IRTransformer:
     def transform_PralineLt(self, node):
         return PralineLt(self.transform(node.a), self.transform(node.b))
 
-    def transform_PralineAutomaton(self, node):
-        return PralineAutomaton(node.aut)
-
     def transform_Closure(self, node):
         new_env = {k: self.transform(v) for k, v in node.env.items()}
         new_args = [self.transform(arg) for arg in node.args]
