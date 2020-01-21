@@ -75,6 +75,13 @@ class ToChars(Builtin):
 
         return result
 
+class Cons(Builtin):
+    def __init__(self):
+        super().__init__(PralineVar('cons'), [PralineVar('head'), PralineVar('tail')])
+
+    def evaluate(self, prog):
+        return PralineList(prog.praline_lookup('head').evaluate(prog), prog.praline_lookup('tail').evaluate(prog))
+
 class AcceptingWord(Builtin):
     def __init__(self):
         super().__init__(PralineVar('acceptingWord'), [PralineVar('pecanTerm')])
@@ -182,5 +189,6 @@ builtins = [
     Emit().definition(),
     FreshVar().definition(),
     AcceptingWord().definition(),
-    ToChars().definition() ]
+    ToChars().definition(),
+    Cons().definition() ]
 

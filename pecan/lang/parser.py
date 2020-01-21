@@ -12,7 +12,7 @@ class PecanTransformer(Transformer):
     var_tok = str
     prop_val_tok = str
     escaped_str = lambda self, v: str(v[1:-1]) # Remove the quotes, which are the first and last characters
-    varlist = lambda self, *vals: list(map(VarRef, list(vals)))
+    varlist = lambda self, *vals: [VarRef(v) for v in vals]
     args = lambda self, *args: list(args)
 
     def int_tok(self, const):
@@ -53,8 +53,6 @@ class PecanTransformer(Transformer):
 
     praline_neg = PralineNeg
     praline_app = PralineApp
-    praline_compose = lambda self, f, g: PralineApp(PralineApp(PralineVar('compose'), f), g)
-    praline_prepend = PralineList
     praline_exponent = lambda self, *args: reduce(PralineExponent, args)
     praline_match = lambda self, t, *arms: PralineMatch(t, list(arms))
     praline_match_arm = PralineMatchArm
@@ -145,7 +143,7 @@ class PecanTransformer(Transformer):
     def directive_shuffle_or(self, pred_a, pred_b, output_pred):
         return DirectiveShuffle(True, pred_a, pred_b, output_pred)
 
-    prog = Program
+    prog = lambda self, *defs: Program(list(defs))
 
     def nil_def(self):
         return []
@@ -217,8 +215,11 @@ class PecanTransformer(Transformer):
     less_equal = LessEquals
     greater_equal = GreaterEquals
 
-    def if_then_else(self, cond, p1, p2):
-        return Conjunction(Implies(cond, p1), Implies(Complement(cond), p2))
+    def if_then_else(self, cond, p1, p2=None):
+        if p2 is None:
+            return Implies(cond, p1)
+        else:
+            return Conjunction(Implies(cond, p1), Implies(Complement(cond), p2))
 
     iff = Iff
     implies = Implies

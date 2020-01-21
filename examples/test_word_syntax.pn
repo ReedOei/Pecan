@@ -2,9 +2,9 @@
 
 Restrict x, y, z are nat.
 
-test() := forall x. forall y. x < y if and only if (exists z. x + z = y & z > 0)
+test() := forall x. forall y. x < y <=> (exists z. x + z = y & z > 0)
 #assert_prop(true, test)
 
-test2() := forall x. if x is even then (x + 1) is odd otherwise (x + 1) is even
+test2() := forall x. if x is even then (x + 1) is odd else (x + 1) is even
 #assert_prop(true, test2)
 
