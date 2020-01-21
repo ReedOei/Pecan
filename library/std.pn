@@ -70,14 +70,21 @@ Define length := foldl (\cur _ -> cur + 1) 0.
 Define map f := foldr (\x rest -> f x :: rest) [].
 Define filter f := foldr (\x rest -> if f x then x :: rest else rest) [].
 
+Define id x := x.
+
+Define bimap f g pair :=
+    match pair with
+    case (a, b) -> (f a, g b)
+    end.
+
+Define lmap f := bimap f id.
+Define rmap g := bimap id g.
+
 Define split n l :=
     if n = 0 then ([], l)
     else match l with
          case [] -> ([], l)
-         case x :: xs ->
-            match split (n - 1) xs with
-            case (before, after) -> (x :: before, after)
-            end
+         case x :: xs -> lmap (\before -> x :: before) (split (n - 1) xs)
          end.
 
 Define take n l := fst (split n l).
@@ -89,7 +96,35 @@ Define compose f g x := f (g x).
 
 Define boolToInt b := if b then 1 else 0.
 Define checkToInt := boolToInt ∘ check.
-Define showWord word idxs := concatenate (map (\i -> checkToInt { word(i) }) idxs).
+Define showWord word := concatenate ∘ map (\i -> checkToInt { word(i) }).
+
+Define wordToBinary inputWord :=
+    match inputWord with
+    case (var, (prefix, cycle)) -> (var, (map boolToInt prefix, map boolToInt cycle))
+    end.
+
+// Note this function converts from/to **LSD** binary
+Define fromBinary := foldr (\a b -> a + 2*b) 0.
+
+Define stdFormat var prefix cycle := var ^ ": " ^ concatenate prefix ^ "(" ^ concatenate cycle ^ ")^w".
+
+// TODO: Add exception/error stuff?
+// TODO: Make sure the cycle is empty
+Define natFormat var prefix cycle := var ^ ": " ^ (if isEmpty prefix then "0" else toString (fromBinary prefix)).
+Define intFormat var prefix cycle := var ^ ": " ^ (
+    if isEmpty prefix then "0"
+    else match prefix with
+         case 0 :: digits -> toString (fromBinary digits)
+         case 1 :: digits -> "-" ^ toString (fromBinary digits)
+         end
+    ).
+
+Define runFormat format inputWord :=
+    match inputWord with
+    case (var, (prefix, cycle)) -> format var prefix cycle
+    end.
+
+Define example format t := map (runFormat format ∘ wordToBinary) (acceptingWord t).
 
 Define fst pair :=
     match pair with

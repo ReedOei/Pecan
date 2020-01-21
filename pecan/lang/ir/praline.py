@@ -433,6 +433,10 @@ class PralineMatchList(PralineMatchPat):
                 return None
 
         head_match_env = self.head.match(term.a)
+
+        if head_match_env is None:
+            return None
+
         tail_match_env = self.tail.match(term.b)
 
         head_match_env.update(tail_match_env)

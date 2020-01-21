@@ -306,7 +306,7 @@ class ASTToIR(AstTransformer):
         return ir.PralineMatchArm(self.transform(node.pat), self.transform(node.expr))
 
     def transform_PralineMatchInt(self, node):
-        return ir.PralineMatchInt(self.transform(node.val))
+        return ir.PralineMatchInt(node.val)
 
     def transform_PralineMatchString(self, node):
         return ir.PralineMatchString(self.transform(node.val))

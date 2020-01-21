@@ -203,7 +203,7 @@ class AstTransformer:
         return PralineMatchArm(self.transform(node.pat), self.transform(node.expr))
 
     def transform_PralineMatchInt(self, node):
-        return PralineMatchInt(self.transform(node.val))
+        return PralineMatchInt(node.val)
 
     def transform_PralineMatchString(self, node):
         return PralineMatchString(self.transform(node.val))

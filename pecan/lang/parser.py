@@ -67,9 +67,7 @@ prop_val: PROP_VAL -> prop_val_tok
 ?praline_add: praline_mul ("+" _NEWLINE* praline_mul)* -> praline_add
 ?praline_mul: praline_div ("*" _NEWLINE* praline_div)* -> praline_mul
 ?praline_div: praline_exponent ("/" _NEWLINE* praline_exponent)* -> praline_div
-
-?praline_exponent: praline_prepend "^" praline_prepend -> praline_exponent
-                 | praline_prepend
+?praline_exponent: praline_prepend ("^" _NEWLINE* praline_prepend)* -> praline_exponent
 
 ?praline_prepend: praline_compose "::" praline_compose -> praline_prepend
                 | praline_compose
@@ -85,7 +83,7 @@ prop_val: PROP_VAL -> prop_val_tok
      | string -> praline_string
      | "true" -> praline_true
      | "false" -> praline_false
-     | "(" term ")"
+     | "(" _NEWLINE* term _NEWLINE* ")"
      | praline_list
      | praline_tuple
      | pecan_term
@@ -245,7 +243,7 @@ class PecanTransformer(Transformer):
     praline_app = PralineApp
     praline_compose = lambda self, f, g: PralineApp(PralineApp(PralineVar('compose'), f), g)
     praline_prepend = PralineList
-    praline_exponent = PralineExponent
+    praline_exponent = lambda self, *args: reduce(PralineExponent, args)
     praline_match = lambda self, t, *arms: PralineMatch(t, list(arms))
     praline_match_arm = PralineMatchArm
 

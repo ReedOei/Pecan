@@ -1,8 +1,18 @@
-#import("integers.pn")
+// Tutorial for Pecan. See the manual for more information.
 
-is_even(x is int) := exists y is int. x = 2*y
-// #accepting_word(is_even)
+is_even(x is nat) := exists y is nat. x = 2*y
 
-test() := forall x is int. is_even(x) | !is_even(x)
-#assert_prop(true, test)
+Restrict x,y,z are nat.
+
+Display example natFormat { is_even(x) }.
+Display example natFormat { x > 33 & !is_even(x) }.
+Display example stdFormat { x > 33 & !is_even(x) }.
+
+is_odd(x) := exists y. x = 2*y+1
+
+all_even_or_odd() := forall x. is_even(x) | is_odd(x)
+#assert_prop(true, all_even_or_odd)
+
+odd_iff_not_even() := forall x. is_odd(x) <=> !is_even(x)
+#assert_prop(true, odd_iff_not_even)
 

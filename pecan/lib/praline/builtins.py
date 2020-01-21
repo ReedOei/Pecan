@@ -1,6 +1,8 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
+from functools import reduce
+
 from pecan.lang.ir.praline import *
 
 from pecan.tools.automaton_tools import TruthValue
@@ -58,6 +60,20 @@ class FreshVar(Builtin):
 
     def evaluate(self, prog):
         return PralineString(prog.fresh_name())
+
+class ToChars(Builtin):
+    def __init__(self):
+        super().__init__(PralineVar('toChars'), [PralineVar('s')])
+
+    def evaluate(self, prog):
+        str_val = prog.praline_lookup('s').evaluate(prog).get_value()
+
+        result = PralineList(None, None)
+
+        for c in str_val[::-1]:
+            result = PralineList(PralineString(c), result)
+
+        return result
 
 class AcceptingWord(Builtin):
     def __init__(self):
@@ -165,5 +181,6 @@ builtins = [
     PralinePrint().definition(),
     Emit().definition(),
     FreshVar().definition(),
-    AcceptingWord().definition() ]
+    AcceptingWord().definition(),
+    ToChars().definition() ]
 

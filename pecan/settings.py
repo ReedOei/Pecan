@@ -6,6 +6,8 @@
 
 import os
 
+from pathlib import Path
+
 class Settings:
     def __init__(self):
         self.debug_level = 0
@@ -13,6 +15,16 @@ class Settings:
         self.opt_level = 1
         self.load_stdlib = True
         self.pecan_path_var = 'PECAN_PATH'
+        self.history_file = 'pecan_history'
+
+        self.stdlib_prog = None
+
+    def get_history_file(self):
+        return Path.home() / self.history_file
+
+    def set_history_file(self, filename):
+        self.history_file = filename
+        return self
 
     def get_pecan_path(self):
         if self.pecan_path_var in os.environ:
@@ -60,6 +72,22 @@ class Settings:
                 print(msg)
         elif self.get_debug_level() > level:
             print(msg)
+
+    def include_stdlib(self, prog, loader, args, kwargs):
+        if self.should_load_stdlib():
+            before = self.should_load_stdlib()
+            try:
+                self.set_load_stdlib(False) # Don't want to load stdlib while loading stdlib
+
+                if self.stdlib_prog is None:
+                    self.stdlib_prog = loader(prog.locate_file('std.pn'), *args, **kwargs)
+                    self.stdlib_prog.evaluate()
+
+                prog.include(self.stdlib_prog)
+            finally:
+                self.set_load_stdlib(before)
+
+        return prog
 
 settings = Settings()
 

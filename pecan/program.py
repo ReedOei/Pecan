@@ -46,16 +46,7 @@ def from_source(source_code, *args, **kwargs):
     settings.log(0, 'Search path: {}'.format(prog.search_paths))
 
     # Load the standard library
-    if settings.should_load_stdlib():
-        before = settings.should_load_stdlib()
-        try:
-            settings.set_load_stdlib(False) # Don't want to load stdlib while loading stdlib
-
-            stdlib_prog = load(prog.locate_file('std.pn'), *args, **kwargs)
-            stdlib_prog.evaluate()
-            prog.include(stdlib_prog)
-        finally:
-            settings.set_load_stdlib(before)
+    prog = settings.include_stdlib(prog, load, args, kwargs)
 
     if settings.opt_enabled():
         prog = UntypedOptimizer(prog).optimize()

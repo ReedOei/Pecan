@@ -15,7 +15,12 @@ from pecan import program
 
 from pecan.settings import settings
 
+from pecan import utility
+
 def run_repl(env):
+    utility.touch(settings.get_history_file())
+    readline.read_history_file(settings.get_history_file())
+
     while True:
         try:
             prog_str = input('> ').strip()
@@ -42,6 +47,8 @@ def run_repl(env):
             print(e)
         except Exception as e:
             print('An exception occurred:', e)
+
+    readline.write_history_file(settings.get_history_file())
 
 def main():
     parser = argparse.ArgumentParser(description='An automated theorem prover for Büchi Automata')

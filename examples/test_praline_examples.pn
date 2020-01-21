@@ -1,0 +1,9 @@
+#import("integers.pn")
+
+Restrict x, y are int.
+
+int_even(x) := exists y. x = 2*y
+
+// Note that there's only one possible answer here
+Display example intFormat { x + 3 >= 0 & x < 0 & int_even(x) }.
+
