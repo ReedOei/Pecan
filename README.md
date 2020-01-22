@@ -51,7 +51,7 @@ prop_false() := exists x. has_zeros(x) & all_ones(x)
 
 Below we prove basic properties of addition (specifically, binary addition), see ([here](https://github.com/ReedOei/Pecan/blob/master/examples/arith_props.pn)):
 ```
-x, y, z are nat
+Restrict x, y, z are nat.
 
 add_zero_id() := forall x. x + 0 = x
 add_comm() := forall x. forall y. x + y = y + x
@@ -59,14 +59,18 @@ add_assoc() := forall x. forall y. forall z. x + (y + z) = (x + y) + z
 
 #assert_prop(true, add_zero_id)
 #assert_prop(true, add_comm)
-#assert_prop(true, assoc_assoc)
+#assert_prop(true, add_assoc)
+
 ```
 
 Running it gives:
 ```bash
 $ python3 pecan.py examples/arith_props.pn
+[INFO] Checking if add_zero_id is true.
 add_zero_id is true.
+[INFO] Checking if add_comm is true.
 add_comm is true.
+[INFO] Checking if add_assoc is true.
 add_assoc is true.
 ```
 
