@@ -5,6 +5,8 @@ import ast
 
 from functools import reduce
 
+from lark import Lark, Transformer, v_args
+
 from pecan.lang.ast import *
 
 @v_args(inline=True)
@@ -12,15 +14,17 @@ class PecanTransformer(Transformer):
     var_tok = str
     prop_val_tok = str
     escaped_str = lambda self, v: str(v[1:-1]) # Remove the quotes, which are the first and last characters
-    varlist = lambda self, *vals: [VarRef(v) for v in vals]
-    args = lambda self, *args: list(args)
+
+    def varlist(self, *vals):
+        return [VarRef(v) for v in vals]
+
+    def args(self, *args):
+        return list(args)
 
     def int_tok(self, const):
         if const.type != "INT":
             raise AutomatonArithmeticError("Constants need to be integers: " + const)
         return int(const.value)
-
-    formals = lambda self, *args: list(args)
 
     praline_def = PralineDef
     praline_display = PralineDisplay
@@ -42,7 +46,8 @@ class PecanTransformer(Transformer):
     praline_let_pecan = PralineLetPecan
     praline_let = PralineLet
 
-    praline_tuple = lambda self, *args: PralineTuple(list(args))
+    def praline_tuple(self, *args):
+        return PralineTuple(list(args))
 
     praline_var = PralineVar
 
@@ -115,9 +120,7 @@ class PecanTransformer(Transformer):
 
         return res
 
-    def restrict_is(self, *args):
-        print('args:', args)
-        varlist, var_ref = args
+    def restrict_is(self, varlist, var_ref):
         return Restriction(varlist, Call(var_ref, []))
 
     def restrict_call(self, varlist, call_name, call_arg_vars):
@@ -277,5 +280,6 @@ class PecanTransformer(Transformer):
 
 from pecan.lang.lark.parser import Lark_StandAlone
 
-pecan_parser = Lark_StandAlone(transformer=PecanTransformer())
+pecan_parser = Lark.open('pecan/lang/lark/pecan_grammar.lark', transformer=PecanTransformer(), parser='lalr')
+# pecan_parser = Lark_StandAlone(transformer=PecanTransformer())
 

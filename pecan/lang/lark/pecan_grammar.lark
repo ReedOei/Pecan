@@ -36,9 +36,9 @@ prop_val: PROP_VAL -> prop_val_tok
 ?match_expr: int -> praline_match_int
     | string -> praline_match_string
     | var -> praline_match_var
-    | "[" [ match_expr ("," match_expr)* ] "]" -> praline_match_list
+    | "[" ( match_expr ("," match_expr)* )? "]" -> praline_match_list
     | match_expr ":" ":" match_expr -> praline_match_prepend
-    | "(" (match_expr ",")+ [match_expr] ")" -> praline_match_tuple
+    | "(" (match_expr ",")+ (match_expr)? ")" -> praline_match_tuple
 
 ?praline_operator: praline_operator operator_sym praline_compare -> praline_operator
                  | praline_compare
@@ -79,12 +79,12 @@ prop_val: PROP_VAL -> prop_val_tok
 ?pecan_term: "{" pred "}" -> praline_pecan_term
            | "{" def "}" -> praline_pecan_term
 
-?praline_list: "[" [ term ("," term)* ] "]" -> praline_list_literal
+?praline_list: "[" (term ("," term)*)? "]" -> praline_list_literal
              | "[" term "." "." ["."] term "]" -> praline_list_gen
 
-?praline_tuple: "(" (term ",")+ [term] ")"
+?praline_tuple: "(" (term ",")+ (term)? ")"
 
-?val_dict: "{" [kv_pair ("," kv_pair )*] "}"
+?val_dict: "{" (kv_pair ("," kv_pair )*)? "}"
 ?kv_pair: string ":" var "(" args ")" -> kv_pair
 
 ?restriction: varlist _IS var -> restrict_is
@@ -144,7 +144,7 @@ varlist: var ("," var)*
      | "(" arith ")"
      | call
 
-args: [arg ("," arg)*]
+args: (arg ("," arg)*)?
 ?arg: expr
 
 call: var "(" args ")" -> call_args
