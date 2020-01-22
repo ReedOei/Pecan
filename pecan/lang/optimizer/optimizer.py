@@ -25,7 +25,7 @@ class UntypedOptimizer:
     def run_optimizations(self, node, pred):
         settings.log(2, f'Optimizing: {node}')
 
-        optimization_pass = [ArithmeticOptimizer(self), BooleanOptimizer(self), RedundantVariableOptimizer(self), UnusedVariableOptimizer(self)]
+        optimization_pass = [ArithmeticOptimizer(self), BooleanOptimizer(self), RedundantVariableOptimizer(self)]
         new_node = node
 
         ast_changed = True # Default to true so we run at least once

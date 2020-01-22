@@ -213,7 +213,6 @@ class CSEOptimizer(BasicOptimizer):
 
         # Extract everything that's either at least 2 levels deep or appears at least twice
         freq_extractor = ExpressionExtractor(self.current_scope, self.prog, frequency, frequency_threshold=2)
-        # TODO: This sometimes seems to help, but not all the time...still, it helps more than it hurts, especially for long-running theorems (e.g., examples/ostrowski.pn)
         depth_extractor = ExpressionExtractor(self.current_scope, self.prog, frequency, depth_threshold=1)
 
         index_a = self.multipass_cse([freq_extractor, depth_extractor], node.index_a)

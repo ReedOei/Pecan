@@ -28,9 +28,11 @@ class NodeSubstitution(IRTransformer):
     def __init__(self, subs_dict):
         super().__init__()
         self.subs_dict = subs_dict
+        self.changed = False
 
     def transform(self, node):
         if node in self.subs_dict:
+            self.changed = True
             return self.subs_dict[node]
         else:
             return super().transform(node)
@@ -65,6 +67,13 @@ class VariableUsage(IRTransformer):
     def __init__(self):
         super().__init__()
         self.used_vars = set()
+
+    def transform(self, node):
+        if isinstance(node, IRNode) and node.get_type() is not None:
+            if node.get_type().get_restriction() is not None:
+                self.transform(node.get_type().get_restriction())
+
+        return super().transform(node)
 
     def transform_VarRef(self, node):
         self.used_vars.add(node.var_name)

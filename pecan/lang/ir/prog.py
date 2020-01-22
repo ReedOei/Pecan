@@ -148,6 +148,12 @@ class Match:
     def __repr__(self):
         return '{}({})'.format(self.pred_name, ', '.join(map(repr, self.pred_args)))
 
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.pred_name == other.pred_name and self.pred_args == other.pred_args and self.match_any == other.match_any
+
+    def __hash__(self):
+        return hash((self.pred_name, self.pred_args, self.match_any))
+
 class Call(IRPredicate):
     def __init__(self, name, args):
         super().__init__()
@@ -202,6 +208,12 @@ class Call(IRPredicate):
 
     def __repr__(self):
         return '{}({})'.format(self.name, ', '.join(map(repr, self.args)))
+
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.name == other.name and self.args == other.args
+
+    def __hash__(self):
+        return hash((self.name, tuple(self.args)))
 
 class NamedPred(IRNode):
     def __init__(self, name, args, arg_restrictions, body, restriction_env=None, body_evaluated=None):
@@ -263,6 +275,12 @@ class NamedPred(IRNode):
             return '{}({}) := {}'.format(self.name, ', '.join(map(repr, self.args)), self.body)
         else:
             return '{}({}) := {} (evaluated)'.format(self.name, ', '.join(map(repr, self.args)), self.body)
+
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.name == other.name and self.args == other.args and self.arg_restrictions == other.arg_restrictions and self.body == other.body and self.restriction_env == other.restriction_env
+
+    def __hash__(self):
+        return hash((self.name, tuple(self.args)))
 
 class Program(IRNode):
     def __init__(self, defs, *args, **kwargs):

@@ -12,7 +12,6 @@ class BooleanOptimizer(BasicOptimizer):
             # !(!P) is equivalent to P
             self.changed = True
             return self.transform(node.a.a)
-
         # DeMorgan's Laws: Pushing complements down seems to help
         elif type(node.a) is Conjunction:
             self.changed = True
@@ -35,25 +34,40 @@ class BooleanOptimizer(BasicOptimizer):
 
     def transform_Conjunction(self, node):
         if type(node.a) is FormulaTrue:
+            self.changed = True
             return node.b
         elif type(node.a) is FormulaFalse:
+            self.changed = True
             return FormulaFalse()
         elif type(node.b) is FormulaFalse:
+            self.changed = True
             return FormulaFalse()
         elif type(node.b) is FormulaTrue:
+            self.changed = True
             return node.a
         else:
             return super().transform_Conjunction(node)
 
     def transform_Disjunction(self, node):
         if type(node.a) is FormulaTrue:
+            self.changed = True
             return FormulaTrue()
         elif type(node.a) is FormulaFalse:
+            self.changed = True
             return node.b
         elif type(node.b) is FormulaFalse:
+            self.changed = True
             return node.a
         elif type(node.b) is FormulaTrue:
+            self.changed = True
             return FormulaTrue()
         else:
             return super().transform_Disjunction(node)
+
+    def transform_Equals(self, node: Equals):
+        if node.a == node.b:
+            self.changed = True
+            return FormulaTrue()
+        else:
+            return super().transform_Equals(node)
 

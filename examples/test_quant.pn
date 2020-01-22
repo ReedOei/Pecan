@@ -16,7 +16,7 @@ eq_sym_weird() := forall x. forall y. x = y | y = x
 eq_trans() := forall x. forall y. forall z. (x = y & y = z) => x = z
 #assert_prop(true, eq_trans)
 
-// This test is just a bit of a stress test for the system
+// This test is meant to be a stress test (many quantifiers, some alternating)
 many_quant() := forall k. exists x. forall y. exists z. forall k1. forall k2. forall k3. forall k4. forall k5. forall k6. x = k => (((x = y) & (y = z)) => ((k1 = k2) | (k2 = k3) | (k3 = k4) | (k4 = k5) | (k5 = k6)))
 #assert_prop(true, many_quant)
 

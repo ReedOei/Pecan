@@ -21,34 +21,46 @@ class RedundantVariableOptimizer(BasicOptimizer):
         self.decl_level = {}
         self.cur_level = 0
 
-        self.subs = {}
-
-        self.count = None
-
     def pre_optimize(self, node):
         self.decl_level = {}
-        self.subs = {}
         self.cur_level = 0
-        self.count = ExpressionFrequency().count(node)
 
-    def post_optimize(self, node):
-        return CustomNodeSubstitution(self.subs).transform(node)
+    # TODO: Make this track information more completely. For the moment, it'll only handle truly obvious cases.
+    def gather_info(self, node):
+        subs = {}
 
-    def transform_Equals(self, node):
-        if node.a == node.b:
-            return FormulaTrue()
+        if type(node) is Equals:
+            if type(node.a) is VarRef and type(node.b) is VarRef:
+                if node.a.var_name in self.decl_level and node.b.var_name in self.decl_level:
+                    if self.decl_level[node.a.var_name] < self.decl_level[node.b.var_name]:
+                        subs[node.b] = node.a
+                    else:
+                        subs[node.a] = node.b
 
-        if type(node.a) is VarRef and type(node.b) is VarRef:
-            if self.decl_level.get(node.a.var_name, -1) < self.decl_level.get(node.b.var_name, -1):
-                self.changed = True
-                self.subs[node.b] = self.subs.get(node.a, node.a)
-            else:
-                self.changed = True
-                self.subs[node.a] = self.subs.get(node.b, node.b)
+        return subs
 
-            return FormulaTrue()
+    def transform_Conjunction(self, node):
+        orig_a = self.transform(node.a)
+        orig_b = self.transform(node.b)
 
-        return super().transform_Equals(node)
+        info = self.gather_info(orig_a)
+        substituter = CustomNodeSubstitution(info)
+
+        new_a = substituter.transform(orig_a)
+        new_b = substituter.transform(orig_b)
+
+        self.changed |= substituter.changed
+
+        return Conjunction(new_a, new_b)
+
+    def transform_Complement(self, node):
+        # Clear out the level dictionary, because the complement means that variables outside should not interact with variables inside
+        temp = self.decl_level
+        self.decl_level = {}
+        result = super().transform_Complement(node)
+        self.decl_level = temp
+
+        return result
 
     def transform_Exists(self, node: Exists):
         self.cur_level += 1

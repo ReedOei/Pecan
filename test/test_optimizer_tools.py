@@ -50,10 +50,16 @@ class OptimizerToolsTest(unittest.TestCase):
 
     # TODO: Move this out, test other optimizers, add integration tests for optimizers
     def test_redundant_variable_optimizer(self):
-        changed, new_node = RedundantVariableOptimizer(DummyOptimizer()).optimize(expr_str('a = b & a + b = c'), None)
+        changed, new_node = RedundantVariableOptimizer(DummyOptimizer()).optimize(expr_str('exists a. exists b. a = b & a + b = c'), None)
 
         self.assertTrue(changed)
-        self.assertEqual(new_node, expr_str('true & b + b = c'))
+        self.assertEqual(new_node, expr_str('exists a. exists b. a = a & a + a = c'))
+
+    def test_redundant_variable_no_change(self):
+        changed, new_node = RedundantVariableOptimizer(DummyOptimizer()).optimize(expr_str('exists a. exists b. a <= b'), None)
+
+        self.assertFalse(changed)
+        self.assertEqual(new_node, expr_str('exists a. exists b. a <= b'))
 
     def test_unused_variable_optimizer(self):
         changed, new_node = UnusedVariableOptimizer(DummyOptimizer()).optimize(expr_str('exists x. a + b = c'), None)

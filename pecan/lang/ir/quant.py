@@ -47,3 +47,9 @@ class Exists(IRPredicate):
         else:
             return '(∃{} {})'.format(self.var, self.pred)
 
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.var == other.var and self.cond == other.cond and self.pred == other.pred
+
+    def __hash__(self):
+        return hash((self.var, self.cond, self.pred))
+
