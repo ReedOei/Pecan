@@ -27,8 +27,6 @@ class ExpressionExtractor(IRTransformer):
 
         self.changed = False
 
-        self.current_scope = {}
-
     def merge(self, other):
         self.expressions.update(other.expressions)
         self.expressions_compute.update(other.expressions_compute)
@@ -65,10 +63,13 @@ class ExpressionExtractor(IRTransformer):
             expr = self.to_compute[v]
             to_compute = self.expressions_compute[expr]
 
-            if v.get_type() is not None and v.get_type().get_restriction() is not None:
-                new_pred = Exists(v, v.get_type().restrict(v), Conjunction(Equals(to_compute, v), new_pred))
+            if type(to_compute) is VarRef:
+                new_pred = NodeSubstitution({v: to_compute}).transform(new_pred)
             else:
-                new_pred = Exists(v, None, Conjunction(Equals(to_compute, v), new_pred))
+                if v.get_type() is not None and v.get_type().get_restriction() is not None:
+                    new_pred = Exists(v, v.get_type().restrict(v), Conjunction(Equals(to_compute, v), new_pred))
+                else:
+                    new_pred = Exists(v, None, Conjunction(Equals(to_compute, v), new_pred))
 
         return new_pred
 
@@ -193,23 +194,19 @@ class CSEOptimizer(BasicOptimizer):
 
     def transform(self, node):
         node = super().transform(node)
-        # if isinstance(node, IRPredicate):
-        #     frequency = ExpressionFrequency().count(node)
-        #     print('temp:', node, frequency)
+        if isinstance(node, IRPredicate):
+            frequency = ExpressionFrequency().count(node)
 
-        #     # Extract everything that's either at least 2 levels deep or appears at least twice
-        #     freq_extractor = ExpressionExtractor(self.current_scope, self.prog, frequency, frequency_threshold=2)
+            # Extract everything that's either at least 2 levels deep or appears at least twice
+            freq_extractor = ExpressionExtractor(self.current_scope, self.prog, frequency, frequency_threshold=2)
 
-        #     new_node = self.multipass_cse([freq_extractor], node)
+            new_node = self.multipass_cse([freq_extractor], node)
 
-        #     self.changed |= freq_extractor.changed
+            self.changed |= freq_extractor.changed
 
-        #     print('temp2:', new_node)
-
-        #     return freq_extractor.compute_vars_for(new_node)
-        #     return node
-        # else:
-        return node
+            return freq_extractor.compute_vars_for(new_node)
+        else:
+            return node
 
     def transform_EqualsCompareIndex(self, node):
         frequency = ExpressionFrequency().count(node)

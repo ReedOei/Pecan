@@ -601,6 +601,7 @@ class PralineLetPecan(PralineTerm):
         prog.praline_local_define(self.var_name, PralinePecanTerm(AutLiteral(result_node.evaluate(prog))))
         result = self.body.evaluate(prog)
         prog.praline_local_cleanup([self.var_name])
+
         return result
 
     def __eq__(self, other):

@@ -182,12 +182,13 @@ class ASTToIR(AstTransformer):
         return res
 
     def transform_EqualsCompareIndex(self, node):
-        self.expr_depth += 1
-        res = ir.EqualsCompareIndex(node.is_equals, self.transform(node.index_a), self.transform(node.index_b))
-        self.expr_depth -= 1
-        return res
+        if node.is_equals:
+            return self.transform(Iff(node.index_a, node.index_b)).with_original_node(node)
+        else:
+            return self.transform(Iff(Complement(node.index_a), node.index_b)).with_original_node(node)
 
     def transform_EqualsCompareRange(self, node):
+        self.expr_depth += 1
         res = ir.EqualsCompareRange(node.is_equals, self.transform(node.index_a), self.transform(node.index_b))
         self.expr_depth -= 1
         return res

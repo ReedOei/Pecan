@@ -4,6 +4,8 @@
 from pecan.lang.optimizer.boolean import BooleanOptimizer
 from pecan.lang.optimizer.arithmetic import ArithmeticOptimizer
 from pecan.lang.optimizer.cse import CSEOptimizer
+from pecan.lang.optimizer.redundant_variable_optimizer import RedundantVariableOptimizer
+from pecan.lang.optimizer.unused_variable_optimizer import UnusedVariableOptimizer
 
 from pecan.lang.ir import *
 
@@ -23,7 +25,7 @@ class UntypedOptimizer:
     def run_optimizations(self, node, pred):
         settings.log(2, f'Optimizing: {node}')
 
-        optimization_pass = [ArithmeticOptimizer(self), BooleanOptimizer(self)]
+        optimization_pass = [ArithmeticOptimizer(self), BooleanOptimizer(self), RedundantVariableOptimizer(self), UnusedVariableOptimizer(self)]
         new_node = node
 
         ast_changed = True # Default to true so we run at least once
@@ -32,7 +34,6 @@ class UntypedOptimizer:
             for optimization in optimization_pass:
                 changed, new_node = optimization.optimize(new_node, pred)
                 ast_changed |= changed
-            break
 
         settings.log(2, f'Optimized node: {new_node}')
 
@@ -52,7 +53,7 @@ class Optimizer:
     def run_optimizations(self, node, pred):
         settings.log(2, f'Optimizing: {node}')
 
-        optimization_pass = [ArithmeticOptimizer(self), CSEOptimizer(self), BooleanOptimizer(self)]
+        optimization_pass = [ArithmeticOptimizer(self), CSEOptimizer(self), BooleanOptimizer(self), RedundantVariableOptimizer(self), UnusedVariableOptimizer(self)]
         new_node = node
 
         ast_changed = True # Default to true so we run at least once
@@ -61,7 +62,6 @@ class Optimizer:
             for optimization in optimization_pass:
                 changed, new_node = optimization.optimize(new_node, pred)
                 ast_changed |= changed
-            break
 
         settings.log(2, f'Optimized node: {new_node}')
 

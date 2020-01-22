@@ -18,21 +18,6 @@ zeck_add(a, b, c) := add2(all_ones2(), a, b, c)
     "less": lt2(any, any)
 })
 
-Restrict x, y, z are ostrowski(alpha).
-
-// These tests of arithmetic properties are relevant because they use bases other than binary
-add_comm() := forall alpha. forall x. forall y. x + y = y + x
-#assert_prop(true, add_comm)
-
-zero_add_refl() := forall alpha. forall x. x + 0 = x
-#assert_prop(true, zero_add_refl)
-
-add_assoc_const() := forall alpha. forall x. x + (1 + 1) = (x + 1) + 1
-#assert_prop(true, add_assoc_const)
-
-add_assoc() := forall alpha. forall x. forall y. forall z. x + (y + z) = (x + y) + z
-#assert_prop(true, add_assoc)
-
 Restrict i, j, k, n are zeckendorf.
 
 // The Fibonacci word (i.e., characteristic Sturmian word with slope = 1/phi)

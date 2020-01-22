@@ -1,0 +1,35 @@
+#load("ostrowski/add_2.txt", "walnut", add2(alpha, a, b, c))
+#load("ostrowski/recog_2.txt", "walnut", recog2(alpha, x))
+#load("ostrowski/all_ones_2.txt", "walnut", all_ones2(a))
+#load("sturmian2.txt", "walnut", sturmian(n))
+
+x is ostrowski(a) := x is finite_num & recog2(a, x)
+
+#type(ostrowski(a), {
+    "adder": add2(a, any, any, any),
+    "less": lt2(any, any)
+})
+
+x is zeckendorf := x is ostrowski(all_ones2())
+zeck_add(a, b, c) := add2(all_ones2(), a, b, c)
+
+#type(zeckendorf, {
+    "adder": zeck_add(any, any, any),
+    "less": lt2(any, any)
+})
+
+Restrict x, y, z are ostrowski(alpha).
+
+// These tests of arithmetic properties are relevant because they use bases other than binary
+add_comm() := forall alpha. forall x. forall y. x + y = y + x
+#assert_prop(true, add_comm)
+
+zero_add_refl() := forall alpha. forall x. x + 0 = x
+#assert_prop(true, zero_add_refl)
+
+add_assoc_const() := forall alpha. forall x. x + (1 + 1) = (x + 1) + 1
+#assert_prop(true, add_assoc_const)
+
+add_assoc() := forall alpha. forall x. forall y. forall z. x + (y + z) = (x + y) + z
+#assert_prop(true, add_assoc)
+

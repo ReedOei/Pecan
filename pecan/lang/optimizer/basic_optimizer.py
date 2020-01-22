@@ -22,9 +22,15 @@ class BasicOptimizer(IRTransformer):
 
         self.pred = pred
 
-        self.pre_optimize(node)
+        res = self.pre_optimize(node)
+        if res is not None:
+            node = res
+
         new_node = self.transform(node)
-        self.post_optimize(new_node)
+
+        res = self.post_optimize(new_node)
+        if res is not None:
+            new_node = res
 
         return self.changed, new_node
 

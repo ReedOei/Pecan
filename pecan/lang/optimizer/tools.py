@@ -20,6 +20,7 @@ class ExpressionFrequency(IRTransformer):
         return super().transform(node)
 
     def count(self, node):
+        self.expr_frequency = {}
         self.transform(node)
         return self.expr_frequency
 

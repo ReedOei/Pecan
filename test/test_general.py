@@ -71,3 +71,9 @@ class GeneralTest(unittest.TestCase):
     def test_real(self):
         self.run_file('examples/test_real.pn')
 
+    def test_zeckendorf(self):
+        self.run_file('examples/test_zeckendorf.pn')
+
+    def test_bounded_ostrowski_2(self):
+        self.run_file('examples/test_bounded_ostrowski_2.pn')
+
