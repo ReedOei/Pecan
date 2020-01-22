@@ -6,7 +6,7 @@ python: 3.6
 
 cache:
     directories:
-        - /home/travis/spot-2.8.5
+        - /home/travis/build/ReedOei/Pecan/spot-2.8.5
 
 before_install:
     - bash install-spot.sh

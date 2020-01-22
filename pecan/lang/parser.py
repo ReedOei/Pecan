@@ -46,10 +46,17 @@ class PecanTransformer(Transformer):
 
     praline_var = PralineVar
 
-    praline_add = lambda self, *args: reduce(PralineAdd, args)
-    praline_sub = lambda self, *args: reduce(PralineSub, args)
-    praline_div = lambda self, *args: reduce(PralineDiv, args)
-    praline_mul = lambda self, *args: reduce(PralineMul, args)
+    def praline_add(self, *args):
+        return reduce(PralineAdd, args)
+
+    def praline_sub(self, *args):
+        return reduce(PralineSub, args)
+
+    def praline_div(self, *args):
+        return reduce(PralineDiv, args)
+
+    def praline_mul(self, *args):
+        return reduce(PralineMul, args)
 
     praline_neg = PralineNeg
     praline_app = PralineApp
