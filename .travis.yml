@@ -10,6 +10,5 @@ before_install:
 
 # Run the unit test
 script:
-    - bash gen-parser.sh
     - python3 -m unittest discover
 
