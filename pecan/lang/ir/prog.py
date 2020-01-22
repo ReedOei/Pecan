@@ -434,7 +434,7 @@ class Program(IRNode):
         msgs = []
 
         for d in self.defs:
-            settings.log(0, d)
+            settings.log(0, '[DEBUG] Processing: {}'.format(d))
 
             # Ignore these constructs because we should have run them earlier in run_type_inference
             # TODO: Fix here and above in run_type_inferences, all these passes are probably somewhat inefficient for larger programs and it doesn't scale particularly well
