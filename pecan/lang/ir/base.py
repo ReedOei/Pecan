@@ -18,7 +18,6 @@ class IRNode:
         #TODO: detect used labels and avoid those
         self.label = IRNode.fresh_name()
         self.type = None
-        self.original_node = None
         self.parent = None
 
     def with_parent(self, parent):
@@ -31,10 +30,6 @@ class IRNode:
     def label_var(self):
         from pecan.lang.ir.prog import VarRef
         return VarRef(self.label).with_type(self.get_type())
-
-    def with_original_node(self, original_node):
-        self.original_node = original_node
-        return self
 
     def with_type(self, new_type):
         self.type = new_type
@@ -70,14 +65,8 @@ class IRNode:
 
         return aut
 
-    def get_original_node(self):
-        return self.original_node
-
     def get_display_node(self, prog):
-        if settings.get_debug_level() > 3:
-            return self
-        else:
-            return self.original_node or self
+        return self
 
     def evaluate(self, prog):
         prog.eval_level += 1

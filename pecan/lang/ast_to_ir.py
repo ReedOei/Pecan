@@ -43,12 +43,12 @@ class ASTToIR(AstTransformer):
     def transform_Iff(self, node):
         new_a = self.transform(node.a)
         new_b = self.transform(node.b)
-        return ir.Conjunction(ir.Disjunction(ir.Complement(new_a), new_b), ir.Disjunction(ir.Complement(new_b), new_a)).with_original_node(node)
+        return ir.Conjunction(ir.Disjunction(ir.Complement(new_a), new_b), ir.Disjunction(ir.Complement(new_b), new_a))
 
     def transform_Implies(self, node):
         new_a = self.transform(node.a)
         new_b = self.transform(node.b)
-        return ir.Disjunction(ir.Complement(new_a), new_b).with_original_node(node)
+        return ir.Disjunction(ir.Complement(new_a), new_b)
 
     def transform_FormulaTrue(self, node):
         return ir.FormulaTrue()
@@ -129,9 +129,9 @@ class ASTToIR(AstTransformer):
             power = ir.Add(power, power)
 
         if negative:
-            return ir.Sub(ir.IntConst(0), s).with_original_node(node)
+            return ir.Sub(ir.IntConst(0), s)
         else:
-            return s.with_original_node(node)
+            return s
 
     def transform_Div(self, node):
         self.expr_depth += 1
@@ -149,7 +149,7 @@ class ASTToIR(AstTransformer):
         return res
 
     def transform_NotEquals(self, node):
-        return ir.Complement(self.transform(Equals(node.a, node.b))).with_original_node(node)
+        return ir.Complement(self.transform(Equals(node.a, node.b)))
 
     def transform_Less(self, node):
         self.expr_depth += 1
@@ -158,16 +158,16 @@ class ASTToIR(AstTransformer):
         return res
 
     def transform_Greater(self, node):
-        return self.transform(Less(node.b, node.a)).with_original_node(node)
+        return self.transform(Less(node.b, node.a))
 
     def transform_LessEquals(self, node):
-        return self.transform(Disjunction(Less(node.a, node.b), Equals(node.a, node.b))).with_original_node(node)
+        return self.transform(Disjunction(Less(node.a, node.b), Equals(node.a, node.b)))
 
     def transform_GreaterEquals(self, node):
-        return self.transform(Disjunction(Less(node.b, node.a), Equals(node.a, node.b))).with_original_node(node)
+        return self.transform(Disjunction(Less(node.b, node.a), Equals(node.a, node.b)))
 
     def transform_Neg(self, node):
-        return self.transform(Sub(IntConst(0), node.a)).with_original_node(node)
+        return self.transform(Sub(IntConst(0), node.a))
 
     def transform_Index(self, node):
         self.expr_depth += 1
@@ -183,9 +183,9 @@ class ASTToIR(AstTransformer):
 
     def transform_EqualsCompareIndex(self, node):
         if node.is_equals:
-            return self.transform(Iff(node.index_a, node.index_b)).with_original_node(node)
+            return self.transform(Iff(node.index_a, node.index_b))
         else:
-            return self.transform(Iff(Complement(node.index_a), node.index_b)).with_original_node(node)
+            return self.transform(Iff(Complement(node.index_a), node.index_b))
 
     def transform_EqualsCompareRange(self, node):
         self.expr_depth += 1
@@ -200,9 +200,9 @@ class ASTToIR(AstTransformer):
             var, cond = extract_var_cond(self.transform(node.var))
 
         if cond is not None:
-            return ir.Complement(ir.Exists(var, cond, ir.Complement(self.transform(node.pred)))).with_original_node(node)
+            return ir.Complement(ir.Exists(var, cond, ir.Complement(self.transform(node.pred))))
         else:
-            return ir.Complement(ir.Exists(var, None, ir.Complement(self.transform(node.pred)))).with_original_node(node)
+            return ir.Complement(ir.Exists(var, None, ir.Complement(self.transform(node.pred))))
 
     def transform_Exists(self, node: Exists):
         if node.cond is not None:
@@ -211,9 +211,9 @@ class ASTToIR(AstTransformer):
             var, cond = extract_var_cond(self.transform(node.var))
 
         if cond is not None:
-            return ir.Exists(var, cond, self.transform(node.pred)).with_original_node(node)
+            return ir.Exists(var, cond, self.transform(node.pred))
         else:
-            return ir.Exists(var, None, self.transform(node.pred)).with_original_node(node)
+            return ir.Exists(var, None, self.transform(node.pred))
 
     def transform_VarRef(self, node: VarRef):
         return ir.VarRef(node.var_name)

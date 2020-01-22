@@ -8,7 +8,7 @@ Pecan is an automated theorem prover for Büchi automata, with additional featur
 
 You will need Python 3.6 or higher.
 
-Then, install [spot](https://spot.lrde.epita.fr/install.html), if you are on a Linux system, the `install-spot.sh` script may work for you:
+Then, install [spot](https://spot.lrde.epita.fr/install.html); if you are on a Linux-y system, the `install-spot.sh` script may work for you:
 
 ```bash
 bash install-spot.sh

@@ -13,7 +13,7 @@ class IRTransformer:
         elif type(node) is str:
             return self.transform_str(node)
         else:
-            return node.transform(self).with_original_node(node.get_original_node())
+            return node.transform(self)
 
     def transform_str(self, node):
         return node
