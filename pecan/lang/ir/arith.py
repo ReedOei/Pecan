@@ -141,8 +141,13 @@ class IntConst(IRExpression):
             return constants_map[(self.val, self.get_type())]
 
         if self.val == 0:
-            # Constant 0 is defined as 000000... TODO: Maybe allow users to define their own 0
-            constants_map[(self.val, self.get_type())] = (spot.formula('G(~__constant0)').translate(), self.label_var())
+            res = prog.lookup_dynamic_call('zero', [self.label_var()])
+
+            if res.name == 'zero':
+                constants_map[(self.val, self.get_type())] = (spot.translate('G(~__constant0)').postprocess('BA'), self.label_var())
+            else:
+                res = prog.call('zero', [self.label_var()])
+                constants_map[(self.val, self.get_type())] = (res, self.label_var())
         elif self.val == 1:
             res = prog.lookup_dynamic_call('one', [self.label_var()])
 

@@ -25,12 +25,6 @@ class IndexRange(Predicate):
         self.start = start
         self.end = end
 
-    def bounds_check(self, idx_var):
-        return Less(Add(self.start, idx_var).with_type(self.start.get_type()), self.end)
-
-    def index_expr(self, idx_var):
-        return Index(self.var_name, Add(self.start, idx_var).with_type(self.start.get_type()))
-
     def transform(self, transformer):
         return transformer.transform_IndexRange(self)
 
