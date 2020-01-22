@@ -73,6 +73,8 @@ Define length := foldl (\cur _ -> cur + 1) 0.
 Define map f := foldr (\x rest -> f x :: rest) [].
 Define filter f := foldr (\x rest -> if f x then x :: rest else rest) [].
 
+Define strLength := length ∘ toChars.
+
 Define id x := x.
 
 Define a & b := if a then b else false.

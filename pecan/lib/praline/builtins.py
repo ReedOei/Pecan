@@ -28,13 +28,6 @@ class ToString(Builtin):
 
         return PralineString(t.display())
 
-class StrLength(Builtin):
-    def __init__(self):
-        super().__init__(PralineVar('strLength'), [PralineVar('s')])
-
-    def evaluate(self, prog):
-        return PralineInt(len(prog.praline_lookup('s').get_value()))
-
 class PralinePrint(Builtin):
     def __init__(self):
         super().__init__(PralineVar('print'), [PralineVar('s')])
@@ -182,7 +175,6 @@ class AcceptingWord(Builtin):
             return '{}({})^w.{}({})^w'.format(sign, integral_repeat, fractional, fractional_repeat)
 
 builtins = [
-    StrLength().definition(),
     Check().definition(),
     ToString().definition(),
     PralinePrint().definition(),
