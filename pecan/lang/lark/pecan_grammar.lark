@@ -155,7 +155,7 @@ int: INT -> int_tok
 
 var: VAR -> var_tok
 
-?string: ESCAPED_STRING -> escaped_str
+string: ESCAPED_STRING -> escaped_str
 
 PROP_VAL: "sometimes"i | "true"i | "false"i // case insensitive
 

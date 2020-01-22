@@ -108,7 +108,9 @@ class PecanTransformer(Transformer):
 
         return res
 
-    def restrict_is(self, varlist, var_ref):
+    def restrict_is(self, *args):
+        print('args:', args)
+        varlist, var_ref = args
         return Restriction(varlist, Call(var_ref, []))
 
     def restrict_call(self, varlist, call_name, call_arg_vars):
