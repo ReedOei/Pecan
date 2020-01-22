@@ -71,8 +71,11 @@ class PecanTransformer(Transformer):
 
     praline_string = PralineString
 
-    praline_true = lambda self: PralineBool(True)
-    praline_false = lambda self: PralineBool(False)
+    def praline_true(self):
+        return PralineBool(True)
+
+    def praline_false(self):
+        return PralineBool(False)
 
     praline_eq = PralineEq
     praline_ne = PralineNe
@@ -91,7 +94,8 @@ class PecanTransformer(Transformer):
 
     praline_match_prepend = PralineMatchList
 
-    praline_do = lambda self, *terms: PralineDo(list(terms))
+    def praline_do(self, *terms):
+        return PralineDo(list(terms))
 
     def praline_list_gen(self, start, end):
         return PralineApp(PralineApp(PralineVar('enumFromTo'), start), end)
@@ -104,17 +108,32 @@ class PecanTransformer(Transformer):
 
         return res
 
-    restrict_is = lambda self, varlist, var_ref: Restriction(varlist, Call(var_ref, []))
-    restrict_call = lambda self, varlist, call_name, call_arg_vars: Restriction(varlist, Call(call_name, call_arg_vars))
+    def restrict_is(self, varlist, var_ref):
+        return Restriction(varlist, Call(var_ref, []))
 
-    formal_is = lambda self, var_name, call_name: Call(call_name, [VarRef(var_name)])
-    formal_is_call = lambda self, var_name, call_name, call_args: Call(call_name, [VarRef(var_name)] + call_args)
-    formal_call = lambda self, call_name, call_args: Call(call_name, call_args)
-    formal_var = VarRef
+    def restrict_call(self, varlist, call_name, call_arg_vars):
+        return Restriction(varlist, Call(call_name, call_arg_vars))
 
-    call_args = Call
-    call_is = lambda self, var_name, call_name: Call(call_name, [var_name])
-    call_is_args = lambda self, var_name, call_name, args: Call(call_name, [var_name] + args)
+    def formal_is(self, var_name, call_name):
+        return Call(call_name, [VarRef(var_name)])
+
+    def formal_is_call(self, var_name, call_name, call_args):
+        return Call(call_name, [VarRef(var_name)] + call_args)
+
+    def formal_call(self, call_name, call_args):
+        return Call(call_name, call_args)
+
+    def formal_var(self, var_name):
+        return VarRef(var_name)
+
+    def call_args(self, name, args):
+        return Call(name, args)
+
+    def call_is(self, var_name, call_name):
+        return Call(call_name, [var_name])
+
+    def call_is_args(self, var_name, call_name, args):
+        return Call(call_name, [var_name] + args)
 
     val_dict = lambda self, *pairs: dict(pairs)
 
