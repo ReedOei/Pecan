@@ -83,7 +83,3 @@ It should be a colon-separated or semicolon-separated list of paths, depending o
 
 Currently, the only "supported" editor is Vim, via a syntax file (`pecan.vim`) in this repository.
 
-## Todo
-
-- Plotting?
-
