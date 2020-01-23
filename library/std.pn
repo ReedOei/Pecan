@@ -23,6 +23,7 @@ default_equal(x, y) := "G((x -> y) & (y -> x))"
 #context("adder", "bin_add")
 #context("less", "bin_less")
 #context("one", "bin_one")
+#context("zero", "zero")
 #context("equal", "default_equal")
 
 #type(nat, {
@@ -50,6 +51,10 @@ Define enumFromTo low high :=
         low :: enumFromTo (low + 1) high .
 
 Define flip f a b := f b a.
+
+Define factorial n :=
+    if n = 0 then 1
+    else n * factorial (n - 1).
 
 Define isEmpty l :=
     match l with
