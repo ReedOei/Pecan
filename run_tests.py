@@ -1,6 +1,7 @@
 import unittest
 
 from test.test_general import GeneralTest
+from test.test_no_optimizer import NoOptimizerTest
 from test.test_optimizer_tools import OptimizerToolsTest
 from test.test_praline import PralineTest
 
@@ -13,6 +14,6 @@ def all_tests(test_classes):
     return unittest.TestSuite(tests)
 
 if __name__ == '__main__':
-    suite = all_tests([GeneralTest, OptimizerToolsTest, PralineTest])
+    suite = all_tests([NoOptimizerTest, GeneralTest, OptimizerToolsTest, PralineTest])
     unittest.TextTestRunner(verbosity=2).run(suite)
 
