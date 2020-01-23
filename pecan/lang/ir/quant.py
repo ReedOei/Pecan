@@ -43,9 +43,9 @@ class Exists(IRPredicate):
 
     def __repr__(self):
         if self.cond is not None:
-            return '(∃{} {})'.format(self.var, Conjunction(self.cond, self.pred))
+            return '(∃{}. {})'.format(self.var, Conjunction(self.cond, self.pred))
         else:
-            return '(∃{} {})'.format(self.var, self.pred)
+            return '(∃{}. {})'.format(self.var, self.pred)
 
     def __eq__(self, other):
         return other is not None and type(other) is self.__class__ and self.var == other.var and self.cond == other.cond and self.pred == other.pred

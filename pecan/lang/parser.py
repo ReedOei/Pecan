@@ -280,6 +280,6 @@ class PecanTransformer(Transformer):
 
 from pecan.lang.lark.parser import Lark_StandAlone
 
-pecan_parser = Lark.open('pecan/lang/lark/pecan_grammar.lark', transformer=PecanTransformer(), parser='lalr')
-# pecan_parser = Lark_StandAlone(transformer=PecanTransformer())
+# pecan_parser = Lark.open('pecan/lang/lark/pecan_grammar.lark', transformer=PecanTransformer(), parser='lalr')
+pecan_parser = Lark_StandAlone(transformer=PecanTransformer())
 

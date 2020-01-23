@@ -94,13 +94,18 @@ class ExpressionExtractor(IRTransformer):
                 new_a = self.transform(node.a)
                 new_b = self.transform(node.b)
 
-                t = node.get_type() if node.get_type() is not None else InferredType()
-                new_var = VarRef(self.prog.fresh_name()).with_type(t)
+                if type(new_a) is not IntConst and type(new_b) is not IntConst:
+                    self.changed = True
 
-                self.expressions[node] = new_var
-                self.expressions_compute[node] = Sub(new_a, new_b).with_type(node.get_type())
-                self.to_compute[new_var] = node
-                self.dep_graph[new_var] = list(set(filter(self.is_var, [new_a, new_b])))
+                    t = node.get_type() if node.get_type() is not None else InferredType()
+                    new_var = VarRef(self.prog.fresh_name()).with_type(t)
+
+                    self.expressions[node] = new_var
+                    self.expressions_compute[node] = Sub(new_a, new_b).with_type(node.get_type())
+                    self.to_compute[new_var] = node
+                    self.dep_graph[new_var] = list(set(filter(self.is_var, [new_a, new_b])))
+                else:
+                    return Sub(new_a, new_b).with_type(node.get_type())
 
             return self.expressions[node]
         else:
@@ -121,18 +126,21 @@ class ExpressionExtractor(IRTransformer):
                 return node
 
             if not node in self.expressions:
-                self.changed = True
-
                 new_a = self.transform(node.a)
                 new_b = self.transform(node.b)
 
-                t = node.get_type() if node.get_type() is not None else InferredType()
-                new_var = VarRef(self.prog.fresh_name()).with_type(t)
+                if type(new_a) is not IntConst and type(new_b) is not IntConst:
+                    self.changed = True
 
-                self.expressions[node] = new_var
-                self.expressions_compute[node] = Add(new_a, new_b).with_type(node.get_type())
-                self.to_compute[new_var] = node
-                self.dep_graph[new_var] = list(set(filter(self.is_var, [new_a, new_b])))
+                    t = node.get_type() if node.get_type() is not None else InferredType()
+                    new_var = VarRef(self.prog.fresh_name()).with_type(t)
+
+                    self.expressions[node] = new_var
+                    self.expressions_compute[node] = Add(new_a, new_b).with_type(node.get_type())
+                    self.to_compute[new_var] = node
+                    self.dep_graph[new_var] = list(set(filter(self.is_var, [new_a, new_b])))
+                else:
+                    return Add(new_a, new_b).with_type(node.get_type())
 
             return self.expressions[node]
         else:
@@ -207,20 +215,6 @@ class CSEOptimizer(BasicOptimizer):
             return freq_extractor.compute_vars_for(new_node)
         else:
             return node
-
-    def transform_EqualsCompareIndex(self, node):
-        frequency = ExpressionFrequency().count(node)
-
-        # Extract everything that's either at least 2 levels deep or appears at least twice
-        freq_extractor = ExpressionExtractor(self.current_scope, self.prog, frequency, frequency_threshold=2)
-        depth_extractor = ExpressionExtractor(self.current_scope, self.prog, frequency, depth_threshold=1)
-
-        index_a = self.multipass_cse([freq_extractor, depth_extractor], node.index_a)
-        index_b = self.multipass_cse([freq_extractor, depth_extractor], node.index_b)
-
-        self.changed |= depth_extractor.changed or freq_extractor.changed
-
-        return depth_extractor.merge(freq_extractor).compute_vars_for(EqualsCompareIndex(node.is_equals, index_a, index_b))
 
     def transform_Exists(self, node: Exists):
         self.current_scope.add(node.var.var_name)

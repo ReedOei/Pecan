@@ -25,9 +25,13 @@ class BooleanOptimizer(BasicOptimizer):
             self.changed = True
             return self.transform(Disjunction(Less(node.a.b, node.a.a), Equals(node.a.a, node.a.b)))
 
-        elif type(node.a) is EqualsCompareIndex:
+        elif type(node.a) is FormulaTrue:
             self.changed = True
-            return self.transform(EqualsCompareIndex(not node.a.is_equals, node.a.index_a, node.a.index_b))
+            return FormulaFalse()
+
+        elif type(node.a) is FormulaFalse:
+            self.changed = True
+            return FormulaTrue()
 
         else:
             return super().transform_Complement(node)
@@ -35,7 +39,7 @@ class BooleanOptimizer(BasicOptimizer):
     def transform_Conjunction(self, node):
         if type(node.a) is FormulaTrue:
             self.changed = True
-            return node.b
+            return self.transform(node.b)
         elif type(node.a) is FormulaFalse:
             self.changed = True
             return FormulaFalse()
@@ -44,7 +48,7 @@ class BooleanOptimizer(BasicOptimizer):
             return FormulaFalse()
         elif type(node.b) is FormulaTrue:
             self.changed = True
-            return node.a
+            return self.transform(node.a)
         else:
             return super().transform_Conjunction(node)
 
@@ -54,10 +58,10 @@ class BooleanOptimizer(BasicOptimizer):
             return FormulaTrue()
         elif type(node.a) is FormulaFalse:
             self.changed = True
-            return node.b
+            return self.transform(node.b)
         elif type(node.b) is FormulaFalse:
             self.changed = True
-            return node.a
+            return self.transform(node.a)
         elif type(node.b) is FormulaTrue:
             self.changed = True
             return FormulaTrue()

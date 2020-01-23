@@ -55,6 +55,7 @@ class RedundantVariableOptimizer(BasicOptimizer):
 
     def transform_Complement(self, node):
         # Clear out the level dictionary, because the complement means that variables outside should not interact with variables inside
+        # TODO: I think...? at the very least, it's safe to do clear it out, because we'll just optimize a little less
         temp = self.decl_level
         self.decl_level = {}
         result = super().transform_Complement(node)

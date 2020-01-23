@@ -6,7 +6,6 @@ from pecan.lang.optimizer.arithmetic import ArithmeticOptimizer
 from pecan.lang.optimizer.cse import CSEOptimizer
 from pecan.lang.optimizer.redundant_variable_optimizer import RedundantVariableOptimizer
 from pecan.lang.optimizer.unused_variable_optimizer import UnusedVariableOptimizer
-
 from pecan.lang.ir import *
 
 from pecan.settings import settings

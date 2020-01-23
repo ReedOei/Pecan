@@ -6,6 +6,12 @@ from pecan.lang.ir import *
 
 from pecan.tools.automaton_tools import TruthValue
 
+def implies(a, b):
+    return Disjunction(Complement(a), b)
+
+def iff(a, b):
+    return Conjunction(implies(a, b), implies(b, a))
+
 # This class performs a number of simplifications on the IR representation, eliminating constructs that we need to know the type of to eliminate
 class TypedIRLowering(IRTransformer):
     def __init__(self):
@@ -26,7 +32,7 @@ class TypedIRLowering(IRTransformer):
         # bounds_checks = Conjunction(self.index_a.bounds_check(idx_var), self.index_b.bounds_check(idx_var))
         # Only do bounds check on the first index, because we've verified the bounds are the same
         bounds_checks = node.index_a.bounds_check(idx_var)
-        equality_check = self.transform(EqualsCompareIndex(True, node.index_a.index_expr(idx_var), node.index_b.index_expr(idx_var)))
+        equality_check = self.transform(iff(node.index_a.index_expr(idx_var), node.index_b.index_expr(idx_var)))
         all_equal = Complement(Exists(idx_var, None, Conjunction(bounds_checks, Complement(equality_check))))
         base_pred = Conjunction(same_range, all_equal)
 

@@ -98,9 +98,6 @@ class IRTransformer:
     def transform_IndexRange(self, node):
         return IndexRange(node.var_name, self.transform(node.start), self.transform(node.end))
 
-    def transform_EqualsCompareIndex(self, node):
-        return EqualsCompareIndex(node.is_equals, self.transform(node.index_a), self.transform(node.index_b))
-
     def transform_EqualsCompareRange(self, node):
         return EqualsCompareRange(node.is_equals, self.transform(node.index_a), self.transform(node.index_b))
 
