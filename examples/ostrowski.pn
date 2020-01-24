@@ -1,0 +1,66 @@
+// Most of the the following was done by: Luke Schaeffer <lrschaeffer@gmail.com>
+
+#load("ostrowski/bco_simple_valid.txt", "walnut", bco_simple_valid(a, x))
+#load("ostrowski/bco_standard.txt", "walnut", bco_standard(a))
+#load("ostrowski/bco_leq.txt", "walnut", bco_leq(x, y))
+#load("ostrowski/bco_adder.txt", "walnut", bco_adder(a, x, y, z))
+#load("ostrowski/bco_alphabet.txt", "walnut", bco_alphabet(w))
+#load("ostrowski/bco_finite_rep.txt", "walnut", bco_finite_rep(n))
+
+#save_aut_img("test.svg", bco_finite_rep)
+
+bco_valid(a, x) := bco_simple_valid(a, x) & bco_standard(a) & bco_finite_rep(x)
+bco_valid2(a, x, y) := bco_valid(a, x) & bco_valid(a, y)
+bco_valid3(a, x, y, z) := bco_valid2(a, x, y) & bco_valid(a, z)
+
+bco_eq(x, y) := bco_leq(x, y) & bco_leq(y, x)
+bco_zero(z) := exists a is bco_alphabet. bco_valid(a,z) & forall y is bco_alphabet. bco_valid(a,y) => bco_leq(z,y)
+bco_succ(a, x, y) := bco_valid2(a, x, y) & bco_leq(x, y) & ~bco_eq(x, y) & forall z is bco_alphabet. bco_valid(a,z) => (bco_leq(z,x) | bco_leq(y,z))
+
+// Ensure that all the variable below come from the correct alphabet
+// Restrict a, x, y, z, u, v, w are bco_alphabet.
+
+test_bco_adder_base_case() := forall a. forall x. forall y. forall z. (bco_zero(x) & bco_valid3(a, x, y, z)) => (bco_adder(a,x,y,z) <=> bco_eq(y,z))
+#assert_prop(true, test_bco_adder_base_case)
+// test_bco_adder_inductive_case() := forall a. forall x. bco_valid(a, x) => forall y. bco_valid(a, y) => forall z. bco_valid(a, z) => forall u. bco_succ(a,u,x) => forall v. bco_succ(a,v,z) => (bco_adder(a,x,y,z) <=> bco_adder(a,u,y,v))
+test_bco_adder_inductive_case() := forall a. forall x. bco_valid(a, x) => forall y. bco_valid(a, y) => forall z. bco_valid(a, z) => forall u. (bco_valid(a,u) & bco_succ(a,u,x)) => forall v. (bco_valid(a, v) & bco_succ(a,v,z)) => (bco_adder(a,x,y,z) => bco_adder(a,u,y,v))
+#assert_prop(true, test_bco_adder_inductive_case)
+
+test_bco_pred() := forall a. forall x. bco_valid(a,x) => (bco_zero(x) | (exists u. bco_valid(a,u) & bco_succ(a,u,x)))
+#assert_prop(true, test_bco_pred)
+
+test_bco_adder_not_zero() := forall a. forall x. forall y. forall z. (bco_adder(a,x,y,z) & bco_zero(z)) => bco_zero(x)
+#assert_prop(true, test_bco_adder_not_zero)
+
+// This proves that bco_adder is commutative.
+test_bco_adder_commutative() := forall a. forall x. forall y. forall z. bco_adder(a,x,y,z) <=> bco_adder(a,y,x,z)
+#assert_prop(true, test_bco_adder_commutative)
+
+// This proves that bco_adder is associative.
+test_bco_adder_associative() := forall a. forall x. forall y. forall z. forall w. (exists u. bco_adder(a,x,y,u) & bco_adder(a,u,z,w)) <=> (exists v. bco_adder(a,y,z,v) & bco_adder(a,x,v,w))
+// #assert_prop(true, test_bco_adder_associative)
+
+// This proves that if x = y, there is always a z such that x + z = y, and this z is equal to zero as we expect.
+test_bco_adder_identity() := forall a. forall x. forall y. (bco_valid2(a,x,y) & bco_eq(x,y)) => exists z. bco_adder(a,x,z,y) & bco_zero(z)
+#assert_prop(true, test_bco_adder_identity)
+
+// This proves that there is only one valid zero representation for a given base. Together with the above, this proves the existence of an identity (because it ensures that “zero” is the same element regardless of what we’re adding it to).
+test_bco_zero_unique() := forall a. forall x. forall y. (bco_valid2(a,x,y) & bco_zero(x) & bco_zero(y)) => bco_eq(x,y)
+#assert_prop(true, test_bco_zero_unique)
+
+// This proves that <= is transitive. Antisymmetry and reflexivity follow immediately from the definition of bco_eq, so it suffices to observe that bco_eq works properly by examining its diagram.
+test_bco_leq_trans() := forall x. forall y. forall z. (bco_leq(x,y) & bco_leq(y,z)) => bco_leq(x,z)
+#assert_prop(true, test_bco_leq_trans)
+
+// This proves that <= is a total order as opposed to a partial order.
+test_bco_leq_total() := forall a. forall x. forall y. bco_valid2(a,x,y) => (bco_leq(x,y) | bco_leq(y,x))
+#assert_prop(true, test_bco_leq_total)
+
+// This proves that x <= y iff x + z <= y + z.
+test_bco_adder_order_comp() := forall a. forall x. forall y. forall z. forall u. forall v. (bco_valid3(a,x,y,z) & bco_valid2(a,u,v) & bco_adder(a,x,z,u) & bco_adder(a,y,z,v)) => (bco_leq(x, y) <=> bco_leq(u, v))
+#assert_prop(true, test_bco_adder_order_comp)
+
+// This proves that x <= y is equivalent to the existence of z such that x + z = y.
+test_bco_adder_order_def() := forall a. forall x. forall y. bco_valid2(a,x,y) => (bco_leq(x,y) <=> exists z. bco_adder(a,x,z,y))
+#assert_prop(true, test_bco_adder_order_def)
+

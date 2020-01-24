@@ -23,3 +23,16 @@ int_add(a, b, c) := a is int & b is int & c is int & (pos_int_add(a, b, c) | neg
     "less": int_less(any, any)
 })
 
+Define intFormat var prefix cycle :=
+    if cycle = [0] then
+        (var,
+            if isEmpty prefix then "0"
+            else match prefix with
+                 case 0 :: digits => toString (fromBinary digits)
+                 case 1 :: digits => "-" ^ toString (fromBinary digits)
+                 end
+        )
+    else
+        stdFormat var prefix cycle ^ " (NOT A VALID INTEGER)"
+    .
+

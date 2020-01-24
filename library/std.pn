@@ -67,8 +67,9 @@ Define a >= b := (a > b) | (a = b).
 Define flip f a b := f b a.
 
 Define mod a b := a - (a / b) * b.
-Define divides a b := mod b a = 0.
-Define isEven := divides 2.
+Define a % b := mod a b.
+Define isEven x := (x % 2) = 0.
+Define isOdd x := (x % 2) = 1.
 
 Define factorial n :=
     if n = 0 then 1
@@ -116,6 +117,11 @@ Define base3Format var prefix cycle :=
 Define length := foldl (\cur _ => cur + 1) 0.
 Define map f := foldr (\x rest => f x :: rest) [].
 Define filter f := foldr (\x rest => if f x then x :: rest else rest) [].
+
+Define all f := foldl (\a b => a & f b) true.
+Define any f := foldl (\a b => a | f b) false.
+Define sum := foldl (\a b => a + b) 0.
+Define product := foldl (\a b => a * b) 1.
 
 Define strLength := length ∘ toChars.
 
@@ -182,18 +188,6 @@ Define natFormat var prefix cycle :=
         (var, if isEmpty prefix then "0" else toString (fromBinary prefix))
     else
         stdFormat var prefix cycle ^ " (NOT A VALID NATURAL NUMBER)"
-    .
-Define intFormat var prefix cycle :=
-    if cycle = [0] then
-        (var,
-            if isEmpty prefix then "0"
-            else match prefix with
-                 case 0 :: digits => toString (fromBinary digits)
-                 case 1 :: digits => "-" ^ toString (fromBinary digits)
-                 end
-        )
-    else
-        stdFormat var prefix cycle ^ " (NOT A VALID INTEGER)"
     .
 
 Define runFormat format inputWord :=

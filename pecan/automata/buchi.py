@@ -58,6 +58,10 @@ class BuchiAutomaton(Automaton):
     def num_edges(self):
         return self.aut.num_edges()
 
+    # Should return a string of SVG data
+    def show(self):
+        return self.postprocess().show()
+
     def get_aut(self):
         # self.aut = spot.remove_alternation(self.postprocess())
         return self.aut

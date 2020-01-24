@@ -44,6 +44,10 @@ class Automaton:
     def accepting_word(self):
         raise NotImplementedError
 
+    # Should return a string of SVG data
+    def show(self):
+        raise NotImplementedError
+
     # -------------------------------------------------------
     # Optional simplification methods:
     # -------------------------------------------------------

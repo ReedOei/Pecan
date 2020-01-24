@@ -105,47 +105,6 @@ class AcceptingWord(Builtin):
 
         return result
 
-    def format_real(self, prefix, cycle):
-        # It is possible for the whole number to be in the cycle (e.g., if the integral part is 0^w)
-        if len(prefix) == 0:
-            cycle_offset = 1
-            sign = '+' if cycle[0] == '0' else '-'
-        else:
-            cycle_offset = 0
-            sign = '+' if prefix[0] == '0' else '-'
-
-        integral = ''
-        # This is always just zeros, so don't bother showing it
-        integral_repeat = ''
-        fractional = ''
-        fractional_repeat = ''
-
-        # Need to keep track of which part will have
-        fractional_modulus = 0
-        for i, c in enumerate(prefix[1:]):
-            if i % 2 == 0:
-                fractional_modulus = 1
-                fractional += c
-            else:
-                fractional_modulus = 0
-                integral += c
-
-        fractional_modulus = (fractional_modulus + cycle_offset) % 2
-        for i, c in enumerate(cycle):
-            if i % 2 == fractional_modulus:
-                fractional_repeat += c
-            else:
-                integral_repeat += c
-
-        # We store the integral part in LSD first
-        integral = integral[::-1]
-        integral_repeat = integral_repeat[::-1]
-
-        if len(integral) > 0:
-            return '{}{}.{}({})^w'.format(sign, integral, fractional, fractional_repeat)
-        else:
-            return '{}({})^w.{}({})^w'.format(sign, integral_repeat, fractional, fractional_repeat)
-
 class Compare(Builtin):
     def __init__(self):
         super().__init__(PralineVar('compare'), [PralineVar('a'), PralineVar('b')])

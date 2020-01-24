@@ -40,3 +40,35 @@ real_add(a, b, c) := (real_add_same_sign(a, b, c) | real_add_dif_sign(a, b, c) |
     "one": real_one(any)
 })
 
+Define splitEvenOdd l :=
+    match l with
+    case [] => ([], [])
+    case [a] => ([a], [])
+    case a :: b :: xs =>
+        match splitEvenOdd xs with
+        case (even, odd) => (a :: even, b :: odd)
+        end
+    end.
+
+Define realFormatHelper sign cycleOffset prefix cycle :=
+    match (splitEvenOdd prefix, splitEvenOdd cycle) with
+    case ((prefixFractional, prefixIntegralTemp), (cycleEven, cycleOdd)) =>
+        let isOffset := isEven (length prefix + cycleOffset) in
+        let cycleIntegral := if isOffset then cycleOdd else cycleEven in
+        let cycleFractionalTemp := if isOffset then cycleEven else cycleOdd in
+        let cycleFractional := if isEmpty cycleFractionalTemp then [0] else cycleFractionalTemp in
+        let prefixIntegral := if isEmpty prefixIntegralTemp then [0] else prefixIntegralTemp in
+        if all (= 0) cycleIntegral then
+            sign ^ concatenate prefixIntegral ^ "." ^ concatenate prefixFractional ^ "(" ^ concatenate cycleFractional ^ ")^w"
+        else
+            snd (stdFormat "" ((if sign = "+" then 0 else 1) :: prefix) cycle) ^ " (NOT A VALID REAL NUMBER)" ^ toString (prefixIntegral, cycleIntegral, prefixFractional, cycleFractional)
+    end.
+
+Define realFormat var prefix cycle :=
+    (var,
+        if isEmpty prefix then
+            realFormatHelper (if head cycle = 0 then "+" else "-") 1 (tail prefix) cycle
+        else
+            realFormatHelper (if head prefix = 0 then "+" else "-") 0 (tail prefix) cycle
+    ).
+

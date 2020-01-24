@@ -1,0 +1,9 @@
+#import("reals.pn")
+
+Restrict x, y are real.
+
+Display example realFormat { x = 1 } .
+Display example realFormat { real(y) & 2*y = 1 } .
+
+Display example realFormat { real(y) & 3*y = 11 } .
+

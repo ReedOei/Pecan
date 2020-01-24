@@ -530,7 +530,7 @@ class PralineIf(PralineTerm):
             else:
                 return self.e2.evaluate(prog)
         else:
-            raise TypeError('cond should evaluate to a bool in "{}"'.format(self))
+            raise TypeError('cond should evaluate to a bool in "{}", got "{}"'.format(self, cond_eval))
 
     def __eq__(self, other):
         return other is not None and type(other) is self.__class__ and self.cond == other.cond and self.e1 == other.e1 and self.e2 == other.e2
