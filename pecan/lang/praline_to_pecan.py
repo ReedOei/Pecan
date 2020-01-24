@@ -98,24 +98,6 @@ class PralineToPecan(IRTransformer):
         else:
             return self.to_ir(FormulaFalse())
 
-    def transform_PralineEq(self, node):
-        return self.to_ir(Equals(self.transform(node.a), self.transform(node.b)))
-
-    def transform_PralineNe(self, node):
-        return self.to_ir(NotEquals(self.transform(node.a), self.transform(node.b)))
-
-    def transform_PralineGe(self, node):
-        return self.to_ir(GreaterEquals(self.transform(node.a), self.transform(node.b)))
-
-    def transform_PralineLe(self, node):
-        return self.to_ir(LessEquals(self.transform(node.a), self.transform(node.b)))
-
-    def transform_PralineGt(self, node):
-        return self.to_ir(Greater(self.transform(node.a), self.transform(node.b)))
-
-    def transform_PralineLt(self, node):
-        return self.to_ir(Less(self.transform(node.a), self.transform(node.b)))
-
     def transform_PralineDo(self, node):
         raise Exception('"{}" cannot be translated into to Pecan'.format(node))
 
