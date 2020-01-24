@@ -221,13 +221,18 @@ class TypeInferer(IRTransformer):
     def transform_Call(self, node: Call):
         new_args = [self.transform(arg) for arg in node.args]
 
+        arg_map = {}
         temp_args = []
         for arg in new_args:
             if type(arg) is VarRef:
                 temp_args.append(arg)
+
+                arg_map[arg] = arg
             else:
                 new_var = VarRef(self.prog.fresh_name()).with_type(arg.get_type())
                 temp_args.append(new_var)
+
+                arg_map[new_var] = arg
 
         resolved_call = self.prog.lookup_dynamic_call(node.name, temp_args)
         resolved_pred = self.prog.lookup_pred_by_name(resolved_call.name)
@@ -235,7 +240,12 @@ class TypeInferer(IRTransformer):
         temp_type_env = TypeEnv(self.prog)
 
         final_args = []
-        for formal, arg in zip(resolved_pred.args, new_args):
+        for formal, temp_arg in zip(resolved_pred.args, resolved_call.args):
+            if temp_arg in arg_map:
+                arg = arg_map[temp_arg]
+            else:
+                arg = temp_arg
+
             if formal.var_name in resolved_pred.restriction_env:
                 # TODO: We choose the "last" one, because there is generally only one, and the last one is usually the most specific. This is not always right, however.
                 restrictions = resolved_pred.restriction_env[formal.var_name]
@@ -246,7 +256,7 @@ class TypeInferer(IRTransformer):
             else:
                 final_args.append(arg)
 
-        return Call(node.name, final_args)
+        return Call(resolved_pred.name, final_args)
 
     def transform_NamedPred(self, node):
         self.prog.enter_scope(node.restriction_env)
@@ -262,8 +272,20 @@ class TypeInferer(IRTransformer):
 
     def transform_FunctionExpression(self, node):
         temp_args = list(node.args)
-        temp_args[node.val_idx] = VarRef(self.prog.fresh_name()).with_type(InferredType())
+        out_var_ref = VarRef(self.prog.fresh_name()).with_type(InferredType())
+        temp_args[node.val_idx] = out_var_ref
+
         new_call = self.transform_Call(Call(node.pred_name, temp_args))
-        res_type = new_call.args[node.val_idx].get_type()
-        return FunctionExpression(new_call.name, new_call.args, node.val_idx).with_type(res_type)
+
+        res_type = None
+        new_idx = -1
+        for idx, arg in enumerate(new_call.args):
+            if type(arg) is VarRef and arg.var_name == out_var_ref.var_name:
+                res_type = arg.get_type()
+                new_idx = idx
+
+        if res_type is None:
+            raise Exception('Missing output variable in resolved call: (was {}, resolved to {}, looking for {})'.format(node, new_call, out_var_ref))
+
+        return FunctionExpression(new_call.name, new_call.args, new_idx).with_type(res_type)
 

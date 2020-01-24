@@ -228,7 +228,9 @@ class FunctionExpression(IRExpression):
         return transformer.transform_FunctionExpression(self)
 
     def show(self):
-        return '{}({})'.format(self.pred_name, ', '.join(map(repr, self.args)))
+        temp_args = list(map(repr, self.args))
+        temp_args[self.val_idx] = 'out({})'.format(self.args[self.val_idx])
+        return '{}({})'.format(self.pred_name, ', '.join(temp_args))
 
 class AutomatonArithmeticError(Exception):
     pass
