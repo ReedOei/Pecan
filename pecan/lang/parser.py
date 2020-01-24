@@ -290,10 +290,14 @@ class PecanTransformer(Transformer):
     def var_ref(self, name):
         return VarRef(str(name))
 
-    formula_true = FormulaTrue
-    formula_false = FormulaFalse
+    def formula_true(self):
+        return BoolConst(True)
 
-    spot_formula = SpotFormula
+    def formula_false(self):
+        return BoolConst(False)
+
+    def spot_formula(self, formula_str):
+        return SpotFormula(formula_str)
 
 from pecan.lang.lark.parser import Lark_StandAlone
 

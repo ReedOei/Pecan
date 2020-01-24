@@ -36,7 +36,9 @@ class BuchiAutomaton(Automaton):
     def substitute(self, subs):
         return BuchiAutomaton(BuchiTransformer(self.postprocess(), Substitution(subs).substitute).transform())
 
-    def project(self, var_names):
+    def project(self, var_refs):
+        from pecan.lang.ir.prog import VarRef
+        var_names = [v.var_name for v in var_refs if type(v) is VarRef]
         return BuchiAutomaton(BuchiProjection(self.postprocess(), var_names).project())
 
     def is_empty(self):

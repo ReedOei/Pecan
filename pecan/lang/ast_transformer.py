@@ -33,10 +33,7 @@ class AstTransformer:
     def transform_Implies(self, node):
         return Implies(self.transform(node.a), self.transform(node.b))
 
-    def transform_FormulaTrue(self, node):
-        return node
-
-    def transform_FormulaFalse(self, node):
+    def transform_BoolConst(self, node):
         return node
 
     def transform_DirectiveSaveAut(self, node):

@@ -62,23 +62,17 @@ class Implies(Predicate):
     def __repr__(self):
         return '({} ⟹  {})'.format(self.a, self.b)
 
-class FormulaTrue(Predicate):
-    def __init__(self):
+class BoolConst(Predicate):
+    def __init__(self, bool_val):
         super().__init__()
+        self.bool_val = bool_val
 
     def transform(self, transformer):
-        return transformer.transform_FormulaTrue(self)
+        return transformer.transform_BoolConst(self)
 
     def __repr__(self):
-        return '⊤'
-
-class FormulaFalse(Predicate):
-    def __init__(self):
-        super().__init__()
-
-    def transform(self, transformer):
-        return transformer.transform_FormulaFalse(self)
-
-    def __repr__(self):
-        return '⊥'
+        if self.bool_val:
+            return '⊤'
+        else:
+            return '⊥'
 

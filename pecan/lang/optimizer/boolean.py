@@ -25,53 +25,57 @@ class BooleanOptimizer(BasicOptimizer):
             self.changed = True
             return self.transform(Disjunction(Less(node.a.b, node.a.a), Equals(node.a.a, node.a.b)))
 
-        elif type(node.a) is FormulaTrue:
+        elif type(node.a) is BoolConst:
             self.changed = True
-            return FormulaFalse()
-
-        elif type(node.a) is FormulaFalse:
-            self.changed = True
-            return FormulaTrue()
+            return BoolConst(not node.a.bool_val)
 
         else:
             return super().transform_Complement(node)
 
     def transform_Conjunction(self, node):
-        if type(node.a) is FormulaTrue:
+        if type(node.a) is BoolConst:
             self.changed = True
-            return self.transform(node.b)
-        elif type(node.a) is FormulaFalse:
+
+            if node.a.bool_val:
+                return self.transform(node.b)
+            else:
+                return BoolConst(False)
+
+        elif type(node.b) is BoolConst:
             self.changed = True
-            return FormulaFalse()
-        elif type(node.b) is FormulaFalse:
-            self.changed = True
-            return FormulaFalse()
-        elif type(node.b) is FormulaTrue:
-            self.changed = True
-            return self.transform(node.a)
+
+            if node.b.bool_val:
+                return self.transform(node.a)
+            else:
+                return BoolConst(False)
+
         else:
             return super().transform_Conjunction(node)
 
     def transform_Disjunction(self, node):
-        if type(node.a) is FormulaTrue:
+        if type(node.a) is BoolConst:
             self.changed = True
-            return FormulaTrue()
-        elif type(node.a) is FormulaFalse:
+
+            if node.a.bool_val:
+                return BoolConst(True)
+            else:
+                return self.transform(node.b)
+
+        elif type(node.b) is BoolConst:
             self.changed = True
-            return self.transform(node.b)
-        elif type(node.b) is FormulaFalse:
-            self.changed = True
-            return self.transform(node.a)
-        elif type(node.b) is FormulaTrue:
-            self.changed = True
-            return FormulaTrue()
+
+            if node.b.bool_val:
+                return BoolConst(True)
+            else:
+                return self.transform(node.a)
+
         else:
             return super().transform_Disjunction(node)
 
     def transform_Equals(self, node: Equals):
         if node.a == node.b:
             self.changed = True
-            return FormulaTrue()
+            return BoolConst(True)
         else:
             return super().transform_Equals(node)
 

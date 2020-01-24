@@ -93,10 +93,7 @@ class PralineToPecan(IRTransformer):
         return self.to_ir(VarRef(node.val))
 
     def transform_PralineBool(self, node):
-        if node.val:
-            return self.to_ir(FormulaTrue())
-        else:
-            return self.to_ir(FormulaFalse())
+        return self.to_ir(BoolConst(node.val))
 
     def transform_PralineDo(self, node):
         raise Exception('"{}" cannot be translated into to Pecan'.format(node))

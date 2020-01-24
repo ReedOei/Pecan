@@ -34,11 +34,8 @@ class IRTransformer:
     def transform_Complement(self, node):
         return Complement(self.transform(node.a))
 
-    def transform_FormulaTrue(self, node):
-        return node
-
-    def transform_FormulaFalse(self, node):
-        return node
+    def transform_BoolConst(self, node):
+        return BoolConst(node.bool_val)
 
     def transform_DirectiveSaveAut(self, node):
         return DirectiveSaveAut(self.transform(node.filename), self.transform(node.pred_name))

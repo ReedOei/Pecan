@@ -27,13 +27,7 @@ class Add(BinaryIRExpression):
 
         aut_add = prog.call('adder', [val_a, val_b, self.label_var()])
 
-        proj_vars = set()
-        if type(self.a) is not VarRef:
-            proj_vars.add(val_a.var_name)
-        if type(self.b) is not VarRef:
-            proj_vars.add(val_b.var_name)
-
-        result = (aut_a & aut_b & aut_add).project(proj_vars)
+        result = self.project_intermediates(val_a, val_b, aut_a & aut_b & aut_add)
 
         return (result, self.label_var())
 
@@ -60,12 +54,7 @@ class Sub(BinaryIRExpression):
 
         aut_sub = prog.call('adder', [self.label_var(), val_b, val_a])
 
-        proj_vars = set()
-        if type(self.a) is not VarRef:
-            proj_vars.add(val_a.var_name)
-        if type(self.b) is not VarRef:
-            proj_vars.add(val_b.var_name)
-        result = (aut_a & aut_b & aut_sub).project(proj_vars)
+        result = self.project_intermediates(val_a, val_b, aut_a & aut_b & aut_sub)
         return (result, self.label_var())
 
     def transform(self, transformer):
@@ -74,7 +63,6 @@ class Sub(BinaryIRExpression):
     def evaluate_int(self, prog):
         assert self.is_int
         return self.a.evaluate_int(prog) - self.b.evaluate_int(prog)
-
 
 #TODO: Implement division if/when possible
 class Div(BinaryIRExpression):
@@ -180,20 +168,14 @@ class Equals(BinaryIRPredicate):
 
     def evaluate_node(self, prog):
         if self.a.is_int and self.b.is_int:
-            return (FormulaTrue() if self.a.evaluate_int(prog) == self.b.evaluate_int(prog) else FormulaFalse()).evaluate(prog)
+            return BoolConst(self.a.evaluate_int(prog) == self.b.evaluate_int(prog)).evaluate(prog)
 
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
 
         eq_aut = prog.call('equal', [val_a, val_b])
 
-        proj_vars = set()
-        if type(self.a) is not VarRef:
-            proj_vars.add(val_a.var_name)
-        if type(self.b) is not VarRef:
-            proj_vars.add(val_b.var_name)
-
-        return (eq_aut & aut_a & aut_b).project(proj_vars)
+        return self.project_intermediates(val_a, val_b, eq_aut & aut_a & aut_b)
 
     def transform(self, transformer):
         return transformer.transform_Equals(self)
@@ -207,20 +189,14 @@ class Less(BinaryIRPredicate):
 
     def evaluate_node(self, prog):
         if self.a.is_int and self.b.is_int:
-            return (FormulaTrue() if self.a.evaluate_int(prog) < self.b.evaluate_int(prog) else FormulaFalse()).evaluate(prog)
+            return BoolConst(self.a.evaluate_int(prog) < self.b.evaluate_int(prog)).evaluate(prog)
 
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
 
         aut_less = prog.call('less', [val_a, val_b])
 
-        proj_vars = set()
-        if type(self.a) is not VarRef:
-            proj_vars.add(val_a.var_name)
-        if type(self.b) is not VarRef:
-            proj_vars.add(val_b.var_name)
-
-        return (aut_a & aut_b & aut_less).project(proj_vars)
+        return self.project_intermediates(val_a, val_b, aut_a & aut_b & aut_less)
 
     def transform(self, transformer):
         return transformer.transform_Less(self)

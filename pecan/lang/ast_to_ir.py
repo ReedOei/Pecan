@@ -50,11 +50,8 @@ class ASTToIR(AstTransformer):
         new_b = self.transform(node.b)
         return ir.Disjunction(ir.Complement(new_a), new_b)
 
-    def transform_FormulaTrue(self, node):
-        return ir.FormulaTrue()
-
-    def transform_FormulaFalse(self, node):
-        return ir.FormulaFalse()
+    def transform_BoolConst(self, node):
+        return ir.BoolConst(node.bool_val)
 
     def transform_DirectiveSaveAut(self, node):
         return ir.DirectiveSaveAut(self.transform(node.filename), self.transform(node.pred_name))

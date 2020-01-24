@@ -26,7 +26,7 @@ class Automaton:
     def substitute(self, subs):
         raise NotImplementedError
 
-    def project(self, var_names):
+    def project(self, var_refs):
         raise NotImplementedError
 
     def is_empty(self):
@@ -91,7 +91,7 @@ class TrueAutomaton(Automaton):
     def substitute(self, subs):
         return self
 
-    def project(self, var_names):
+    def project(self, var_refs):
         return self
 
     def is_empty(self):
@@ -126,7 +126,7 @@ class FalseAutomaton(Automaton):
     def substitute(self, subs):
         return self
 
-    def project(self, var_names):
+    def project(self, var_refs):
         return self
 
     def is_empty(self):

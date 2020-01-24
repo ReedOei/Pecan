@@ -22,8 +22,8 @@ class VarRef(IRExpression):
 
     def evaluate(self, prog):
         # The automata accepts everything (because this isn't a predicate)
-        from pecan.lang.ir.bool import FormulaTrue
-        return FormulaTrue().evaluate(prog), self
+        from pecan.lang.ir.bool import BoolConst
+        return BoolConst(True).evaluate(prog), self
 
     def transform(self, transformer):
         return transformer.transform_VarRef(self)

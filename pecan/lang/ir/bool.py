@@ -57,41 +57,29 @@ class Complement(UnaryIRPredicate):
     def __repr__(self):
         return '(¬{})'.format(self.a)
 
-class FormulaTrue(IRPredicate):
-    def __init__(self):
+class BoolConst(IRPredicate):
+    def __init__(self, bool_val):
         super().__init__()
+        self.bool_val = bool_val
 
     def evaluate_node(self, prog):
-        return TrueAutomaton()
+        if self.bool_val:
+            return TrueAutomaton()
+        else:
+            return FalseAutomaton()
 
     def transform(self, transformer):
-        return transformer.transform_FormulaTrue(self)
+        return transformer.transform_BoolConst(self)
 
     def __repr__(self):
-        return '⊤'
+        if self.bool_val:
+            return '⊤'
+        else:
+            return '⊥'
 
     def __eq__(self, other):
-        return other is not None and type(other) is self.__class__
+        return other is not None and type(other) is self.__class__ and self.bool_val == other.bool_val
 
     def __hash__(self):
-        return 0 # No fields to hash
-
-class FormulaFalse(IRPredicate):
-    def __init__(self):
-        super().__init__()
-
-    def evaluate_node(self, prog):
-        return FalseAutomaton()
-
-    def transform(self, transformer):
-        return transformer.transform_FormulaFalse(self)
-
-    def __repr__(self):
-        return '⊥'
-
-    def __eq__(self, other):
-        return other is not None and type(other) is self.__class__
-
-    def __hash__(self):
-        return 0 # No fields to hash
+        return hash(self.bool_val) # No fields to hash
 
