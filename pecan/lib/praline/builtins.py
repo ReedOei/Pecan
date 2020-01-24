@@ -194,8 +194,8 @@ class Equal(Builtin):
         super().__init__(PralineVar('equal'), [PralineVar('a'), PralineVar('b')])
 
     def evaluate(self, prog):
-        a_val = prog.praline_lookup('a').evaluate(prog).get_value()
-        b_val = prog.praline_lookup('b').evaluate(prog).get_value()
+        a_val = prog.praline_lookup('a').evaluate(prog)
+        b_val = prog.praline_lookup('b').evaluate(prog)
         return PralineBool(a_val == b_val)
 
 builtins = [

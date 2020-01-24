@@ -3,7 +3,7 @@ Define boolToInt b := if b then 1 else 0.
 Display boolToInt true.
 Display boolToInt false.
 
-Define test := (\i -> i + 1) ∘ boolToInt .
+Define test := (\i => i + 1) ∘ boolToInt .
 
 Display test true.
 

@@ -10,9 +10,10 @@ cache:
 
 before_install:
     - bash install-spot.sh
+    - pip3 install pytest
     - export PYTHONPATH="$HOME/.local/lib/python3.6/site-packages":"$PYTHONPATH"
 
 # Run the unit test
 script:
-    - python3 run_tests.py
+    - pytest --verbose test
 
