@@ -221,6 +221,7 @@ class TypeInferer(IRTransformer):
     def transform_Call(self, node: Call):
         new_args = [self.transform(arg) for arg in node.args]
 
+        # Temp args is necessary, because the resolving dynamic calls only works with variables for now (TODO)
         arg_map = {}
         temp_args = []
         for arg in new_args:

@@ -15,9 +15,6 @@ class TypedIRLowering(IRTransformer):
     def __init__(self):
         super().__init__()
 
-    def transform_Index(self, node):
-        return Call(node.var_name, [node.index_expr])
-
     def transform_EqualsCompareRange(self, node):
         idx_var = VarRef(self.current_program.fresh_name()).with_type(node.index_a.start.get_type())
 

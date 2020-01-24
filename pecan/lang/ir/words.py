@@ -3,19 +3,6 @@
 
 from pecan.lang.ir import *
 
-class Index(IRPredicate):
-    def __init__(self, var_name, index_expr):
-        super().__init__()
-        self.var_name = var_name
-        self.index_expr = index_expr
-        self.is_int = False
-
-    def transform(self, transformer):
-        return transformer.transform_Index(self)
-
-    def __repr__(self):
-        return '{}[{}]'.format(self.var_name, self.index_expr)
-
 class IndexRange(IRPredicate):
     def __init__(self, var_name, start, end):
         super().__init__()
@@ -27,7 +14,7 @@ class IndexRange(IRPredicate):
         return Less(Add(self.start, idx_var).with_type(self.start.get_type()), self.end)
 
     def index_expr(self, idx_var):
-        return Index(self.var_name, Add(self.start, idx_var).with_type(self.start.get_type()))
+        return Call(self.var_name, [Add(self.start, idx_var).with_type(self.start.get_type())])
 
     def transform(self, transformer):
         return transformer.transform_IndexRange(self)

@@ -89,9 +89,6 @@ class IRTransformer:
     def transform_Neg(self, node):
         return Neg(self.transform(node.a)).with_type(node.get_type())
 
-    def transform_Index(self, node):
-        return Index(node.var_name, self.transform(node.index_expr))
-
     def transform_IndexRange(self, node):
         return IndexRange(node.var_name, self.transform(node.start), self.transform(node.end))
 

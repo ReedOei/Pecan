@@ -167,10 +167,7 @@ class ASTToIR(AstTransformer):
         return self.transform(Sub(IntConst(0), node.a))
 
     def transform_Index(self, node):
-        self.expr_depth += 1
-        res = ir.Index(node.var_name, self.transform(node.index_expr))
-        self.expr_depth -= 1
-        return res
+        return self.transform(Call(node.var_name, [node.index_expr]))
 
     def transform_IndexRange(self, node):
         self.expr_depth += 1
