@@ -1,12 +1,8 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-import sys
-
 import spot
 
-from pecan.tools.automaton_tools import TruthValue
-from pecan.tools.convert_hoa import convert_aut
 from pecan.lang.ast import *
 
 class DirectiveSaveAut(ASTNode):

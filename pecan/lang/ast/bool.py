@@ -28,10 +28,9 @@ class Disjunction(Predicate):
         return '({} ∨ {})'.format(self.a, self.b)
 
 class Complement(Predicate):
-    def __init__(self, a, use_not_equals=True):
+    def __init__(self, a):
         super().__init__()
         self.a = a
-        self.use_not_equals = use_not_equals
 
     def transform(self, transformer):
         return transformer.transform_Complement(self)

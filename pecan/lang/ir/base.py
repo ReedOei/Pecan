@@ -1,7 +1,6 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-import spot
 import time
 
 from pecan.settings import settings
@@ -15,7 +14,7 @@ class IRNode:
         return label
 
     def __init__(self):
-        #TODO: detect used labels and avoid those
+        # TODO: detect used labels and avoid those
         self.label = IRNode.fresh_name()
         self.type = None
         self.parent = None
@@ -39,27 +38,24 @@ class IRNode:
         return self.type
 
     def show_aut_stats(self, prog, aut, desc=None):
-        sn, en, acc = aut.num_states(), aut.num_edges(), aut.get_acceptance()
+        sn, en = aut.num_states(), aut.num_edges()
 
         if desc is None:
-            settings.log(1, self.indented(prog, 'Automaton (acc: {}) has {} states and {} edges'.format(acc, sn, en)))
+            settings.log(1, self.indented(prog, 'Automaton has {} states and {} edges'.format(sn, en)))
         else:
-            settings.log(1, self.indented(prog, 'Automaton (acc: {}) has {} states and {} edges {}'.format(acc, sn, en, desc)))
+            settings.log(1, self.indented(prog, 'Automaton has {} states and {} edges {}'.format(sn, en, desc)))
 
     def indented(self, prog, s):
         return '{}{}'.format(' ' * prog.eval_level, s)
 
     def simplify(self, prog, aut):
         self.show_aut_stats(prog, aut, desc='before simplify')
-        # if aut.is_deterministic():
-        #     aut = spot.minimize_obligation(aut)
-        #     self.show_aut_stats(prog, aut, desc='after minimize_obligation')
 
-        if aut.num_edges() < 10000:
+        if aut.num_edges() < 50000:
             aut.merge_edges()
             self.show_aut_stats(prog, aut, desc='after merge_edges')
 
-        if aut.num_states() < 1000:
+        if aut.num_states() < 5000:
             aut.merge_states()
             self.show_aut_stats(prog, aut, desc='after merge_states')
 

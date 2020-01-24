@@ -4,8 +4,6 @@
 from pecan.lang.ir_transformer import IRTransformer
 from pecan.lang.ir import *
 
-from pecan.tools.automaton_tools import TruthValue
-
 def implies(a, b):
     return Disjunction(Complement(a), b)
 

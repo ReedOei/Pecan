@@ -3,6 +3,8 @@
 
 from pecan.lang.ir import *
 
+from pecan.automata.automaton import TrueAutomaton, FalseAutomaton
+
 class Conjunction(BinaryIRPredicate):
     def __init__(self, a, b):
         super().__init__(a, b)
@@ -15,7 +17,7 @@ class Conjunction(BinaryIRPredicate):
 
         b_aut = self.b.evaluate(prog)
 
-        return spot.product(a_aut, b_aut)
+        return a_aut & b_aut
 
     def transform(self, transformer):
         return transformer.transform_Conjunction(self)
@@ -34,7 +36,7 @@ class Disjunction(BinaryIRPredicate):
         if a_aut.is_empty():
             return b_aut
 
-        return spot.product_or(a_aut, b_aut)
+        return a_aut | b_aut
 
     def transform(self, transformer):
         return transformer.transform_Disjunction(self)
@@ -43,16 +45,11 @@ class Disjunction(BinaryIRPredicate):
         return '({} ∨ {})'.format(self.a, self.b)
 
 class Complement(UnaryIRPredicate):
-    def __init__(self, a, use_not_equals=True):
+    def __init__(self, a):
         super().__init__(a)
-        self.use_not_equals = use_not_equals
 
     def evaluate_node(self, prog):
-        # from pecan.lang.ir.arith import Equals, NotEquals
-        # if self.use_not_equals and type(self.a) is Equals:
-        #     return NotEquals(self.a.a, self.a.b).evaluate(prog)
-        # else:
-        return spot.complement(self.a.evaluate(prog))
+        return self.a.evaluate(prog).complement()
 
     def transform(self, transformer):
         return transformer.transform_Complement(self)
@@ -65,7 +62,7 @@ class FormulaTrue(IRPredicate):
         super().__init__()
 
     def evaluate_node(self, prog):
-        return spot.translate("1")
+        return TrueAutomaton()
 
     def transform(self, transformer):
         return transformer.transform_FormulaTrue(self)
@@ -84,7 +81,7 @@ class FormulaFalse(IRPredicate):
         super().__init__()
 
     def evaluate_node(self, prog):
-        return spot.translate("0")
+        return FalseAutomaton()
 
     def transform(self, transformer):
         return transformer.transform_FormulaFalse(self)

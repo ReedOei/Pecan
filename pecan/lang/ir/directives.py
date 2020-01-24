@@ -5,10 +5,10 @@ import sys
 
 import spot
 
-from pecan.tools.automaton_tools import TruthValue
 from pecan.tools.shuffle_automata import ShuffleAutomata
 from pecan.tools.convert_hoa import convert_aut
 from pecan.tools.labeled_aut_converter import convert_labeled_aut
+from pecan.automata.buchi import BuchiAutomaton
 from pecan.lang.ir import *
 
 from pecan.settings import settings
@@ -116,7 +116,7 @@ class DirectiveAssertProp(IRNode):
         self.pred_name = pred_name
 
     def pred_truth_value(self, prog):
-        return TruthValue(Call(self.pred_name, [])).truth_value(prog)
+        return Call(self.pred_name, []).evaluate(prog).truth_value()
 
     def evaluate(self, prog):
         settings.log(f'[INFO] Checking if {self.pred_name} is {self.display_truth_val()}.')
@@ -163,7 +163,7 @@ class DirectiveLoadAut(IRNode):
 
         if self.aut_format == 'hoa':
             # TODO: Rename the APs of the loaded automaton to be the same as the args specified
-            aut = spot.automaton(realpath)
+            aut = BuchiAutomaton(spot.automaton(realpath))
         elif self.aut_format == 'walnut':
             aut = convert_aut(realpath, [v.var_name for v in self.pred.args])
         elif self.aut_format == 'pecan':
@@ -273,7 +273,7 @@ class DirectiveShuffle(IRNode):
     def evaluate(self, prog):
         a_aut = prog.call(self.pred_a.name, self.pred_a.args)
         b_aut = prog.call(self.pred_b.name, self.pred_b.args)
-        aut_res = ShuffleAutomata(a_aut, b_aut).shuffle(self.disjunction)
+        aut_res = BuchiAutomaton(ShuffleAutomata(BuchiAutomaton.as_buchi(a_aut).get_aut(), BuchiAutomaton.as_buchi(b_aut).get_aut()).shuffle(self.disjunction))
         prog.preds[self.output_pred.name] = NamedPred(self.output_pred.name, self.output_pred.args, {}, AutLiteral(aut_res))
 
         return None

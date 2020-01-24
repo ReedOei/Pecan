@@ -3,14 +3,14 @@
 
 from colorama import Fore, Style
 
-import time
 import os
 from functools import reduce
+import time
 
 from lark import Lark, Transformer, v_args
 import spot
 
-from pecan.tools.automaton_tools import AutomatonTransformer, Substitution
+from pecan.automata.buchi import BuchiAutomaton
 from pecan.lang.ir.base import *
 from pecan.settings import settings
 
@@ -22,7 +22,8 @@ class VarRef(IRExpression):
 
     def evaluate(self, prog):
         # The automata accepts everything (because this isn't a predicate)
-        return spot.formula('1').translate(), self
+        from pecan.lang.ir.bool import FormulaTrue
+        return FormulaTrue().evaluate(prog), self
 
     def transform(self, transformer):
         return transformer.transform_VarRef(self)
@@ -74,9 +75,9 @@ class SpotFormula(IRPredicate):
 
     def evaluate(self, prog):
         try:
-            return spot.translate(self.formula_str)
+            return BuchiAutomaton(spot.translate(self.formula_str))
         except:
-            return spot.parse_word(self.formula_str).as_automaton()
+            return BuchiAutomaton(spot.parse_word(self.formula_str).as_automaton())
 
     def transform(self, transformer):
         return transformer.transform_SpotFormula(self)
@@ -256,15 +257,13 @@ class NamedPred(IRNode):
         prog.enter_scope(dict(self.restriction_env))
 
         if self.body_evaluated is None:
-            # We postprocess here because we will do it every time we call anyway (in AutomatonTransformer)
-            self.body_evaluated = self.body.evaluate(prog).postprocess('BA')
+            self.body_evaluated = self.body.evaluate(prog)
 
         if arg_names is None or len(arg_names) == 0:
             result = self.body_evaluated
         else:
-            subs_dict = {arg.var_name: spot.formula_ap(name.var_name) for arg, name in zip(self.args, arg_names)}
-            substitution = Substitution(subs_dict)
-            result = AutomatonTransformer(self.body_evaluated, substitution.substitute).transform()
+            subs_dict = {arg.var_name: name.var_name for arg, name in zip(self.args, arg_names)}
+            result = self.body_evaluated.substitute(subs_dict)
 
         prog.exit_scope()
 

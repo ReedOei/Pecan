@@ -5,9 +5,26 @@ from functools import reduce
 
 from pecan.lang.ir.praline import *
 
-from pecan.tools.automaton_tools import TruthValue
-
 from pecan.settings import settings
+
+def as_praline(val):
+    if type(val) is list:
+        result = PralineList(None, None)
+
+        for v in val[::-1]:
+            result = PralineList(as_praline(v), result)
+
+        return result
+    elif type(val) is str:
+        return PralineString(val)
+    elif type(val) is bool:
+        return PralineBool(val)
+    elif type(val) is int:
+        return PralineInt(val)
+    elif type(val) is tuple:
+        return PralineTuple([as_praline(v) for v in val])
+    else:
+        raise Exception("Can't convert {} ({}) to a Praline value".format(type(val), val))
 
 class Check(Builtin):
     def __init__(self):
@@ -15,7 +32,7 @@ class Check(Builtin):
 
     def evaluate(self, prog):
         pecan_node = prog.praline_lookup('t').evaluate(prog).pecan_term
-        result = TruthValue(pecan_node).truth_value(prog)
+        result = pecan_node.evaluate(prog).truth_value()
 
         return PralineBool(result == 'true')
 
@@ -82,56 +99,11 @@ class AcceptingWord(Builtin):
     def evaluate(self, prog):
         acc_word = prog.praline_lookup('pecanTerm').evaluate(prog).pecan_term.evaluate(prog).accepting_word()
 
-        if acc_word is None:
-            return PralineList(None, None)
-
-        acc_word.simplify()
-
-        var_vals = {}
-        var_names = []
-        for formula in list(acc_word.prefix) + list(acc_word.cycle):
-            for f in spot.atomic_prop_collect(spot.bdd_to_formula(formula)):
-                var_names.append(f.ap_name())
-        var_names = sorted(list(set(var_names)))
-        prefixes = self.to_binary(var_names, acc_word.prefix)
-        cycles = self.to_binary(var_names, acc_word.cycle)
-
         result = PralineList(None, None)
-        for var_name in var_names[::-1]:
-            word_tuple = PralineTuple([prefixes[var_name], cycles[var_name]])
-            result = PralineList(PralineTuple([PralineString(var_name), word_tuple]), result)
+        for var_name, vs in acc_word.items():
+            result = PralineList(PralineTuple([PralineString(var_name), as_praline(vs)]), result)
 
         return result
-
-    def to_binary(self, var_names, bdd_list):
-        var_vals = {k: PralineList(None, None) for k in var_names}
-
-        for bdd in bdd_list[::-1]:
-            formula = spot.bdd_to_formula(bdd)
-
-            next_vals = {}
-            self.process_formula(next_vals, formula)
-
-            # If we didn't find a value for a variable in this part of the formula, that means it can be either True or False.
-            # We arbitrarily choose False.
-            for var_name in var_names:
-                var_vals[var_name] = PralineList(next_vals.get(var_name, PralineBool(False)), var_vals[var_name])
-
-
-        return var_vals
-
-    def process_formula(self, next_vals, formula):
-        if formula._is(spot.op_ap):
-            next_vals[formula.ap_name()] = PralineBool(True)
-        elif formula._is(spot.op_Not):
-            next_vals[formula[0].ap_name()] = PralineBool(False)
-        elif formula._is(spot.op_And):
-            for i in range(formula.size()):
-                self.process_formula(next_vals, formula[i])
-        elif formula._is(spot.op_tt):
-            pass
-        else:
-            raise Exception('Cannot process formula: {}'.format(formula))
 
     def format_real(self, prefix, cycle):
         # It is possible for the whole number to be in the cycle (e.g., if the integral part is 0^w)

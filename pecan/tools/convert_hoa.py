@@ -2,6 +2,8 @@ import buddy
 import math
 import spot
 
+from pecan.automata.buchi import BuchiAutomaton
+
 # GLOBAL VARIABLES
 state_counter = -1
 states = dict()
@@ -110,49 +112,49 @@ def convert_aut(txt, inp_names = []):
         return convert_aut_lines(f.readlines(), inp_names)
 
 def convert_aut_lines(lines, inp_names = []):
-        reset_global()
+    reset_global()
 
-        bases = []
-        base = 0
+    bases = []
+    base = 0
 
-        for line in lines:
-            if line[0] == '{':
-                bases = adjust_base(line)
-                for i in range(len(bases)):
-                    bases[i] = math.ceil(math.log(bases[i], 2))
-                base = max(bases)
-            elif '->' in line:
-                edge(line.strip(), base)
-            elif len(line) > 1:
-                state_line(line.strip())
+    for line in lines:
+        if line[0] == '{':
+            bases = adjust_base(line)
+            for i in range(len(bases)):
+                bases[i] = math.ceil(math.log(bases[i], 2))
+            base = max(bases)
+        elif '->' in line:
+            edge(line.strip(), base)
+        elif len(line) > 1:
+            state_line(line.strip())
 
-        aut = spot.make_twa_graph()
-        aps = []
-        for i in range(len(bases)):
-            # should require same length?
-            if len(inp_names) > i:
-                aps.append(buddy.bdd_ithvar(aut.register_ap(inp_names[i])))
-            else:
-                aps.append(buddy.bdd_ithvar(aut.register_ap("p" + str(i + 1))))
+    aut = spot.make_twa_graph()
+    aps = []
+    for i in range(len(bases)):
+        # should require same length?
+        if len(inp_names) > i:
+            aps.append(buddy.bdd_ithvar(aut.register_ap(inp_names[i])))
+        else:
+            aps.append(buddy.bdd_ithvar(aut.register_ap("p" + str(i + 1))))
 
-        aut.set_buchi()
-        aut.new_states(len(states))
-        aut.set_init_state(0)
+    aut.set_buchi()
+    aut.new_states(len(states))
+    aut.set_init_state(0)
 
-        for i in states:
-            state = states[i]
-            for j in state.keys():
-                if j != "acc":
-                    for end_state in state[j]:
-                        if end_state[0] == 'o':
-                            end_state = org_states[int(end_state[1:])]
+    for i in states:
+        state = states[i]
+        for j in state.keys():
+            if j != "acc":
+                for end_state in state[j]:
+                    if end_state[0] == 'o':
+                        end_state = org_states[int(end_state[1:])]
 
-                        label = make_edge(aps, j)
+                    label = make_edge(aps, j)
 
-                        if states[end_state]["acc"]:
-                            aut.new_edge(int(i), int(end_state), label, [0])
-                        else:
-                            aut.new_edge(int(i), int(end_state), label)
+                    if states[end_state]["acc"]:
+                        aut.new_edge(int(i), int(end_state), label, [0])
+                    else:
+                        aut.new_edge(int(i), int(end_state), label)
 
-        return aut
+    return BuchiAutomaton(aut)
 

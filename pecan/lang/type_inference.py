@@ -4,8 +4,6 @@
 from pecan.lang.ir_transformer import IRTransformer
 from pecan.lang.ir import *
 
-from pecan.tools.automaton_tools import TruthValue
-
 class Type:
     def __init__(self):
         pass
@@ -123,18 +121,17 @@ class TypeEnv:
                 return t_a
             else:
                 # Unification didn't easily succeed, so drop down to actually using some theorem proving power to check
-                # if the types are compatible
+                # if the types are compatible (e.g., subtyping check)
                 temp_var = VarRef(self.prog.fresh_name())
-                # TODO: Abstract out a subtyping checker thing here
-                # TODO: Can probably optimize this by using spot's ability to check containment so we don't need to recompute/complement as much
-                tval1 = TruthValue(Disjunction(Complement(t_a.subs_first(temp_var)), t_b.subs_first(temp_var))).truth_value(self.prog)
-                tval2 = TruthValue(Disjunction(Complement(t_b.subs_first(temp_var)), t_a.subs_first(temp_var))).truth_value(self.prog)
+                aut_a = t_a.subs_first(temp_var).evaluate(self.prog)
+                aut_b = t_b.subs_first(temp_var).evaluate(self.prog)
 
-                if tval1 == 'true' or tval2 == 'true':
+                # TODO: Optimize by pulling out repeated computations
+                if aut_a.contains(aut_b) and aut_b.contains(aut_a):
                     return t_a
-                elif tval1 == 'true':
+                elif aut_a.contains(aut_b):
                     return t_b
-                elif tval2 == 'true':
+                elif aut_b.contains(aut_a):
                     return t_a
                 else:
                     return None

@@ -4,7 +4,6 @@
 from functools import reduce
 
 from pecan.lang.ir.bool import *
-from pecan.tools.automaton_tools import Projection
 
 class Exists(IRPredicate):
     def __init__(self, var: VarRef, cond, pred):
@@ -25,7 +24,7 @@ class Exists(IRPredicate):
             prog.restrict(self.var.var_name, self.cond)
 
         aut = self.with_cond(new_pred).evaluate(prog)
-        res = Projection(aut, [self.var.var_name]).project()
+        res = aut.project([self.var.var_name])
 
         if self.cond is not None:
             prog.forget(self.var.var_name)

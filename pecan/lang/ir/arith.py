@@ -1,9 +1,6 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-import spot
-
-from pecan.tools.automaton_tools import Substitution, AutomatonTransformer, Projection
 from pecan.lang.ir import *
 
 # TODO: memoize same expressions
@@ -29,15 +26,15 @@ class Add(BinaryIRExpression):
         (aut_b, val_b) = self.b.evaluate(prog)
 
         aut_add = prog.call('adder', [val_a, val_b, self.label_var()])
-        result = spot.product(aut_b, aut_a)
-        result = spot.product(aut_add, result)
 
         proj_vars = set()
         if type(self.a) is not VarRef:
             proj_vars.add(val_a.var_name)
         if type(self.b) is not VarRef:
             proj_vars.add(val_b.var_name)
-        result = Projection(result, proj_vars).project()
+
+        result = (aut_a & aut_b & aut_add).project(proj_vars)
+
         return (result, self.label_var())
 
     def transform(self, transformer):
@@ -62,15 +59,13 @@ class Sub(BinaryIRExpression):
         (aut_b, val_b) = self.b.evaluate(prog)
 
         aut_sub = prog.call('adder', [self.label_var(), val_b, val_a])
-        result = spot.product(aut_b, aut_a)
-        result = spot.product(aut_sub, result)
 
         proj_vars = set()
         if type(self.a) is not VarRef:
             proj_vars.add(val_a.var_name)
         if type(self.b) is not VarRef:
             proj_vars.add(val_b.var_name)
-        result = Projection(result, proj_vars).project()
+        result = (aut_a & aut_b & aut_sub).project(proj_vars)
         return (result, self.label_var())
 
     def transform(self, transformer):
@@ -81,7 +76,7 @@ class Sub(BinaryIRExpression):
         return self.a.evaluate_int(prog) - self.b.evaluate_int(prog)
 
 
-#TODO:
+#TODO: Implement division if/when possible
 class Div(BinaryIRExpression):
     def __init__(self, a, b):
         super().__init__(a, b)
@@ -98,18 +93,6 @@ class Div(BinaryIRExpression):
             return IntConst(self.evaluate_int(prog)).with_type(self.get_type()).evaluate(prog)
 
         assert False
-        b = self.b.evaluate_int(prog)
-        if b == 1:
-            return self.a.evaluate(prog)
-
-        (aut_a, val_a) = self.a.evaluate(prog)
-        # (aut_b, val_b) = IntConst(b).evaluate(prog)
-        #TODO: change label, not finished
-        (aut_div,val_div) = Mul(self.b,spot.formula('1').translate()).evaluate(prog)
-        def build_div_formula(formula):
-            return Substitution({val_div: spot.formula(val_a), 'a': spot.formula('{}_div_{}'.format(val_a,val_a))}).substitute(formula)
-        #TODO: drop val_a, val_b in return
-        return (spot.product(aut_b, spot.product(aut_a, aut_div)), '{}_add_{}'.format(self.a,self.b))
 
     def evaluate_int(self, prog):
         assert self.is_int
@@ -151,7 +134,7 @@ class IntConst(IRExpression):
                 leq = Disjunction(Less(self.label_var(), b_const), Equals(self.label_var(), b_const))
                 b_in_0_1 = Conjunction(Less(zero_const, b_const), Less(b_const, self.label_var()))
                 formula_1 = Conjunction(Less(zero_const, self.label_var()), Complement(Exists(b_const, self.get_type().restrict(b_const), b_in_0_1)))
-                constants_map[(self.val, self.get_type())] = (formula_1.evaluate(prog).postprocess('BA'), self.label_var())
+                constants_map[(self.val, self.get_type())] = (formula_1.evaluate(prog), self.label_var())
             else:
                 res = prog.call('one', [self.label_var()])
                 constants_map[(self.val, self.get_type())] = (res, self.label_var())
@@ -172,7 +155,7 @@ class IntConst(IRExpression):
             result.change_label(self.label)
             result.is_int = False
             (result_aut, val) = result.evaluate(prog)
-            constants_map[(self.val, self.get_type())] = (result_aut.postprocess('BA'), val)
+            constants_map[(self.val, self.get_type())] = (result_aut, val)
 
         return constants_map[(self.val, self.get_type())]
 
@@ -197,19 +180,20 @@ class Equals(BinaryIRPredicate):
 
     def evaluate_node(self, prog):
         if self.a.is_int and self.b.is_int:
-            return spot.translate('1') if self.a.evaluate_int(prog) == self.b.evaluate_int(prog) else spot.translate('0')
+            return (FormulaTrue() if self.a.evaluate_int(prog) == self.b.evaluate_int(prog) else FormulaFalse()).evaluate(prog)
 
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
+
         eq_aut = prog.call('equal', [val_a, val_b])
-        result = spot.product(eq_aut, spot.product(aut_a, aut_b))
+
         proj_vars = set()
         if type(self.a) is not VarRef:
             proj_vars.add(val_a.var_name)
         if type(self.b) is not VarRef:
             proj_vars.add(val_b.var_name)
-        result = Projection(result, proj_vars).project()
-        return result
+
+        return (eq_aut & aut_a & aut_b).project(proj_vars)
 
     def transform(self, transformer):
         return transformer.transform_Equals(self)
@@ -223,20 +207,20 @@ class Less(BinaryIRPredicate):
 
     def evaluate_node(self, prog):
         if self.a.is_int and self.b.is_int:
-            return spot.formula('1').translate() if self.a.evaluate_int(prog) < self.b.evaluate_int(prog) else spot.formula('0').translate()
+            return (FormulaTrue() if self.a.evaluate_int(prog) < self.b.evaluate_int(prog) else FormulaFalse()).evaluate(prog)
+
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
+
         aut_less = prog.call('less', [val_a, val_b])
-        result = spot.product(aut_a, aut_b)
-        result = spot.product(aut_less, result)
 
         proj_vars = set()
         if type(self.a) is not VarRef:
             proj_vars.add(val_a.var_name)
         if type(self.b) is not VarRef:
             proj_vars.add(val_b.var_name)
-        result = Projection(result, proj_vars).project()
-        return result
+
+        return (aut_a & aut_b & aut_less).project(proj_vars)
 
     def transform(self, transformer):
         return transformer.transform_Less(self)

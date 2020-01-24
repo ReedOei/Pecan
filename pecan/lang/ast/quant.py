@@ -2,7 +2,6 @@
 # -*- coding=utf-8 -*-
 
 from pecan.lang.ast.bool import *
-from pecan.tools.automaton_tools import Projection
 
 def to_ref(var_ref):
     if type(var_ref) is VarRef:

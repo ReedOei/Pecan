@@ -10,7 +10,6 @@ from functools import reduce
 from lark import Lark, Transformer, v_args
 import spot
 
-from pecan.tools.automaton_tools import AutomatonTransformer, Substitution
 from pecan.lang.ast.base import *
 
 class VarRef(Expression):

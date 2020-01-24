@@ -1,8 +1,6 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-import spot
-
 from pecan.lang.ir import *
 
 class Index(IRPredicate):
