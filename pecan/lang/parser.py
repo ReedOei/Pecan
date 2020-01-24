@@ -231,7 +231,7 @@ class PecanTransformer(Transformer):
         else:
             return Equals(a, b)
 
-    def not_equal(self, a, b):
+    def not_equal(self, a, sym, b):
         # Resolve what sort of equality we're doing (e.g., "regular" equality, equality of subwords, etc.)
         if type(a) is Index and type(b) is IntConst:
             return EqualsCompareIndex(False, a, b)
