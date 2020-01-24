@@ -26,7 +26,9 @@ class PecanTransformer(Transformer):
             raise AutomatonArithmeticError("Constants need to be integers: " + const)
         return int(const.value)
 
-    praline_def = PralineDef
+    def praline_def(self, t, body):
+        return PralineDef(t, body)
+
     praline_display = PralineDisplay
     praline_execute = PralineExecute
 
@@ -65,13 +67,19 @@ class PecanTransformer(Transformer):
 
     praline_neg = PralineNeg
     praline_app = PralineApp
-    praline_exponent = lambda self, *args: reduce(PralineExponent, args)
-    praline_match = lambda self, t, *arms: PralineMatch(t, list(arms))
+
+    def praline_exponent(self, *args):
+        return reduce(PralineExponent, args)
+
+    def praline_match(self, t, *arms):
+        return PralineMatch(t, list(arms))
+
     praline_match_arm = PralineMatchArm
 
     praline_match_int = PralineMatchInt
 
-    praline_match_tuple = lambda self, *args: PralineMatchTuple(list(args))
+    def praline_match_tuple(self, *args):
+        return PralineMatchTuple(list(args))
 
     praline_match_string = PralineMatchString
     praline_match_var = PralineMatchVar
@@ -89,13 +97,6 @@ class PecanTransformer(Transformer):
     def praline_false(self):
         return PralineBool(False)
 
-    praline_eq = PralineEq
-    praline_ne = PralineNe
-    praline_le = PralineLe
-    praline_ge = PralineGe
-    praline_lt = PralineLt
-    praline_gt = PralineGt
-
     def praline_match_list(self, *args):
         res = PralineMatchList(None, None)
 
@@ -104,7 +105,8 @@ class PecanTransformer(Transformer):
 
         return res
 
-    praline_match_prepend = PralineMatchList
+    def praline_match_prepend(self, head, sym1, sym2, tail):
+        return PralineMatchList(head, tail)
 
     def praline_do(self, *terms):
         return PralineDo(list(terms))
@@ -147,10 +149,11 @@ class PecanTransformer(Transformer):
     def call_is_args(self, var_name, call_name, args):
         return Call(call_name, [var_name] + args)
 
-    val_dict = lambda self, *pairs: dict(pairs)
+    def val_dict(self, *pairs):
+        return dict(pairs)
 
-    # TODO: Idealy we would allow all forms of calls here (e.g., "n is nat")
-    kv_pair = lambda self, key, pred_name, args: (key, Call(pred_name, args))
+    def kv_pair(self, key, sym, pred_name, args):
+        return (key, Call(pred_name, args))
 
     def restrict_many(self, args, pred):
         if type(pred) is VarRef: # If we do something like `x,y,z are nat`
@@ -213,7 +216,7 @@ class PecanTransformer(Transformer):
     index = Index
     index_range = IndexRange
 
-    def equal(self, a, b):
+    def equal(self, a, sym, b):
         # Resolve what sort of equality we're doing (e.g., "regular" equality, equality of subwords, etc.)
 
         # TODO: It would be nice to support automatic words with outputs other than 0 or 1
@@ -241,16 +244,30 @@ class PecanTransformer(Transformer):
         else:
             return NotEquals(a, b)
 
-    less = Less
-    greater = Greater
-    less_equal = LessEquals
-    greater_equal = GreaterEquals
+    def less(self, a, sym, b):
+        return Less(a, b)
+
+    def greater(self, a, sym, b):
+        return Greater(a, b)
+
+    def less_equal(self, a, sym, b):
+        return LessEquals(a, b)
+
+    def greater_equal(self, a, sym, b):
+        return GreaterEquals(a, b)
 
     def if_then_else(self, cond, p1, p2=None):
         if p2 is None:
             return Implies(cond, p1)
         else:
             return Conjunction(Implies(cond, p1), Implies(Complement(cond), p2))
+
+    # These functions exist because the two forms of ge and le have different numbers of symbols; these standardize it
+    def elim_ge(self, *args):
+        return '>='
+
+    def elim_le(self, *args):
+        return '<='
 
     iff = Iff
     implies = Implies

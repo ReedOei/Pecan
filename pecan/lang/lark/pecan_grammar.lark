@@ -17,42 +17,40 @@
 
 prop_val: PROP_VAL -> prop_val_tok
 
-?praline: "Define" praline_operator ":" "=" term "." -> praline_def
+?praline: "Define" praline_operator _DEFEQ term "." -> praline_def
         | "Execute" term "."             -> praline_execute
         | "Display" term "."             -> praline_display
 
 ?term: "if" term "then" term "else" term -> praline_if
-     | "\\" app "->" term -> praline_lambda
+     | "\\" app _IMPLIES term -> praline_lambda
      | "let" var "be" pecan_term "in" term -> praline_let_pecan
-     | "let" var ":" "=" term "in" term -> praline_let
+     | "let" var _DEFEQ term "in" term -> praline_let
      | "match" term "with" (match_arm)+ "end" -> praline_match
      | "do" term (";" term)* [";"] -> praline_do
      | praline_operator
      | praline_operator operator_sym -> partial_op_fst
      | operator_sym praline_operator -> partial_op_snd
 
-?match_arm: "case" match_expr "->" term -> praline_match_arm
+?match_arm: "case" match_expr _IMPLIES term -> praline_match_arm
 
 ?match_expr: int -> praline_match_int
     | string -> praline_match_string
     | var -> praline_match_var
     | "[" ( match_expr ("," match_expr)* )? "]" -> praline_match_list
-    | match_expr ":" ":" match_expr -> praline_match_prepend
+    | match_expr COLON COLON match_expr -> praline_match_prepend
     | "(" (match_expr ",")+ (match_expr)? ")" -> praline_match_tuple
 
-?praline_operator: praline_operator operator_sym praline_compare -> praline_operator
-                 | praline_compare
+?praline_operator: praline_operator operator_sym praline_operator -> praline_operator
+                 | praline_arith
 
 ?operator_sym: operator_sym_char+ -> operator_sym
-?operator_sym_char: /[+\-*\/=\\<>]/ | DISJ | CONJ | COMP | /[^\x00-\xFF]/ | ":"
+?operator_sym_char: EQ | GT | LT | COLON | DISJ | CONJ | COMP | /[^\x00-\xFF]/
 
-?praline_compare: praline_arith "=" praline_arith -> praline_eq
-                | praline_arith _NE praline_arith -> praline_ne
-                | praline_arith _LE praline_arith -> praline_le
-                | praline_arith _GE praline_arith -> praline_ge
-                | praline_arith "<" praline_arith -> praline_lt
-                | praline_arith ">" praline_arith -> praline_gt
-                | praline_arith
+_DEFEQ: ":="
+EQ: "="
+GT: ">"
+LT: "<"
+COLON: ":"
 
 ?praline_arith: "-" praline_sub -> praline_neg
                  | praline_sub
@@ -85,16 +83,16 @@ prop_val: PROP_VAL -> prop_val_tok
 ?praline_tuple: "(" (term ",")+ (term)? ")"
 
 ?val_dict: "{" (kv_pair ("," kv_pair )*)? "}"
-?kv_pair: string ":" var "(" args ")" -> kv_pair
+?kv_pair: string COLON var "(" args ")" -> kv_pair
 
 ?restriction: varlist _IS var -> restrict_is
             | varlist _IS var "(" varlist ")" -> restrict_call
 
 _IS: "are" | "is" | "∈"
 
-?pred_definition: var "(" args ")" ":" "=" pred -> def_pred_standard
-                | var _IS var ":" "=" pred -> def_pred_is
-                | var _IS var "(" args ")" ":" "=" pred -> def_pred_is_call
+?pred_definition: var "(" args ")" _DEFEQ pred -> def_pred_standard
+                | var _IS var _DEFEQ pred -> def_pred_is
+                | var _IS var "(" args ")" _DEFEQ pred -> def_pred_is_call
 
 formal: var -> formal_var
       | var "(" varlist ")" -> formal_call
@@ -120,12 +118,12 @@ varlist: var ("," var)*
      | "(" pred ")"
      | comparison
 
-?comparison: expr "=" expr                     -> equal
-           | expr _NE expr                     -> not_equal
-           | expr "<" expr                     -> less
-           | expr ">" expr                     -> greater
-           | expr _LE expr                     -> less_equal
-           | expr _GE expr                     -> greater_equal
+?comparison: expr EQ expr                     -> equal
+           | expr _ne expr                     -> not_equal
+           | expr LT expr                     -> less
+           | expr GT expr                     -> greater
+           | expr le expr                     -> less_equal
+           | expr ge expr                     -> greater_equal
 
 ?expr: arith
      | var "[" arith "]"  -> index
@@ -159,10 +157,12 @@ string: ESCAPED_STRING -> escaped_str
 
 PROP_VAL: "sometimes"i | "true"i | "false"i // case insensitive
 
-_NE: COMP "=" | "/=" | "≠"
+_ne: COMP "=" | "/" EQ | "≠"
 COMP: "!" | "~" | "¬" | "not"
-_GE: ">=" | "≥"
-_LE: "<=" | "≤"
+ge: GT EQ -> elim_ge
+   | "≥" -> elim_ge
+le: LT EQ -> elim_le
+   | "≤" -> elim_ge
 
 _IMPLIES: "=>" | "⇒" | "⟹ "
 _IFF: "<=>" | "⟺" | "⇔" | "iff"

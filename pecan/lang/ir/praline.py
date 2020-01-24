@@ -185,7 +185,7 @@ class PralineDiv(PralineBinaryOp):
         eval_b = self.b.evaluate(prog)
 
         if eval_a.is_int() and eval_b.is_int():
-            return PralineInt(eval_a.get_value() / eval_b.get_value())
+            return PralineInt(eval_a.get_value() // eval_b.get_value())
         else:
             raise TypeError('Both operands should be integers in "{}"'.format(self))
 
@@ -246,7 +246,7 @@ class PralineExponent(PralineBinaryOp):
         elif eval_a.is_string() and eval_b.is_string():
             return PralineString(eval_a.get_value() + eval_b.get_value()) # + is for string concatenation
         else:
-            raise TypeError('Both operands should be integers or strings in "{}", but they are {} and {}, respectively.'.format(self, eval_a.typeof(), eval_b.typeof()))
+            raise TypeError('Both operands should be integers or strings in "{}", but they are ({} : {}) and ({} : {}), respectively.'.format(self, eval_a, eval_a.typeof(), eval_b, eval_b.typeof()))
 
 class PralineUnaryOp(PralineTerm):
     def __init__(self, a):
@@ -438,6 +438,9 @@ class PralineMatchList(PralineMatchPat):
             return None
 
         tail_match_env = self.tail.match(term.b)
+
+        if tail_match_env is None:
+            return None
 
         head_match_env.update(tail_match_env)
 

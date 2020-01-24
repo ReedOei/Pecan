@@ -50,7 +50,25 @@ Define enumFromTo low high :=
     else
         low :: enumFromTo (low + 1) high .
 
+Define (f ∘ g) x := f (g x).
+Define x :: xs := cons x xs.
+
+Define id x := x.
+
+Define a & b := if a then b else false.
+Define a | b := if a then true else b.
+
+Define a = b := equal a b.
+Define a < b := compare a b = -1.
+Define a > b := compare a b = 1.
+Define a <= b := (a < b) | (a = b).
+Define a >= b := (a > b) | (a = b).
+
 Define flip f a b := f b a.
+
+Define mod a b := a - (a / b) * b.
+Define divides a b := mod b a = 0.
+Define isEven := divides 2.
 
 Define factorial n :=
     if n = 0 then 1
@@ -58,41 +76,52 @@ Define factorial n :=
 
 Define isEmpty l :=
     match l with
-    case [] -> true
-    case x :: xs -> false
+    case [] => true
+    case x :: xs => false
     end.
 
 Define foldl f init l :=
     match l with
-    case [] -> init
-    case x :: xs -> foldl f (f init x) xs
+    case [] => init
+    case x :: xs => foldl f (f init x) xs
     end.
 
 Define foldr f init l :=
     match l with
-    case [] -> init
-    case x :: xs -> f x (foldr f init xs)
+    case [] => init
+    case x :: xs => f x (foldr f init xs)
     end.
 
-Define length := foldl (\cur _ -> cur + 1) 0.
-Define map f := foldr (\x rest -> f x :: rest) [].
-Define filter f := foldr (\x rest -> if f x then x :: rest else rest) [].
+Define concat a b :=
+    match a with
+    case [] => b
+    case x :: xs => x :: concat xs b
+    end.
+
+// binList should have even length
+Define binaryToBase3 binList :=
+    match binList with
+    case [] => []
+    case 0 :: 0 :: xs => 0 :: binaryToBase3 xs
+    case 0 :: 1 :: xs => 1 :: binaryToBase3 xs
+    case 1 :: 0 :: xs => 2 :: binaryToBase3 xs
+    end.
+Define base3Format var prefix cycle :=
+    let actualPrefix := if isEven (length prefix) then prefix else concat prefix [head cycle] in
+    let actualCycle := if isEven (length cycle) then cycle else concat cycle [head cycle] in
+    let base3Prefix := concatenate (binaryToBase3 actualPrefix) in
+    let base3Cycle := concatenate (binaryToBase3 actualCycle) in
+    var ^ ": " ^ base3Prefix ^ "(" ^ base3Cycle ^ ")^w { " ^ concatenate prefix ^ "(" ^ concatenate cycle ^ ")^w }" .
+
+Define length := foldl (\cur _ => cur + 1) 0.
+Define map f := foldr (\x rest => f x :: rest) [].
+Define filter f := foldr (\x rest => if f x then x :: rest else rest) [].
 
 Define strLength := length ∘ toChars.
 
-Define id x := x.
-
-Define a & b := if a then b else false.
-Define a | b := if a then true else b.
-
-Define compose f g x := f (g x).
-Define f ∘ g := compose f g.
-
-Define x :: xs := cons x xs.
-
 Define bimap f g pair :=
     match pair with
-    case (a, b) -> (f a, g b)
+    case (a, b) => (f a, g b)
     end.
 
 Define lmap f := bimap f id.
@@ -101,8 +130,8 @@ Define rmap g := bimap id g.
 Define split n l :=
     if n = 0 then ([], l)
     else match l with
-         case [] -> ([], l)
-         case x :: xs -> lmap (\before -> x :: before) (split (n - 1) xs)
+         case [] => ([], l)
+         case x :: xs => lmap (\before => x :: before) (split (n - 1) xs)
          end.
 
 Define take n l := fst (split n l).
@@ -110,41 +139,41 @@ Define drop n l := snd (split n l).
 
 Define head l :=
     match l with
-    case x :: _ -> x
+    case x :: _ => x
     end.
 
 Define tail l :=
     match l with
-    case _ :: xs -> xs
+    case _ :: xs => xs
     end.
 
 Define find f l :=
     match l with
-    case [] -> []
-    case x :: xs -> if f x then [x] else find f xs
+    case [] => []
+    case x :: xs => if f x then [x] else find f xs
     end.
 
 Define lookup key assocs :=
-    match find (\kv -> fst kv = key) assocs with
-    case [] -> []
-    case [x] -> snd x
+    match find (\kv => fst kv = key) assocs with
+    case [] => []
+    case [x] => snd x
     end.
 
-Define delete key := filter (\kv -> fst kv != key).
+Define delete key := filter (\kv => fst kv != key).
 
-Define concatenate := foldl (\a b -> a ^ toString b) "".
+Define concatenate := foldl (\a b => a ^ toString b) "".
 
 Define boolToInt b := if b then 1 else 0.
 Define checkToInt := boolToInt ∘ check.
-Define showWord word := concatenate ∘ map (\i -> checkToInt { word(i) }).
+Define showWord word := concatenate ∘ map (\i => checkToInt { word(i) }).
 
 Define wordToBinary inputWord :=
     match inputWord with
-    case (var, (prefix, cycle)) -> (var, (map boolToInt prefix, map boolToInt cycle))
+    case (var, (prefix, cycle)) => (var, (map boolToInt prefix, map boolToInt cycle))
     end.
 
 // Note this function converts from **LSD** binary
-Define fromBinary := foldr (\a b -> a + 2*b) 0.
+Define fromBinary := foldr (\a b => a + 2*b) 0.
 
 Define stdFormat var prefix cycle := (var, concatenate prefix ^ "(" ^ concatenate cycle ^ ")^w").
 
@@ -159,8 +188,8 @@ Define intFormat var prefix cycle :=
         (var,
             if isEmpty prefix then "0"
             else match prefix with
-                 case 0 :: digits -> toString (fromBinary digits)
-                 case 1 :: digits -> "-" ^ toString (fromBinary digits)
+                 case 0 :: digits => toString (fromBinary digits)
+                 case 1 :: digits => "-" ^ toString (fromBinary digits)
                  end
         )
     else
@@ -169,7 +198,7 @@ Define intFormat var prefix cycle :=
 
 Define runFormat format inputWord :=
     match inputWord with
-    case (var, (prefix, cycle)) -> format var prefix cycle
+    case (var, (prefix, cycle)) => format var prefix cycle
     end.
 
 Define example format t := map (runFormat format ∘ wordToBinary) (acceptingWord t).
@@ -181,12 +210,12 @@ Define graph format F := map (graphPoint format F).
 
 Define fst pair :=
     match pair with
-    case (a, b) -> a
+    case (a, b) => a
     end.
 
 Define snd pair :=
     match pair with
-    case (a, b) -> b
+    case (a, b) => b
     end.
 
 Define theoremCheck ID BODY := do

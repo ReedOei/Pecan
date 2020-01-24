@@ -174,6 +174,30 @@ class AcceptingWord(Builtin):
         else:
             return '{}({})^w.{}({})^w'.format(sign, integral_repeat, fractional, fractional_repeat)
 
+class Compare(Builtin):
+    def __init__(self):
+        super().__init__(PralineVar('compare'), [PralineVar('a'), PralineVar('b')])
+
+    def evaluate(self, prog):
+        a_val = prog.praline_lookup('a').evaluate(prog).get_value()
+        b_val = prog.praline_lookup('b').evaluate(prog).get_value()
+
+        if a_val < b_val:
+            return PralineInt(-1)
+        elif a_val > b_val:
+            return PralineInt(1)
+        else:
+            return PralineInt(0)
+
+class Equal(Builtin):
+    def __init__(self):
+        super().__init__(PralineVar('equal'), [PralineVar('a'), PralineVar('b')])
+
+    def evaluate(self, prog):
+        a_val = prog.praline_lookup('a').evaluate(prog).get_value()
+        b_val = prog.praline_lookup('b').evaluate(prog).get_value()
+        return PralineBool(a_val == b_val)
+
 builtins = [
     Check().definition(),
     ToString().definition(),
@@ -182,5 +206,7 @@ builtins = [
     FreshVar().definition(),
     AcceptingWord().definition(),
     ToChars().definition(),
-    Cons().definition() ]
+    Cons().definition(),
+    Compare().definition(),
+    Equal().definition() ]
 
