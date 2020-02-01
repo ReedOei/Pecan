@@ -59,7 +59,7 @@ Define realFormatHelper sign cycleOffset prefix cycle :=
         let cycleFractional := if isEmpty cycleFractionalTemp then [0] else cycleFractionalTemp in
         let prefixIntegral := if isEmpty prefixIntegralTemp then [0] else prefixIntegralTemp in
         if all (= 0) cycleIntegral then
-            sign ^ concatenate prefixIntegral ^ "." ^ concatenate prefixFractional ^ "(" ^ concatenate cycleFractional ^ ")^w"
+            sign ^ concatenate prefixIntegral ^ "." ^ concatenate prefixFractional ^ "(" ^ concatenate cycleFractional ^ ")^ω"
         else
             snd (stdFormat "" ((if sign = "+" then 0 else 1) :: prefix) cycle) ^ " (NOT A VALID REAL NUMBER)" ^ toString (prefixIntegral, cycleIntegral, prefixFractional, cycleFractional)
     end.

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
+import copy
 from functools import reduce
 
 import buddy
@@ -8,7 +9,42 @@ import spot
 
 from pecan.automata.automaton import Automaton
 
+def merge(aut, var_map, other_var_map):
+    merged_var_map = copy.deepcopy(var_map)
+    subs = {}
+
+    for var, aps in other_var_map.items():
+        if var in merged_var_map:
+            merged_aps = merged_var_map[var]
+
+            if len(merged_aps) != len(aps):
+                raise Exception('Cannot merge {}: representations differ in length ({}, {})'.format(var, merged_aps, aps))
+
+            for a, b in zip(merged_aps, aps):
+                subs[b] = a
+        else:
+            merged_var_map[var] = aps
+
+    return BuchiAutomaton(aut, merged_var_map).ap_substitute(subs)
+
+def clean_subs(subs):
+    to_pop = []
+
+    for k, v in subs.items():
+        if k == v:
+            to_pop.append(k)
+
+    for k in to_pop:
+        subs.pop(k)
+
 class BuchiAutomaton(Automaton):
+    id = 0
+    @staticmethod
+    def fresh_ap():
+        label = f"__ap{BuchiAutomaton.id}"
+        BuchiAutomaton.id += 1
+        return label
+
     @staticmethod
     def as_buchi(aut):
         if aut.get_aut_type() == 'buchi':
@@ -20,26 +56,124 @@ class BuchiAutomaton(Automaton):
         else:
             raise NotImplementedError
 
-    def __init__(self, aut):
+    def __init__(self, aut, var_map):
         super().__init__('buchi')
+
+        # The interal automaton representation
         self.aut = aut
 
+        # Maps pecan variables to internal variables
+        self.var_map = var_map
+
+    def get_var_map(self):
+        return self.var_map
+
+    def combine_var_map(self, other):
+        new_var_map = copy.deepcopy(self.get_var_map())
+
+        for var_name in self.get_var_map():
+            if var_name in other.get_var_map():
+                if self.get_var_map()[var_name] != other.get_var_map()[var_name]:
+                    raise Exception('Underlying representation of variable {} does not match ({}, {})'.format(var_name, self.get_var_map(), other.get_var_map()))
+
+        new_var_map.update(other.get_var_map())
+        return new_var_map
+
     def conjunction(self, other):
-        return BuchiAutomaton(spot.product(self.get_aut(), other.get_aut()))
+        return merge(spot.product(self.get_aut(), other.get_aut()), self.get_var_map(), other.get_var_map())
 
     def disjunction(self, other):
-        return BuchiAutomaton(spot.product_or(self.get_aut(), other.get_aut()))
+        return merge(spot.product_or(self.get_aut(), other.get_aut()), self.get_var_map(), other.get_var_map())
 
     def complement(self):
-        return BuchiAutomaton(spot.complement(self.get_aut()))
+        return BuchiAutomaton(spot.complement(self.get_aut()), self.var_map)
+
+    def call(self, arg_map):
+        # Generate fresh aps for all the aps in this automaton
+        fresh_var_map = {}
+        subs = {}
+
+        for v, aps in self.get_var_map().items():
+            new_aps = []
+
+            for ap in aps:
+                new_ap = self.fresh_ap()
+                new_aps.append(new_ap)
+                subs[ap] = new_ap
+
+            fresh_var_map[v] = new_aps
+
+        # print(fresh_var_map)
+
+        new_var_map = {}
+        ap_subs = {}
+        for v, aps in fresh_var_map.items():
+            if v in arg_map:
+                if arg_map[v] in new_var_map:
+                    final_aps = new_var_map[arg_map[v]]
+
+                    for final, temp in zip(final_aps, aps):
+                        ap_subs[temp] = final
+                else:
+                    new_var_map[arg_map[v]] = aps
+            else:
+                new_var_map[v] = aps
+
+        for orig_ap, new_ap in subs.items():
+            subs[orig_ap] = ap_subs.get(new_ap, new_ap)
+
+        # print('call()', self.get_var_map(), subs, new_var_map, subs)
+
+        return BuchiAutomaton(self.get_aut(), new_var_map).ap_substitute(subs)
 
     def substitute(self, subs):
-        return BuchiAutomaton(BuchiTransformer(self.postprocess(), Substitution(subs).substitute).transform())
+        new_var_map = {}
+        ap_subs = {}
+
+        for v, aps in self.get_var_map().items():
+            if v in subs:
+                if subs[v] in new_var_map:
+                    final_aps = new_var_map[subs[v]]
+
+                    for final, temp in zip(final_aps, aps):
+                        ap_subs[temp] = final
+                else:
+                    new_var_map[subs[v]] = aps
+            else:
+                new_var_map[v] = aps
+
+        # print('substitute()', self.get_var_map(), subs, new_var_map, ap_subs)
+
+        return BuchiAutomaton(self.get_aut(), new_var_map).ap_substitute(ap_subs)
+
+    def ap_substitute(self, subs):
+        clean_subs(subs)
+
+        if len(subs) == 0:
+            return self
+
+        return BuchiTransformer(self, Substitution(subs)).transform()
 
     def project(self, var_refs):
         from pecan.lang.ir.prog import VarRef
-        var_names = [v.var_name for v in var_refs if type(v) is VarRef]
-        return BuchiAutomaton(BuchiProjection(self.postprocess(), var_names).project())
+        var_names = []
+        pecan_var_names = []
+
+        for v in var_refs:
+            if type(v) is VarRef:
+                var_names.extend(self.var_map[v.var_name])
+                pecan_var_names.append(v.var_name)
+
+        result = self
+        for var_name in var_names:
+            result = BuchiTransformer(result.postprocess(), BuchiProjection(var_name)).transform()
+
+        for var_name in pecan_var_names:
+            # It may not be there (e.g., it's perfectly valid to do "exists x. y = y", even if it's pointless)
+            if var_name in result.get_var_map():
+                result.get_var_map().pop(var_name)
+
+        return result
 
     def is_empty(self):
         return self.aut.is_empty()
@@ -60,10 +194,9 @@ class BuchiAutomaton(Automaton):
 
     # Should return a string of SVG data
     def show(self):
-        return self.postprocess().show()
+        return self.postprocess().aut.show()
 
     def get_aut(self):
-        # self.aut = spot.remove_alternation(self.postprocess())
         return self.aut
 
     def merge_edges(self):
@@ -75,7 +208,7 @@ class BuchiAutomaton(Automaton):
         return self
 
     def accepting_word(self):
-        acc_word = self.get_aut().accepting_word()
+        acc_word = self.postprocess().get_aut().accepting_word()
 
         if acc_word is None:
             return None
@@ -128,54 +261,20 @@ class BuchiAutomaton(Automaton):
 
     def custom_convert(self, other):
         if other.get_aut_type() == 'true':
-            return BuchiAutomaton(spot.translate('1'))
+            return BuchiAutomaton(spot.translate('1'), {})
         elif other.get_aut_type() == 'false':
-            return BuchiAutomaton(spot.translate('0'))
+            return BuchiAutomaton(spot.translate('0'), {})
         else:
             raise NotImplementedError
 
     def postprocess(self):
         if not self.aut.is_sba():
             self.aut = self.aut.postprocess('BA') # Ensure that the automata we have is a Buchi (possible nondeterministic) automata
-        return self.aut
+        return self
 
-class BuchiTransformer:
-    def __init__(self, original_aut, formula_builder):
-        self.original_aut = original_aut
-        self.formula_builder = formula_builder
-
-    def transform(self):
-        # Build a new automata with different edges
-        new_aut = spot.make_twa_graph()
-
-        # Set the acceptance condition to be same as the input automata
-        acc = self.original_aut.get_acceptance()
-        new_aut.set_acceptance(acc.used_sets().max_set(), acc)
-        new_aut.new_states(self.original_aut.num_states())
-        new_aut.set_init_state(self.original_aut.get_init_state_number())
-
-        for e in self.original_aut.edges():
-            # Convert to a formula because formulas are nicer to work with than the bdd's
-            formula = spot.bdd_to_formula(e.cond)
-            new_formula = self.formula_builder(formula)
-            cond = formula_to_bdd(new_aut, new_formula)
-            # print('Adding edge', e.src, e.dst, '(', formula, ')', '(', new_formula, ')', e.acc)
-            new_aut.new_edge(e.src, e.dst, cond, e.acc)
-
-        return new_aut
-
-class Substitution:
-    def __init__(self, subs):
-        self.subs = subs
-
-    def substitute(self, formula):
-        if formula._is(spot.op_ap):
-            if formula.ap_name() in self.subs:
-                return spot.formula(self.subs[formula.ap_name()])
-            else:
-                return formula
-        else:
-            return formula.map(self.substitute)
+    def shuffle(self, is_disj, other):
+        new_var_map = self.combine_var_map(other)
+        return BuchiAutomaton(ShuffleAutomata(a_aut.get_aut(), b_aut.get_aut()).shuffle(self.disjunction), new_var_map)
 
 def build_bdd(kind, children):
     if kind == spot.op_And:
@@ -204,22 +303,72 @@ def formula_to_bdd(aut, formula):
 
         return build_bdd(formula.kind(), new_children)
 
-class BuchiProjection:
-    def __init__(self, aut, var_names):
+class BuchiTransformer:
+    def __init__(self, original_aut, builder):
+        self.original_aut = original_aut
+        self.builder = builder
+
+    def transform(self):
+        # Build a new automata with different edges
+        new_aut = spot.make_twa_graph()
+
+        inner_aut = self.original_aut.get_aut()
+
+        # Set the acceptance condition to be same as the input automata
+        acc = inner_aut.get_acceptance()
+        new_aut.set_acceptance(acc.used_sets().max_set(), acc)
+        new_aut.new_states(inner_aut.num_states())
+        new_aut.set_init_state(inner_aut.get_init_state_number())
+
+        for e in inner_aut.edges():
+            # Convert to a formula because formulas are nicer to work with than the bdd's
+            formula = spot.bdd_to_formula(e.cond)
+            new_formula = self.builder.transform_formula(formula)
+            cond = spot.formula_to_bdd(new_formula, new_aut.get_dict(), new_aut)
+            # print('Adding edge', e.src, e.dst, '(', formula, ')', '(', new_formula, ')', e.acc)
+            new_aut.new_edge(e.src, e.dst, cond, e.acc)
+
+        return BuchiAutomaton(new_aut, self.builder.transform_var_map(self.original_aut.get_var_map()))
+
+class Builder:
+    def transform_formula(self, formula):
+        return formula
+
+    def transform_var_map(self, var_map):
+        return copy.deepcopy(var_map)
+
+class Substitution(Builder):
+    def __init__(self, subs):
+        self.subs = subs
+
+    def transform_formula(self, formula):
+        if formula._is(spot.op_ap):
+            if formula.ap_name() in self.subs:
+                return spot.formula(self.subs[formula.ap_name()])
+            else:
+                return formula
+        else:
+            return formula.map(self.transform_formula)
+
+    def transform_var_map(self, var_map):
+        new_var_map = {}
+
+        for v, aps in var_map.items():
+            new_var_map[v] = [self.subs.get(ap, ap) for ap in aps]
+
+        return new_var_map
+
+class BuchiProjection(Builder):
+    def __init__(self, var_name):
         super().__init__()
-        self.aut = aut
-        self.var_names = var_names
+        self.var_name = var_name
 
-    def project(self):
-        for var in self.var_names:
-            def build_projection_formula(formula):
-                if_0 = Substitution({var: spot.formula('0')}).substitute(formula)
-                if_1 = Substitution({var: spot.formula('1')}).substitute(formula)
+    def transform_formula(self, formula):
+        if_0 = Substitution({self.var_name: spot.formula('0')}).transform_formula(formula)
+        if_1 = Substitution({self.var_name: spot.formula('1')}).transform_formula(formula)
 
-                # The new edge condition should be:
-                # [0/y]cond | [1/y]cond
-                # where cond is the original condition. That is, the edge is taken if it holds with y being false or y being true.
-                return spot.formula_Or([if_0, if_1])
-            self.aut = BuchiTransformer(self.aut, build_projection_formula).transform()
-        return self.aut
+        # The new edge condition should be:
+        # [0/y]cond | [1/y]cond
+        # where cond is the original condition. That is, the edge is taken if it holds with y being false or y being true.
+        return spot.formula_Or([if_0, if_1])
 

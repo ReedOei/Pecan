@@ -1,3 +1,6 @@
+#!/usr/bin/env python3.6
+# -*- coding=utf-8 -*-
+
 import buddy
 import math
 import spot
@@ -130,12 +133,17 @@ def convert_aut_lines(lines, inp_names = []):
 
     aut = spot.make_twa_graph()
     aps = []
+    var_map = {}
     for i in range(len(bases)):
-        # should require same length?
+        # TODO: should require same length?
         if len(inp_names) > i:
-            aps.append(buddy.bdd_ithvar(aut.register_ap(inp_names[i])))
+            var_name = inp_names[i]
         else:
-            aps.append(buddy.bdd_ithvar(aut.register_ap("p" + str(i + 1))))
+            var_name = f'p{i+1}'
+
+        aps.append(buddy.bdd_ithvar(aut.register_ap(var_name)))
+        # TODO: Change this if variables are encoded with multiple variables per variable (e.g., instead of encoding symbols via multiple states, encode via multiple variables).
+        var_map[var_name] = [var_name]
 
     aut.set_buchi()
     aut.new_states(len(states))
@@ -156,5 +164,5 @@ def convert_aut_lines(lines, inp_names = []):
                     else:
                         aut.new_edge(int(i), int(end_state), label)
 
-    return BuchiAutomaton(aut)
+    return BuchiAutomaton(aut, var_map)
 

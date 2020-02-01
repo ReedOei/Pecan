@@ -10,7 +10,7 @@ import time
 from lark import Lark, Transformer, v_args
 import spot
 
-from pecan.automata.buchi import BuchiAutomaton
+from pecan.tools.hoa_loader import from_spot_aut
 from pecan.lang.ir.base import *
 from pecan.settings import settings
 
@@ -75,9 +75,9 @@ class SpotFormula(IRPredicate):
 
     def evaluate(self, prog):
         try:
-            return BuchiAutomaton(spot.translate(self.formula_str))
+            return from_spot_aut(spot.translate(self.formula_str))
         except:
-            return BuchiAutomaton(spot.parse_word(self.formula_str).as_automaton())
+            return from_spot_aut(spot.parse_word(self.formula_str).as_automaton())
 
     def transform(self, transformer):
         return transformer.transform_SpotFormula(self)
@@ -263,7 +263,7 @@ class NamedPred(IRNode):
             result = self.body_evaluated
         else:
             subs_dict = {arg.var_name: name.var_name for arg, name in zip(self.args, arg_names)}
-            result = self.body_evaluated.substitute(subs_dict)
+            result = self.body_evaluated.call(subs_dict)
 
         prog.exit_scope()
 

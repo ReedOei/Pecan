@@ -1,12 +1,9 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-import sys
-
-import spot
-
 from pecan.tools.shuffle_automata import ShuffleAutomata
 from pecan.tools.convert_hoa import convert_aut
+from pecan.tools.hoa_loader import load_hoa
 from pecan.tools.labeled_aut_converter import convert_labeled_aut
 from pecan.automata.buchi import BuchiAutomaton
 from pecan.lang.ir import *
@@ -163,7 +160,7 @@ class DirectiveLoadAut(IRNode):
 
         if self.aut_format == 'hoa':
             # TODO: Rename the APs of the loaded automaton to be the same as the args specified
-            aut = BuchiAutomaton(spot.automaton(realpath))
+            aut = load_hoa(realpath)
         elif self.aut_format == 'walnut':
             aut = convert_aut(realpath, [v.var_name for v in self.pred.args])
         elif self.aut_format == 'pecan':
@@ -273,8 +270,9 @@ class DirectiveShuffle(IRNode):
     def evaluate(self, prog):
         a_aut = prog.call(self.pred_a.name, self.pred_a.args)
         b_aut = prog.call(self.pred_b.name, self.pred_b.args)
-        aut_res = BuchiAutomaton(ShuffleAutomata(BuchiAutomaton.as_buchi(a_aut).get_aut(), BuchiAutomaton.as_buchi(b_aut).get_aut()).shuffle(self.disjunction))
-        prog.preds[self.output_pred.name] = NamedPred(self.output_pred.name, self.output_pred.args, {}, AutLiteral(aut_res))
+
+        res = a_aut.shuffle(self.disjunction, b_aut)
+        prog.preds[self.output_pred.name] = NamedPred(self.output_pred.name, self.output_pred.args, {}, AutLiteral(res))
 
         return None
 

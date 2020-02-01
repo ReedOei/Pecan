@@ -181,7 +181,7 @@ Define wordToBinary inputWord :=
 // Note this function converts from **LSD** binary
 Define fromBinary := foldr (\a b => a + 2*b) 0.
 
-Define stdFormat var prefix cycle := (var, concatenate prefix ^ "(" ^ concatenate cycle ^ ")^w").
+Define stdFormat var prefix cycle := (var, concatenate prefix ^ "(" ^ concatenate cycle ^ ")^ω").
 
 Define natFormat var prefix cycle :=
     if cycle = [0] then

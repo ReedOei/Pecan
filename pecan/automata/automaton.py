@@ -23,6 +23,9 @@ class Automaton:
     def complement(self):
         raise NotImplementedError
 
+    def call(self, arg_map):
+        raise NotImplementedError
+
     def substitute(self, subs):
         raise NotImplementedError
 
@@ -61,6 +64,9 @@ class Automaton:
     def custom_convert(self, other):
         raise NotImplementedError
 
+    def shuffle(self, is_disj, other):
+        raise NotImplementedError
+
     # -------------------------------------------------------
     # Default implementations:
     # -------------------------------------------------------
@@ -91,6 +97,9 @@ class TrueAutomaton(Automaton):
 
     def complement(self):
         return FalseAutomaton()
+
+    def call(self, arg_map):
+        return self
 
     def substitute(self, subs):
         return self
@@ -126,6 +135,9 @@ class FalseAutomaton(Automaton):
 
     def complement(self):
         return TrueAutomaton()
+
+    def call(self, arg_map):
+        return self
 
     def substitute(self, subs):
         return self
