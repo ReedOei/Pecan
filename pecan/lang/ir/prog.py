@@ -257,7 +257,7 @@ class NamedPred(IRNode):
         prog.enter_scope(dict(self.restriction_env))
 
         if self.body_evaluated is None:
-            self.body_evaluated = self.body.evaluate(prog)
+            self.body_evaluated = self.body.evaluate(prog).postprocess()
 
         if arg_names is None or len(arg_names) == 0:
             result = self.body_evaluated

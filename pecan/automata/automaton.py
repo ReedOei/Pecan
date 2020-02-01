@@ -60,6 +60,9 @@ class Automaton:
     def merge_states(self):
         return self
 
+    def postprocess(self):
+        return self
+
     # Allows conversion between types of automata, if desired
     def custom_convert(self, other):
         raise NotImplementedError

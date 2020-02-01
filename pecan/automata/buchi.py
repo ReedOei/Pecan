@@ -25,6 +25,8 @@ def merge(aut, var_map, other_var_map):
         else:
             merged_var_map[var] = aps
 
+    # print('merge()', var_map, other_var_map, merged_var_map, subs)
+
     return BuchiAutomaton(aut, merged_var_map).ap_substitute(subs)
 
 def clean_subs(subs):
@@ -90,24 +92,18 @@ class BuchiAutomaton(Automaton):
 
     def call(self, arg_map):
         # Generate fresh aps for all the aps in this automaton
-        fresh_var_map = {}
-        subs = {}
-
-        for v, aps in self.get_var_map().items():
-            new_aps = []
-
-            for ap in aps:
-                new_ap = self.fresh_ap()
-                new_aps.append(new_ap)
-                subs[ap] = new_ap
-
-            fresh_var_map[v] = new_aps
-
-        # print(fresh_var_map)
-
         new_var_map = {}
         ap_subs = {}
-        for v, aps in fresh_var_map.items():
+        subs = {}
+
+        for v, old_aps in self.get_var_map().items():
+            aps = []
+
+            for ap in old_aps:
+                new_ap = self.fresh_ap()
+                subs[ap] = new_ap
+                aps.append(new_ap)
+
             if v in arg_map:
                 if arg_map[v] in new_var_map:
                     final_aps = new_var_map[arg_map[v]]
@@ -119,8 +115,9 @@ class BuchiAutomaton(Automaton):
             else:
                 new_var_map[v] = aps
 
-        for orig_ap, new_ap in subs.items():
-            subs[orig_ap] = ap_subs.get(new_ap, new_ap)
+        for orig_ap in subs:
+            while subs[orig_ap] in ap_subs:
+                subs[orig_ap] = ap_subs[subs[orig_ap]]
 
         # print('call()', self.get_var_map(), subs, new_var_map, subs)
 
