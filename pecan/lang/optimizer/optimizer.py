@@ -22,7 +22,7 @@ class UntypedOptimizer:
         return self.prog
 
     def run_optimizations(self, node, pred):
-        settings.log(2, f'Optimizing: {node}')
+        settings.log(2, lambda: f'Optimizing: {node}')
 
         optimization_pass = [ArithmeticOptimizer(self), BooleanOptimizer(self), RedundantVariableOptimizer(self)]
         new_node = node
@@ -34,7 +34,7 @@ class UntypedOptimizer:
                 changed, new_node = optimization.optimize(new_node, pred)
                 ast_changed |= changed
 
-        settings.log(2, f'Optimized node: {new_node}')
+        settings.log(2, lambda: f'Optimized node: {new_node}')
 
         return new_node
 
@@ -50,7 +50,7 @@ class Optimizer:
         return self.prog
 
     def run_optimizations(self, node, pred):
-        settings.log(2, f'Optimizing: {node}')
+        settings.log(2, lambda: f'Optimizing: {node}')
 
         optimization_pass = [ArithmeticOptimizer(self), CSEOptimizer(self), BooleanOptimizer(self), RedundantVariableOptimizer(self), UnusedVariableOptimizer(self)]
         new_node = node
@@ -62,7 +62,7 @@ class Optimizer:
                 changed, new_node = optimization.optimize(new_node, pred)
                 ast_changed |= changed
 
-        settings.log(2, f'Optimized node: {new_node}')
+        settings.log(2, lambda: f'Optimized node: {new_node}')
 
         return new_node
 

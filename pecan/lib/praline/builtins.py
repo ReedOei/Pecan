@@ -60,7 +60,7 @@ class Emit(Builtin):
     def evaluate(self, prog):
         # TODO: Finish this
         term = prog.praline_lookup('pecanTerm').evaluate(prog).pecan_term
-        settings.log(0, '[DEBUG] Emitted: "{}"'.format(term))
+        settings.log(0, lambda: '[DEBUG] Emitted: "{}"'.format(term))
         prog.emit_definition(term)
         return PralineBool(True)
 

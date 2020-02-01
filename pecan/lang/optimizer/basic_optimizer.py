@@ -23,25 +23,25 @@ class BasicOptimizer(IRTransformer):
 
         self.pred = pred
 
-        settings.log(3, 'Before pre-optimize {}: {}'.format(type(self).__name__, node))
+        settings.log(3, lambda: 'Before pre-optimize {}: {}'.format(type(self).__name__, node))
         res = self.pre_optimize(node)
         if res is not None:
             node = res
 
         if self.changed:
-            settings.log(3, 'Before optimize {}: {}'.format(type(self).__name__, node))
+            settings.log(3, lambda: 'Before optimize {}: {}'.format(type(self).__name__, node))
 
         new_node = self.transform(node)
 
         if self.changed:
-            settings.log(3, 'Before post-optimize {}: {}'.format(type(self).__name__, new_node))
+            settings.log(3, lambda: 'Before post-optimize {}: {}'.format(type(self).__name__, new_node))
 
         res = self.post_optimize(new_node)
         if res is not None:
             new_node = res
 
         if self.changed:
-            settings.log(3, 'After post-optimize {}: {}'.format(type(self).__name__, new_node))
+            settings.log(3, lambda: 'After post-optimize {}: {}'.format(type(self).__name__, new_node))
 
         return self.changed, new_node
 

@@ -373,14 +373,14 @@ class Program(IRNode):
         from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle
         from pecan.lang.ir.praline import PralineDef, PralineExecute, PralineDisplay
 
-        settings.log(0, '[DEBUG] Processing: {}'.format(d))
+        settings.log(0, lambda: '[DEBUG] Processing: {}'.format(d))
 
         # TODO: Cleanup this part relative to evaluate below (e.g., lots of repeated if tree). Instead we could add a evaluate_type method or something, and let dispatch handle it for us
         if type(d) is NamedPred:
             self.defs[i] = self.type_infer(d).with_parent(self)
             self.preds[d.name] = self.defs[i]
             self.preds[d.name].evaluate(self)
-            settings.log(0, self.preds[d.name])
+            settings.log(0, lambda: self.preds[d.name])
         elif type(d) is Restriction:
             d.evaluate(self)
         elif type(d) is DirectiveForget:
@@ -435,7 +435,7 @@ class Program(IRNode):
         msgs = []
 
         for d in self.defs:
-            settings.log(0, '[DEBUG] Processing: {}'.format(d))
+            settings.log(0, lambda: '[DEBUG] Processing: {}'.format(d))
 
             # Ignore these constructs because we should have run them earlier in run_type_inference
             # TODO: Fix here and above in run_type_inferences, all these passes are probably somewhat inefficient for larger programs and it doesn't scale particularly well

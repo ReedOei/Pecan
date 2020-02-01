@@ -35,15 +35,15 @@ def load(pecan_file, *args, **kwargs):
 def from_source(source_code, *args, **kwargs):
     prog = pecan_parser.parse(source_code)
 
-    settings.log(0, 'Parsed program:')
-    settings.log(0, prog)
+    settings.log(0, lambda: 'Parsed program:')
+    settings.log(0, lambda: prog)
 
     prog.search_paths = make_search_paths(kwargs.get('filename', None))
     prog.loader = load
 
     prog = ASTToIR().transform(prog)
 
-    settings.log(0, 'Search path: {}'.format(prog.search_paths))
+    settings.log(0, lambda: 'Search path: {}'.format(prog.search_paths))
 
     # Load the standard library
     prog = settings.include_stdlib(prog, load, args, kwargs)
@@ -51,20 +51,20 @@ def from_source(source_code, *args, **kwargs):
     if settings.opt_enabled():
         prog = UntypedOptimizer(prog).optimize()
 
-        settings.log(1, '(Untyped) Optimized program:')
-        settings.log(1, prog)
+        settings.log(1, lambda: '(Untyped) Optimized program:')
+        settings.log(1, lambda: prog)
 
     prog = prog.run_type_inference()
     prog = TypedIRLowering().transform(prog)
 
-    settings.log(1, 'Program IR:')
-    settings.log(1, prog)
+    settings.log(1, lambda: 'Program IR:')
+    settings.log(1, lambda: prog)
 
     if settings.opt_enabled():
         prog = Optimizer(prog).optimize()
 
-        settings.log(1, '(Typed) Optimized program:')
-        settings.log(1, prog)
+        settings.log(1, lambda: '(Typed) Optimized program:')
+        settings.log(1, lambda: prog)
 
     return prog
 

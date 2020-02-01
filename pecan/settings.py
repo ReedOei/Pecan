@@ -69,9 +69,9 @@ class Settings:
         if msg is None:
             msg = level
             if not self.is_quiet():
-                print(msg)
+                print(msg())
         elif self.get_debug_level() > level:
-            print(msg)
+            print(msg())
 
     def include_stdlib(self, prog, loader, args, kwargs):
         if self.should_load_stdlib():

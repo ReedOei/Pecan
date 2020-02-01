@@ -43,9 +43,9 @@ class IRNode:
         sn, en = aut.num_states(), aut.num_edges()
 
         if desc is None:
-            settings.log(1, self.indented(prog, 'Automaton has {} states and {} edges'.format(sn, en)))
+            settings.log(1, lambda: self.indented(prog, 'Automaton has {} states and {} edges'.format(sn, en)))
         else:
-            settings.log(1, self.indented(prog, 'Automaton has {} states and {} edges {}'.format(sn, en, desc)))
+            settings.log(1, lambda: self.indented(prog, 'Automaton has {} states and {} edges {}'.format(sn, en, desc)))
 
     def indented(self, prog, s):
         return '{}{}'.format(' ' * prog.eval_level, s)
@@ -70,7 +70,7 @@ class IRNode:
         prog.eval_level += 1
         if settings.get_debug_level() > 0:
             start_time = time.time()
-            # settings.log(0, self.indented(prog, 'Evaluating {}'.format(self))
+            # settings.log(0, lambda: self.indented(prog, 'Evaluating {}'.format(self))
         result = self.evaluate_node(prog)
         if type(result) is tuple:
             result = (self.simplify(prog, result[0]), result[1])
@@ -84,7 +84,7 @@ class IRNode:
             else:
                 sn, en = result.num_states(), result.num_edges()
             end_time = time.time()
-            settings.log(0, self.indented(prog, '{} has {} states and {} edges ({:.2f} seconds)'.format(self.get_display_node(prog), sn, en, end_time - start_time)))
+            settings.log(0, lambda: self.indented(prog, '{} has {} states and {} edges ({:.2f} seconds)'.format(self.get_display_node(prog), sn, en, end_time - start_time)))
 
         return result
 

@@ -19,7 +19,7 @@ class DirectiveSaveAut(IRNode):
         self.pred_name = pred_name
 
     def evaluate(self, prog):
-        settings.log(f'[INFO] Saving {self.pred_name} as {self.filename}')
+        settings.log(lambda: f'[INFO] Saving {self.pred_name} as {self.filename}')
 
         prog.call(self.pred_name).save(self.filename)
         return None
@@ -44,7 +44,7 @@ class DirectiveSaveAutImage(IRNode):
 
     def evaluate(self, prog):
         # TODO: Support formats other than SVG?
-        settings.log(f'[INFO] Saving {self.pred_name} as an SVG in {self.filename}')
+        settings.log(lambda: f'[INFO] Saving {self.pred_name} as an SVG in {self.filename}')
 
         evaluated = prog.call(self.pred_name)
         with open(self.filename, 'w') as f:
@@ -118,7 +118,7 @@ class DirectiveAssertProp(IRNode):
         return Call(self.pred_name, []).evaluate(prog).truth_value()
 
     def evaluate(self, prog):
-        settings.log(f'[INFO] Checking if {self.pred_name} is {self.display_truth_val()}.')
+        settings.log(lambda: f'[INFO] Checking if {self.pred_name} is {self.display_truth_val()}.')
 
         pred_truth_value = self.pred_truth_value(prog)
 
@@ -127,7 +127,7 @@ class DirectiveAssertProp(IRNode):
         else:
             result = Result(f'{self.pred_name} is not {self.display_truth_val()}.', False)
 
-        settings.log(result.result_str())
+        settings.log(lambda: result.result_str())
 
         return result
 
