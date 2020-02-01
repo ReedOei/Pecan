@@ -27,7 +27,7 @@ class Add(BinaryIRExpression):
 
         aut_add = prog.call('adder', [val_a, val_b, self.label_var()])
 
-        result = self.project_intermediates(val_a, val_b, aut_a & aut_b & aut_add)
+        result = self.project_intermediates(prog, val_a, val_b, aut_a & aut_b & aut_add)
 
         return (result, self.label_var())
 
@@ -54,7 +54,7 @@ class Sub(BinaryIRExpression):
 
         aut_sub = prog.call('adder', [self.label_var(), val_b, val_a])
 
-        result = self.project_intermediates(val_a, val_b, aut_a & aut_b & aut_sub)
+        result = self.project_intermediates(prog, val_a, val_b, aut_a & aut_b & aut_sub)
         return (result, self.label_var())
 
     def transform(self, transformer):
@@ -175,7 +175,7 @@ class Equals(BinaryIRPredicate):
 
         eq_aut = prog.call('equal', [val_a, val_b])
 
-        return self.project_intermediates(val_a, val_b, eq_aut & aut_a & aut_b)
+        return self.project_intermediates(prog, val_a, val_b, eq_aut & aut_a & aut_b)
 
     def transform(self, transformer):
         return transformer.transform_Equals(self)
@@ -196,7 +196,7 @@ class Less(BinaryIRPredicate):
 
         aut_less = prog.call('less', [val_a, val_b])
 
-        return self.project_intermediates(val_a, val_b, aut_a & aut_b & aut_less)
+        return self.project_intermediates(prog, val_a, val_b, aut_a & aut_b & aut_less)
 
     def transform(self, transformer):
         return transformer.transform_Less(self)

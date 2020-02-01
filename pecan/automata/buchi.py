@@ -90,7 +90,28 @@ class BuchiAutomaton(Automaton):
     def complement(self):
         return BuchiAutomaton(spot.complement(self.get_aut()), self.var_map)
 
-    def call(self, arg_map):
+    def call(self, arg_map, env_var_map):
+        call_var_map = {}
+        arg_var_map = {}
+        ap_subs = {}
+
+        for formal_arg, actual_arg in arg_map.items():
+            if actual_arg in call_var_map:
+                for a, b in zip(self.get_var_map()[formal_arg], call_var_map[actual_arg]):
+                    ap_subs[a] = b
+            else:
+                call_var_map[actual_arg] = self.get_var_map()[formal_arg]
+
+            if actual_arg not in env_var_map:
+                env_var_map[actual_arg] = [ self.fresh_ap() for i in self.get_var_map()[formal_arg] ]
+
+            arg_var_map[actual_arg] = env_var_map[actual_arg]
+
+        # print('call()', arg_map, env_var_map, arg_var_map, call_var_map, ap_subs)
+
+        return merge(self.ap_substitute(ap_subs).aut, arg_var_map, call_var_map)
+
+        # TODO: Remove this if it's no longer needed
         # Generate fresh aps for all the aps in this automaton
         new_var_map = {}
         ap_subs = {}
@@ -151,7 +172,7 @@ class BuchiAutomaton(Automaton):
 
         return BuchiTransformer(self, Substitution(subs)).transform()
 
-    def project(self, var_refs):
+    def project(self, var_refs, env_var_map):
         from pecan.lang.ir.prog import VarRef
         var_names = []
         pecan_var_names = []
@@ -169,6 +190,9 @@ class BuchiAutomaton(Automaton):
             # It may not be there (e.g., it's perfectly valid to do "exists x. y = y", even if it's pointless)
             if var_name in result.get_var_map():
                 result.get_var_map().pop(var_name)
+
+            if var_name in env_var_map:
+                env_var_map.pop(var_name)
 
         return result
 

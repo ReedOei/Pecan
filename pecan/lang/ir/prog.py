@@ -263,7 +263,7 @@ class NamedPred(IRNode):
             result = self.body_evaluated
         else:
             subs_dict = {arg.var_name: name.var_name for arg, name in zip(self.args, arg_names)}
-            result = self.body_evaluated.call(subs_dict)
+            result = self.body_evaluated.call(subs_dict, prog.get_var_map())
 
         prog.exit_scope()
 
@@ -302,8 +302,13 @@ class Program(IRNode):
         self.idx = None
         self.emit_offset = 0
 
+        self.var_map = []
+
         from pecan.lang.type_inference import TypeInferer
         self.type_inferer = TypeInferer(self)
+
+    def get_var_map(self):
+        return self.var_map[-1]
 
     def enter_praline_env(self, new_env=None):
         if new_env is None:
@@ -498,6 +503,7 @@ class Program(IRNode):
         return result
 
     def enter_scope(self, new_restrictions=None):
+        self.var_map.append({})
         if new_restrictions is None:
             new_restrictions = {}
         self.restrictions.append(dict(new_restrictions))
@@ -506,6 +512,7 @@ class Program(IRNode):
         if len(self.restrictions) <= 0:
             raise Exception('Cannot exit the last scope!')
         else:
+            self.var_map.pop()
             self.restrictions.pop(-1)
 
     def get_restrictions(self, var_name: str):

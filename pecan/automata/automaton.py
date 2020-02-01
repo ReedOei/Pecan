@@ -23,13 +23,13 @@ class Automaton:
     def complement(self):
         raise NotImplementedError
 
-    def call(self, arg_map):
+    def call(self, arg_map, env_var_map):
         raise NotImplementedError
 
     def substitute(self, subs):
         raise NotImplementedError
 
-    def project(self, var_refs):
+    def project(self, var_refs, env_var_map):
         raise NotImplementedError
 
     def is_empty(self):
@@ -101,13 +101,13 @@ class TrueAutomaton(Automaton):
     def complement(self):
         return FalseAutomaton()
 
-    def call(self, arg_map):
+    def call(self, arg_map, env_var_map):
         return self
 
     def substitute(self, subs):
         return self
 
-    def project(self, var_refs):
+    def project(self, var_refs, env_var_map):
         return self
 
     def is_empty(self):
@@ -139,13 +139,13 @@ class FalseAutomaton(Automaton):
     def complement(self):
         return TrueAutomaton()
 
-    def call(self, arg_map):
+    def call(self, arg_map, env_var_map):
         return self
 
     def substitute(self, subs):
         return self
 
-    def project(self, var_refs):
+    def project(self, var_refs, env_var_map):
         return self
 
     def is_empty(self):

@@ -24,7 +24,7 @@ class Exists(IRPredicate):
             prog.restrict(self.var.var_name, self.cond)
 
         aut = self.with_cond(new_pred).evaluate(prog)
-        res = aut.project([self.var])
+        res = aut.project([self.var], prog.get_var_map())
 
         if self.cond is not None:
             prog.forget(self.var.var_name)

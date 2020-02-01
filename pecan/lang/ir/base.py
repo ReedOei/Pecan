@@ -139,7 +139,7 @@ class BinaryIRExpression(IRExpression):
         self.b = self.b.with_type(new_type)
         return super().with_type(new_type)
 
-    def project_intermediates(self, val_a, val_b, aut):
+    def project_intermediates(self, prog, val_a, val_b, aut):
         from pecan.lang.ir.prog import VarRef
 
         proj_vars = set()
@@ -150,7 +150,7 @@ class BinaryIRExpression(IRExpression):
         if type(self.b) is not VarRef:
             proj_vars.add(val_b)
 
-        return aut.project(proj_vars)
+        return aut.project(proj_vars, prog.get_var_map())
 
     def __eq__(self, other):
         return other is not None and type(other) is self.__class__ and self.a == other.a and self.b == other.b and self.get_type() == other.get_type()
@@ -171,7 +171,7 @@ class BinaryIRPredicate(IRPredicate):
         self.a = a.with_parent(self)
         self.b = b.with_parent(self)
 
-    def project_intermediates(self, val_a, val_b, aut):
+    def project_intermediates(self, prog, val_a, val_b, aut):
         from pecan.lang.ir.prog import VarRef
 
         proj_vars = set()
@@ -182,7 +182,7 @@ class BinaryIRPredicate(IRPredicate):
         if type(self.b) is not VarRef:
             proj_vars.add(val_b)
 
-        return aut.project(proj_vars)
+        return aut.project(proj_vars, prog.get_var_map())
 
     def __eq__(self, other):
         return other is not None and type(other) is self.__class__ and self.a == other.a and self.b == other.b
