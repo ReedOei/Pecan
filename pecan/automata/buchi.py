@@ -156,9 +156,12 @@ class BuchiTransformer:
 
         for e in self.original_aut.edges():
             # Convert to a formula because formulas are nicer to work with than the bdd's
+
+            # TODO: is it possible/worth it to transform the formula without having to first convert to a spot formula?
             formula = spot.bdd_to_formula(e.cond)
             new_formula = self.formula_builder(formula)
-            cond = formula_to_bdd(new_aut, new_formula)
+            cond = spot.formula_to_bdd(new_formula, new_aut.get_dict(), new_aut)
+
             # print('Adding edge', e.src, e.dst, '(', formula, ')', '(', new_formula, ')', e.acc)
             new_aut.new_edge(e.src, e.dst, cond, e.acc)
 
@@ -176,33 +179,6 @@ class Substitution:
                 return formula
         else:
             return formula.map(self.substitute)
-
-def build_bdd(kind, children):
-    if kind == spot.op_And:
-        return reduce(lambda a, b: a & b, children)
-    elif kind == spot.op_Or:
-        return reduce(lambda a, b: a | b, children)
-    elif kind == spot.op_Not:
-        return buddy.bdd_not(children[0])
-    elif kind == spot.op_tt:
-        return buddy.bddtrue
-    elif kind == spot.op_ff:
-        return buddy.bddfalse
-    else:
-        raise Exception('Unhandled formula kind: {}'.format(kind))
-
-def formula_to_bdd(aut, formula):
-    if formula._is(spot.op_ap): # op_ap is 'atomic proposition' (i.e., variable)
-        return buddy.bdd_ithvar(aut.register_ap(formula.ap_name()))
-    else:
-        new_children = []
-        for i in range(formula.size()):
-            new_child = formula_to_bdd(aut, formula[i])
-
-            if new_child is not None:
-                new_children.append(new_child)
-
-        return build_bdd(formula.kind(), new_children)
 
 class BuchiProjection:
     def __init__(self, aut, var_names):

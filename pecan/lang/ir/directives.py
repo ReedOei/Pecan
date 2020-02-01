@@ -3,11 +3,10 @@
 
 import sys
 
-import spot
-
 from pecan.tools.shuffle_automata import ShuffleAutomata
 from pecan.tools.convert_hoa import convert_aut
 from pecan.tools.labeled_aut_converter import convert_labeled_aut
+from pecan.tools.hoa_loader import load_hoa
 from pecan.automata.buchi import BuchiAutomaton
 from pecan.lang.ir import *
 
@@ -163,7 +162,7 @@ class DirectiveLoadAut(IRNode):
 
         if self.aut_format == 'hoa':
             # TODO: Rename the APs of the loaded automaton to be the same as the args specified
-            aut = BuchiAutomaton(spot.automaton(realpath))
+            aut = load_hoa(realpath)
         elif self.aut_format == 'walnut':
             aut = convert_aut(realpath, [v.var_name for v in self.pred.args])
         elif self.aut_format == 'pecan':
