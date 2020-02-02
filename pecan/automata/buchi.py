@@ -70,10 +70,11 @@ class BuchiAutomaton(Automaton):
         from pecan.lang.ir.prog import VarRef
         var_names = [v.var_name for v in var_refs if type(v) is VarRef]
 
-        self.postprocess()
-
-        res_aut = self.aut
+        res_aut = self.aut.postprocess('BA')
         for var_name in var_names:
+            if not res_aut.is_sba():
+                res_aut = res_aut.postprocess('BA')
+
             res_aut = buchi_transform(res_aut, BuchiProjection(res_aut, var_name))
 
         return BuchiAutomaton(res_aut)
@@ -247,4 +248,3 @@ class BuchiProjection(Builder):
         # [F/y]cond | [T/y]cond
         # where cond is the original condition. That is, the edge is taken if it holds with y being false or y being true.
         return if_0 | if_1
-
