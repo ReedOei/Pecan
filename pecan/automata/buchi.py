@@ -34,7 +34,20 @@ class BuchiAutomaton(Automaton):
         return BuchiAutomaton(spot.complement(self.get_aut()))
 
     def substitute(self, subs):
-        return BuchiAutomaton(BuchiTransformer(self.postprocess(), Substitution(subs).substitute).transform())
+        subs_list = []
+        for k,v in subs.items():
+            # If we try something like [x/x]P, just don't do anything
+            if k == v:
+                continue
+
+            kbdd = self.aut.register_ap(k)
+            vbdd = buddy.bdd_ithvar(self.aut.register_ap(v))
+            subs_list.append((kbdd, vbdd))
+
+        if len(subs_list) == 0:
+            return self
+
+        return BuchiAutomaton(BuchiTransformer(self.postprocess(), Substitution(subs_list).substitute).transform())
 
     def project(self, var_refs):
         from pecan.lang.ir.prog import VarRef
@@ -155,14 +168,7 @@ class BuchiTransformer:
         new_aut.set_init_state(self.original_aut.get_init_state_number())
 
         for e in self.original_aut.edges():
-            # Convert to a formula because formulas are nicer to work with than the bdd's
-
-            # TODO: is it possible/worth it to transform the formula without having to first convert to a spot formula?
-            formula = spot.bdd_to_formula(e.cond)
-            new_formula = self.formula_builder(formula)
-            cond = spot.formula_to_bdd(new_formula, new_aut.get_dict(), new_aut)
-
-            # print('Adding edge', e.src, e.dst, '(', formula, ')', '(', new_formula, ')', e.acc)
+            cond = self.formula_builder(e.cond)
             new_aut.new_edge(e.src, e.dst, cond, e.acc)
 
         return new_aut
@@ -171,14 +177,13 @@ class Substitution:
     def __init__(self, subs):
         self.subs = subs
 
-    def substitute(self, formula):
-        if formula._is(spot.op_ap):
-            if formula.ap_name() in self.subs:
-                return spot.formula(self.subs[formula.ap_name()])
-            else:
-                return formula
-        else:
-            return formula.map(self.substitute)
+    def substitute(self, cond):
+        # TODO: ideally we could use the bdd_veccompose to do them all at once instead of
+        #   one at a time, but spot doesn't expose the bdd_newpair function to python at the moment...
+        for var, new_formula in self.subs:
+            cond = buddy.bdd_compose(cond, new_formula, var)
+
+        return cond
 
 class BuchiProjection:
     def __init__(self, aut, var_names):
@@ -188,14 +193,18 @@ class BuchiProjection:
 
     def project(self):
         for var in self.var_names:
+            bdd = self.aut.register_ap(var)
+
             def build_projection_formula(formula):
-                if_0 = Substitution({var: spot.formula('0')}).substitute(formula)
-                if_1 = Substitution({var: spot.formula('1')}).substitute(formula)
+                if_0 = Substitution([(bdd, buddy.bddtrue)]).substitute(formula)
+                if_1 = Substitution([(bdd, buddy.bddfalse)]).substitute(formula)
 
                 # The new edge condition should be:
-                # [0/y]cond | [1/y]cond
+                # [F/y]cond | [T/y]cond
                 # where cond is the original condition. That is, the edge is taken if it holds with y being false or y being true.
-                return spot.formula_Or([if_0, if_1])
+                return if_0 | if_1
+
             self.aut = BuchiTransformer(self.aut, build_projection_formula).transform()
+
         return self.aut
 
