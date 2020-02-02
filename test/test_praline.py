@@ -1,3 +1,6 @@
+#!/usr/bin/env python3.6
+# -*- coding=utf-8 -*-
+
 from contextlib import redirect_stdout
 import io
 

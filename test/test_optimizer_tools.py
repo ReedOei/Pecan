@@ -1,3 +1,6 @@
+#!/usr/bin/env python3.6
+# -*- coding=utf-8 -*-
+
 from lark import Lark, Transformer, v_args
 
 from pecan.lang.optimizer.tools import *
