@@ -1,4 +1,4 @@
-// Most of the the following was done by: Luke Schaeffer <lrschaeffer@gmail.com>
+// Most of the the following was done by: Luke Schaeffer (https://dblp.org/pers/hd/s/Schaeffer:Luke)
 
 #load("ostrowski/bco_simple_valid.txt", "walnut", bco_simple_valid(a, x))
 #load("ostrowski/bco_standard.txt", "walnut", bco_standard(a))
@@ -14,16 +14,15 @@ bco_valid2(a, x, y) := bco_valid(a, x) & bco_valid(a, y)
 bco_valid3(a, x, y, z) := bco_valid2(a, x, y) & bco_valid(a, z)
 
 bco_eq(x, y) := bco_leq(x, y) & bco_leq(y, x)
-bco_zero(z) := exists a is bco_alphabet. bco_valid(a,z) & forall y is bco_alphabet. bco_valid(a,y) => bco_leq(z,y)
-bco_succ(a, x, y) := bco_valid2(a, x, y) & bco_leq(x, y) & ~bco_eq(x, y) & forall z is bco_alphabet. bco_valid(a,z) => (bco_leq(z,x) | bco_leq(y,z))
-
-// Ensure that all the variable below come from the correct alphabet
-// Restrict a, x, y, z, u, v, w are bco_alphabet.
+bco_zero(z) := exists a. bco_valid(a,z) & forall y. bco_valid(a,y) => bco_leq(z,y)
+bco_succ(a, x, y) := bco_valid2(a, x, y) & bco_leq(x, y) & ~bco_eq(x, y) & forall z. bco_valid(a,z) => (bco_leq(z,x) | bco_leq(y,z))
 
 test_bco_adder_base_case() := forall a. forall x. forall y. forall z. (bco_zero(x) & bco_valid3(a, x, y, z)) => (bco_adder(a,x,y,z) <=> bco_eq(y,z))
 #assert_prop(true, test_bco_adder_base_case)
 // test_bco_adder_inductive_case() := forall a. forall x. bco_valid(a, x) => forall y. bco_valid(a, y) => forall z. bco_valid(a, z) => forall u. bco_succ(a,u,x) => forall v. bco_succ(a,v,z) => (bco_adder(a,x,y,z) <=> bco_adder(a,u,y,v))
-test_bco_adder_inductive_case() := forall a. forall x. bco_valid(a, x) => forall y. bco_valid(a, y) => forall z. bco_valid(a, z) => forall u. bco_succ(a,u,x) => forall v. bco_succ(a,v,z) => (bco_adder(a,x,y,z) => bco_adder(a,u,y,v))
+test_bco_adder_inductive_case_fail(a,x,y,z) := bco_valid(a, x) & bco_valid(a, y) & bco_valid(a, z) & bco_adder(a,x,y,z) & exists u. bco_succ(a,u,x) & exists v. bco_succ(a,v,z) & !bco_adder(a,u,y,v)
+Display example stdFormat { test_bco_adder_inductive_case_fail(a, x, y, z, u) }.
+test_bco_adder_inductive_case() := forall a. forall x. bco_valid(a, x) => forall y. bco_valid(a, y) => forall z. bco_valid(a, z) => !test_bco_adder_inductive_case_fail(a,x,y,z)
 #assert_prop(true, test_bco_adder_inductive_case)
 
 test_bco_pred() := forall a. forall x. bco_valid(a,x) => (bco_zero(x) | (exists u. bco_valid(a,u) & bco_succ(a,u,x)))
