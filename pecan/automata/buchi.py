@@ -20,6 +20,12 @@ class BuchiAutomaton(Automaton):
         else:
             raise NotImplementedError
 
+    id = 0
+    def fresh_ap(self):
+        name = f'__ap{BuchiAutomaton.id}'
+        BuchiAutomaton.id += 1
+        return name
+
     def __init__(self, aut):
         super().__init__('buchi')
         self.aut = aut
@@ -33,26 +39,45 @@ class BuchiAutomaton(Automaton):
     def complement(self):
         return BuchiAutomaton(spot.complement(self.get_aut()))
 
+    def relabel(self, arguments=None):
+        new_aps = {}
+        for ap in self.aut.ap():
+            new_aps[ap.ap_name()] = self.fresh_ap()
+
+        for ap in arguments or []:
+            new_aps[ap] = self.fresh_ap()
+
+        return new_aps, self.substitute(new_aps)
+
     def substitute(self, subs):
-        subs_list = []
+        self.postprocess()
+
+        bdd_subs = {}
         for k,v in subs.items():
             # If we try something like [x/x]P, just don't do anything
             if k == v:
                 continue
 
-            kbdd = self.aut.register_ap(k)
-            vbdd = buddy.bdd_ithvar(self.aut.register_ap(v))
-            subs_list.append((kbdd, vbdd))
+            kvar = self.aut.register_ap(k)
+            bdd_subs[kvar] = v
 
-        if len(subs_list) == 0:
+        if not bdd_subs:
             return self
 
-        return BuchiAutomaton(BuchiTransformer(self.postprocess(), Substitution(subs_list).substitute).transform())
+        return BuchiAutomaton(buchi_transform(self.aut, Substitution(bdd_subs)))
 
     def project(self, var_refs):
         from pecan.lang.ir.prog import VarRef
         var_names = [v.var_name for v in var_refs if type(v) is VarRef]
-        return BuchiAutomaton(BuchiProjection(self.postprocess(), var_names).project())
+
+        res_aut = self.aut.postprocess('BA')
+        for var_name in var_names:
+            if not res_aut.is_sba():
+                res_aut = res_aut.postprocess('BA')
+
+            res_aut = buchi_transform(res_aut, BuchiProjection(res_aut, var_name))
+
+        return BuchiAutomaton(res_aut)
 
     def is_empty(self):
         return self.aut.is_empty()
@@ -76,7 +101,6 @@ class BuchiAutomaton(Automaton):
         return self.postprocess().show()
 
     def get_aut(self):
-        # self.aut = spot.remove_alternation(self.postprocess())
         return self.aut
 
     def merge_edges(self):
@@ -152,59 +176,75 @@ class BuchiAutomaton(Automaton):
             self.aut = self.aut.postprocess('BA') # Ensure that the automata we have is a Buchi (possible nondeterministic) automata
         return self.aut
 
-class BuchiTransformer:
-    def __init__(self, original_aut, formula_builder):
-        self.original_aut = original_aut
-        self.formula_builder = formula_builder
+    def save(self, filename):
+        self.aut.save(filename)
 
-    def transform(self):
-        # Build a new automata with different edges
-        new_aut = spot.make_twa_graph()
+def buchi_transform(original_aut, builder):
+    # Build a new automata with different edges
+    new_aut = spot.make_twa_graph()
 
-        # Set the acceptance condition to be same as the input automata
-        acc = self.original_aut.get_acceptance()
-        new_aut.set_acceptance(acc.used_sets().max_set(), acc)
-        new_aut.new_states(self.original_aut.num_states())
-        new_aut.set_init_state(self.original_aut.get_init_state_number())
+    # Set the acceptance condition to be same as the input automata
+    acc = original_aut.get_acceptance()
+    new_aut.set_acceptance(acc.used_sets().max_set(), acc)
+    new_aut.new_states(original_aut.num_states())
+    new_aut.set_init_state(original_aut.get_init_state_number())
 
-        for e in self.original_aut.edges():
-            cond = self.formula_builder(e.cond)
-            new_aut.new_edge(e.src, e.dst, cond, e.acc)
+    builder.pre_build(new_aut)
 
-        return new_aut
+    for e in original_aut.edges():
+        cond = builder.build_cond(e.cond)
+        new_aut.new_edge(e.src, e.dst, cond, e.acc)
 
-class Substitution:
+    builder.post_build(new_aut)
+
+    return new_aut
+
+class Builder:
+    def pre_build(self, new_aut):
+        pass
+
+    def post_build(self, new_aut):
+        pass
+
+    def build_cond(self, cond):
+        return cond
+
+class Substitution(Builder):
     def __init__(self, subs):
         self.subs = subs
 
-    def substitute(self, cond):
+    def pre_build(self, new_aut):
+        for k, v in self.subs.items():
+            if type(v) is str:
+                self.subs[k] = buddy.bdd_ithvar(new_aut.register_ap(v))
+
+    def build_cond(self, cond):
         # TODO: ideally we could use the bdd_veccompose to do them all at once instead of
         #   one at a time, but spot doesn't expose the bdd_newpair function to python at the moment...
-        for var, new_formula in self.subs:
+        for var, new_formula in self.subs.items():
+            # old = cond
             cond = buddy.bdd_compose(cond, new_formula, var)
+            # print('after ({} |-> {}), is now {}, was {}'.format(spot.bdd_to_formula(buddy.bdd_ithvar(var)), spot.bdd_to_formula(new_formula), spot.bdd_to_formula(cond), spot.bdd_to_formula(old)))
 
         return cond
 
-class BuchiProjection:
-    def __init__(self, aut, var_names):
+class BuchiProjection(Builder):
+    def __init__(self, aut, var_name):
         super().__init__()
         self.aut = aut
-        self.var_names = var_names
+        self.var_name = var_name
+        self.bdd_var = self.aut.register_ap(var_name)
 
-    def project(self):
-        for var in self.var_names:
-            bdd = self.aut.register_ap(var)
+    def pre_build(self, new_aut):
+        for ap in self.aut.ap():
+            if ap.ap_name() != self.var_name:
+                new_aut.register_ap(ap)
 
-            def build_projection_formula(formula):
-                if_0 = Substitution([(bdd, buddy.bddtrue)]).substitute(formula)
-                if_1 = Substitution([(bdd, buddy.bddfalse)]).substitute(formula)
+    def build_cond(self, cond):
+        if_0 = Substitution({self.bdd_var: buddy.bddfalse}).build_cond(cond)
+        if_1 = Substitution({self.bdd_var: buddy.bddtrue}).build_cond(cond)
 
-                # The new edge condition should be:
-                # [F/y]cond | [T/y]cond
-                # where cond is the original condition. That is, the edge is taken if it holds with y being false or y being true.
-                return if_0 | if_1
-
-            self.aut = BuchiTransformer(self.aut, build_projection_formula).transform()
-
-        return self.aut
-
+        # The new edge condition should be:
+        # [F/y]cond | [T/y]cond
+        # where cond is the original condition. That is, the edge is taken if it holds with y being false or y being true.
+        return if_0 | if_1

@@ -9,14 +9,14 @@ class Exists(IRPredicate):
     def __init__(self, var: VarRef, cond, pred):
         super().__init__()
         self.var = var
-        self.cond = cond.with_parent(self) if cond is not None else None
-        self.pred = pred.with_parent(self)
+        self.cond = cond
+        self.pred = pred
 
     def evaluate_node(self, prog):
         # TODO: Move to this to TypedIRLowering or something
         if len(prog.get_restrictions(self.var.var_name)) > 0:
             constraints = reduce(Conjunction, prog.get_restrictions(self.var.var_name))
-            new_pred = Conjunction(constraints, self.pred).with_parent(self)
+            new_pred = Conjunction(constraints, self.pred)
         else:
             new_pred = self.pred
 

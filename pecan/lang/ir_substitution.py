@@ -36,5 +36,5 @@ class IRSubstitution(IRTransformer):
         new_name = self.substitute_identifier(node, node.name)
         new_args = [self.transform(arg) for arg in node.args]
         new_restrictions = {self.transform(var): self.transform(restriction) for var, restriction in node.arg_restrictions.items()}
-        return NamedPred(new_name, new_args, new_restrictions, self.transform(node.body), restriction_env=node.restriction_env, body_evaluated=node.body_evaluated)
+        return NamedPred(new_name, new_args, new_restrictions, self.transform(node.body), restriction_env=node.restriction_env, body_evaluated=node.body_evaluated, arg_name_map=node.arg_name_map)
 

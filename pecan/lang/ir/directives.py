@@ -154,7 +154,7 @@ class DirectiveLoadAut(IRNode):
         super().__init__()
         self.filename = filename
         self.aut_format = aut_format
-        self.pred = pred.with_parent(self)
+        self.pred = pred
 
     def evaluate(self, prog):
         # TODO: Support argument restrictions on loaded automata
@@ -169,6 +169,8 @@ class DirectiveLoadAut(IRNode):
             aut = convert_labeled_aut(realpath, [v.var_name for v in self.pred.args])
         else:
             raise Exception('Unknown format: {}'.format(self.aut_format))
+
+        # print('loaded ap: ', aut.aut.ap())
 
         prog.preds[self.pred.name] = NamedPred(self.pred.name, self.pred.args, {}, AutLiteral(aut))
 
@@ -239,7 +241,7 @@ class DirectiveType(IRNode):
     def __init__(self, pred_ref, val_dict):
         super().__init__()
         self.pred_ref = pred_ref
-        self.val_dict = {k: v.with_parent(self) for k, v in val_dict.items()}
+        self.val_dict = val_dict
 
     def evaluate(self, prog):
         prog.declare_type(self.pred_ref, self.val_dict)

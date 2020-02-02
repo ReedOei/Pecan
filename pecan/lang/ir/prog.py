@@ -159,7 +159,7 @@ class Call(IRPredicate):
     def __init__(self, name, args):
         super().__init__()
         self.name = name
-        self.args = [arg.with_parent(self) for arg in args]
+        self.args = args
 
     def arity(self):
         return len(self.args)
@@ -217,17 +217,17 @@ class Call(IRPredicate):
         return hash((self.name, tuple(self.args)))
 
 class NamedPred(IRNode):
-    def __init__(self, name, args, arg_restrictions, body, restriction_env=None, body_evaluated=None):
+    def __init__(self, name, args, arg_restrictions, body, restriction_env=None, body_evaluated=None, arg_name_map=None):
         super().__init__()
         self.name = name
 
-        self.args = [arg.with_parent(self) for arg in args]
-        self.arg_restrictions = {var.with_parent(self): restriction.with_parent(self) for var, restriction in arg_restrictions.items()}
-        self.body = body.with_parent(self)
+        self.args = args
+        self.arg_restrictions = arg_restrictions
+        self.body = body
 
         self.restriction_env = restriction_env or {}
-
         self.body_evaluated = body_evaluated
+        self.arg_name_map = arg_name_map or {}
 
     def evaluate(self, prog):
         # Here we keep track of all restrictions that were in scope when we are evaluated;
@@ -258,11 +258,13 @@ class NamedPred(IRNode):
 
         if self.body_evaluated is None:
             self.body_evaluated = self.body.evaluate(prog)
+            self.arg_name_map, self.body_evaluated = self.body_evaluated.relabel([arg.var_name for arg in self.args])
+            # print(self.name, self.args, self.arg_name_map)
 
         if arg_names is None or len(arg_names) == 0:
             result = self.body_evaluated
         else:
-            subs_dict = {arg.var_name: name.var_name for arg, name in zip(self.args, arg_names)}
+            subs_dict = {self.arg_name_map[arg.var_name]: name.var_name for arg, name in zip(self.args, arg_names)}
             result = self.body_evaluated.substitute(subs_dict)
 
         prog.exit_scope()
@@ -285,7 +287,7 @@ class Program(IRNode):
     def __init__(self, defs, *args, **kwargs):
         super().__init__()
 
-        self.defs = [d.with_parent(self) for d in defs]
+        self.defs = defs
         self.preds = kwargs.get('preds', {})
         self.context = kwargs.get('context', {})
         self.restrictions = kwargs.get('restrictions', [{}])
@@ -352,9 +354,9 @@ class Program(IRNode):
 
     def include(self, other_prog):
         # Note: Intentionally do NOT merge restrictions, because it would be super confusing if variable restrictions "leaked" from imports
-        self.preds.update({k: v.with_parent(self) for k, v in other_prog.preds.items()})
+        self.preds.update(other_prog.preds)
         self.context.update(other_prog.context)
-        self.types.update({k: {pred_k: pred_v.with_parent(self) for pred_k, pred_v in v.items()} for k, v in other_prog.types.items()})
+        self.types.update(other_prog.types)
 
         self.praline_defs.update(other_prog.praline_defs)
 
@@ -377,7 +379,7 @@ class Program(IRNode):
 
         # TODO: Cleanup this part relative to evaluate below (e.g., lots of repeated if tree). Instead we could add a evaluate_type method or something, and let dispatch handle it for us
         if type(d) is NamedPred:
-            self.defs[i] = self.type_infer(d).with_parent(self)
+            self.defs[i] = self.type_infer(d)
             self.preds[d.name] = self.defs[i]
             self.preds[d.name].evaluate(self)
             settings.log(0, lambda: self.preds[d.name])
@@ -643,7 +645,7 @@ class Restriction(IRNode):
     def __init__(self, restrict_vars, pred):
         super().__init__()
         self.restrict_vars = restrict_vars
-        self.pred = pred.with_parent(self)
+        self.pred = pred
 
     def evaluate(self, prog):
         for var in self.restrict_vars:

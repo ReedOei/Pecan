@@ -14,4 +14,6 @@ Short:
 - Make all parsing functions in pecan.lang.parser into proper functions (b/c it gives better debug info)
 - Make settings log call a function so it desn't have to build all the strings if it's not going to display anyway
 - Convert all operators to predicate calls after the last stage of optimizations
-
+- Get rid of the parent thing, it doesn't seem to be used at all
+    - Same for display node (which is almost gone except for the field in IRNode?)
+- Try projecting all at once instead of in multiple passes?

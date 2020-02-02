@@ -17,14 +17,6 @@ class IRNode:
         # TODO: detect used labels and avoid those
         self.label = None
         self.type = None
-        self.parent = None
-
-    def with_parent(self, parent):
-        self.parent = parent
-        return self
-
-    def get_parent(self):
-        return self.parent
 
     def label_var(self):
         from pecan.lang.ir.prog import VarRef
@@ -68,9 +60,11 @@ class IRNode:
 
     def evaluate(self, prog):
         prog.eval_level += 1
+
         if settings.get_debug_level() > 0:
             start_time = time.time()
             # settings.log(0, lambda: self.indented(prog, 'Evaluating {}'.format(self))
+
         result = self.evaluate_node(prog)
         if type(result) is tuple:
             result = (self.simplify(prog, result[0]), result[1])
@@ -78,6 +72,7 @@ class IRNode:
             result = self.simplify(prog, result)
 
         prog.eval_level -= 1
+
         if settings.get_debug_level() > 0:
             if type(result) is tuple:
                 sn, en = result[0].num_states(), result[0].num_edges()
@@ -115,7 +110,7 @@ class IRExpression(IRNode):
 class UnaryIRExpression(IRExpression):
     def __init__(self, a):
         super().__init__()
-        self.a = a.with_parent(self)
+        self.a = a
 
     def with_type(self, new_type):
         self.a = self.a.with_type(new_type)
@@ -130,9 +125,9 @@ class UnaryIRExpression(IRExpression):
 class BinaryIRExpression(IRExpression):
     def __init__(self, a, b):
         super().__init__()
-        self.a = a.with_parent(self)
-        self.b = b.with_parent(self)
         self.is_int = a.is_int and b.is_int
+        self.a = a
+        self.b = b
 
     def with_type(self, new_type):
         self.a = self.a.with_type(new_type)
@@ -168,8 +163,8 @@ class IRPredicate(IRNode):
 class BinaryIRPredicate(IRPredicate):
     def __init__(self, a, b):
         super().__init__()
-        self.a = a.with_parent(self)
-        self.b = b.with_parent(self)
+        self.a = a
+        self.b = b
 
     def project_intermediates(self, val_a, val_b, aut):
         from pecan.lang.ir.prog import VarRef
@@ -193,7 +188,7 @@ class BinaryIRPredicate(IRPredicate):
 class UnaryIRPredicate(IRPredicate):
     def __init__(self, a):
         super().__init__()
-        self.a = a.with_parent(self)
+        self.a = a
 
     def __eq__(self, other):
         return other is not None and type(other) is self.__class__ and self.a == other.a

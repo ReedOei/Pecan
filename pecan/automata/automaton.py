@@ -48,6 +48,9 @@ class Automaton:
     def show(self):
         raise NotImplementedError
 
+    def save(self, filename):
+        raise NotImplementedError
+
     # -------------------------------------------------------
     # Optional simplification methods:
     # -------------------------------------------------------
@@ -60,6 +63,9 @@ class Automaton:
     # Allows conversion between types of automata, if desired
     def custom_convert(self, other):
         raise NotImplementedError
+
+    def relabel(self, arguments=None):
+        return {arg: arg for arg in arguments} or {}, self
 
     # -------------------------------------------------------
     # Default implementations:
