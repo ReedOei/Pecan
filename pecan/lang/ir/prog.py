@@ -431,7 +431,6 @@ class Program(IRNode):
 
             settings.log(0, lambda: '[DEBUG] Processing: {}'.format(d))
             if type(d) is NamedPred:
-
                 # If we already computed it, it doesn't matter if we replace it with a more efficient version
                 if self.preds[d.name].body_evaluated is None:
                     self.preds[d.name] = d

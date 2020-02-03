@@ -54,7 +54,7 @@ def main():
     parser = argparse.ArgumentParser(description='An automated theorem prover for Büchi Automata')
     parser.add_argument('file', help='A Pecan file to execute', nargs='?')
     parser.add_argument('-i', '--interactive', help='Run Pecan in interactive mode (REPL)', required=False, action='store_true')
-    parser.add_argument('-d', '--debug', help='Output debugging information', required=False, action='count')
+    parser.add_argument('-d', '--debug', help='Output debugging information', required=False, action='store_true')
     parser.add_argument('-q', '--quiet', help='Quiet mode', required=False, action='store_true')
     parser.add_argument('--no_opt', help='Turns off optimizations', required=False, action='store_true')
     parser.add_argument('--load_stdlib', help='Loads the standard library (from library/std.pn in your Pecan installation)', required=False, action='store_false')
