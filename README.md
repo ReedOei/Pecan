@@ -4,6 +4,8 @@
 
 Pecan is an automated theorem prover for Büchi automata, with additional features for making it easier to deal with expressing numbers in various numeration systems and working with automatic words.
 
+You can try Pecan online! Just go to [http://reedoei.com/pecan](http://reedoei.com/pecan).
+
 ## Installation
 
 NOTE: You can also use Docker (see below), if you have it.
