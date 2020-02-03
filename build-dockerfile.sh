@@ -5,5 +5,11 @@ set -ex
 echo "$(git rev-parse HEAD)"
 date
 
-docker build -t "pecan-prover:latest" - < "./Dockerfile"
+dockerfile="./Dockerfile"
+
+if [[ ! -z "$1" ]]; then
+    dockerfile="$1"
+fi
+
+docker build -t "pecan-prover:latest" - < "$dockerfile"
 

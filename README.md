@@ -6,6 +6,8 @@ Pecan is an automated theorem prover for Büchi automata, with additional featur
 
 ## Installation
 
+NOTE: You can also use Docker (see below), if you have it.
+
 You will need Python 3.6 or higher.
 
 Then, install [spot](https://spot.lrde.epita.fr/install.html); if you are on a Linux-y system, the `install-spot.sh` script may work for you:
@@ -33,6 +35,16 @@ or start interactive mode via:
 ```bash
 python3 pecan.py -i
 ```
+
+### Using Docker
+
+If you have Docker, you can run Pecan with:
+
+```bash
+bash start-docker.sh OPTIONS
+```
+
+This will automatically build the image if you don't have it already.
 
 ## Examples
 
