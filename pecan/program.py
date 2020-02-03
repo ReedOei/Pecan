@@ -28,7 +28,7 @@ def make_search_paths(filename=None):
     return search_paths
 
 def load(pecan_file, *args, **kwargs):
-    with open(pecan_file, 'r') as f:
+    with open(pecan_file, 'r', encoding='utf-8') as f:
         kwargs['filename'] = pecan_file
         return from_source(f.read(), *args, **kwargs)
 

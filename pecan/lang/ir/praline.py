@@ -669,14 +669,13 @@ class Closure(PralineTerm):
         self.body = body
 
     def evaluate(self, prog):
-        # Evaluate as though we are in the environment specified
-        if len(self.args) == 0:
+        if self.args: # If we still require more arguments
+            return self
+        else: # Evaluate as though we are in the environment specified
             prog.praline_local_define_all(self.env)
             result = self.body.evaluate(prog)
             prog.praline_local_cleanup(self.env.keys())
             return result
-        else:
-            return self
 
     def transform(self, transformer):
         return transformer.transform_Closure(self)
@@ -685,7 +684,7 @@ class Closure(PralineTerm):
         return 'Closure({}, {}, {})'.format(self.env, self.args, self.body)
 
     def apply(self, prog, arg):
-        if len(self.args) == 0:
+        if not self.args:
             raise Exception('Closure accepts no arguments!')
 
         new_env = dict(self.env)

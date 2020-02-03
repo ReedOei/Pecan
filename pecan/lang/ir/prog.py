@@ -261,7 +261,7 @@ class NamedPred(IRNode):
             self.arg_name_map, self.body_evaluated = self.body_evaluated.relabel([arg.var_name for arg in self.args])
             # print(self.name, self.args, self.arg_name_map)
 
-        if arg_names is None or len(arg_names) == 0:
+        if not arg_names:
             result = self.body_evaluated
         else:
             subs_dict = {self.arg_name_map[arg.var_name]: name.var_name for arg, name in zip(self.args, arg_names)}
@@ -483,7 +483,7 @@ class Program(IRNode):
 
     def restrict(self, var_name, pred):
         if pred is not None and pred not in self.get_restrictions(var_name):
-            if type(pred) is not Call or len(pred.args) == 0:
+            if type(pred) is not Call or not pred.args:
                 raise Exception('Unexpected predicate used as restriction (must be Call with the first argument as the variable to restrict): {}'.format(pred))
 
             if var_name in self.restrictions[-1]:
@@ -505,10 +505,10 @@ class Program(IRNode):
         self.restrictions.append(dict(new_restrictions))
 
     def exit_scope(self):
-        if len(self.restrictions) <= 0:
-            raise Exception('Cannot exit the last scope!')
-        else:
+        if self.restrictions:
             self.restrictions.pop(-1)
+        else:
+            raise Exception('Cannot exit the last scope!')
 
     def get_restrictions(self, var_name: str):
         result = []
@@ -520,7 +520,7 @@ class Program(IRNode):
 
     def call(self, pred_name, args=None):
         try:
-            if args is None or len(args) == 0:
+            if not args:
                 if pred_name in self.preds:
                     return self.preds[pred_name].call(self, args)
                 else:
