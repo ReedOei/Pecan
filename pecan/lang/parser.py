@@ -13,7 +13,7 @@ from pecan.lang.ast import *
 class PecanTransformer(Transformer):
     var_tok = str
     prop_val_tok = str
-    escaped_str = lambda self, v: str(v[1:-1]) # Remove the quotes, which are the first and last characters
+    escaped_str = lambda self, v: str(v[1:-1]).replace('\\n', '\n').replace('\\r', '\r').replace('\\t', '\t') # Remove the quotes, which are the first and last characters
 
     def varlist(self, *vals):
         return [VarRef(v) for v in vals]

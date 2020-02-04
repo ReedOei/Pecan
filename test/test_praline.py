@@ -78,3 +78,9 @@ def test_praline_real_format():
 [(y,+11.10(10)^w)]
 ''')
 
+def test_praline_file_io():
+    run_file('examples/test_praline_file_io.pn', '''
+blah blah
+
+''') # Note: the extra space is important. I want to test that we can write strings with newlines in them
+

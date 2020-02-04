@@ -37,13 +37,13 @@ class State:
 
 # TODO: It would be nice if we used a real parser for all this stuff (same for convert_hoa.py)
 def convert_labeled_aut(filename, input_names):
-    lines = []
-
     state_idx = 0
     cur_state = None
 
     state_map = {}
     states = []
+
+    alphabet_line = None
 
     with open(filename, 'r') as f:
         for lineno, line in enumerate(f.readlines()):
@@ -53,7 +53,7 @@ def convert_labeled_aut(filename, input_names):
                 pass
             elif line[0] == '{':
                 # It's the alphabet line,
-                lines.append(line)
+                alphabet_line = line
             elif '->' in line:
                 if cur_state is None:
                     raise Exception('Transition "{}" not inside any state! (line: {})'.format(line, lineno))
@@ -63,6 +63,11 @@ def convert_labeled_aut(filename, input_names):
                 state_map[cur_state.label] = state_idx
                 states.append(cur_state)
                 state_idx += 1
+
+    return build_aut(alphabet_line, states, state_map, input_names)
+
+def build_aut(alphabet_line, states, state_map, input_names):
+    lines = [alphabet_line]
 
     for state in states:
         lines.extend(state.to_str(state_map))

@@ -232,3 +232,6 @@ class IRTransformer:
     def transform_PralineDo(self, node):
         return PralineDo([self.transform(t) for t in node.terms])
 
+    def transform_PralineAutomaton(self, node):
+        return node
+

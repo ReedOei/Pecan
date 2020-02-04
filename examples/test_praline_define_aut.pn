@@ -1,0 +1,26 @@
+// Defines an automaton accepting strings that only use the digits {0,...,n} in the alphabet {0,...,base}
+
+Define useN n base :=
+    let baseAut := mkAut ["n"] [base] in
+    foldl (\aut sym => addTransition aut "0" "0" (toString sym)) (addState baseAut "0" true) [0..n].
+
+
+// Normally you'd just emit Pecan definitions, but do this to test all these other builtins
+Execute writeFile "test2.aut" (autToStr (buildAut (useN 2 10))).
+Execute writeFile "test4.aut" (autToStr (buildAut (useN 4 10))).
+Execute writeFile "test7.aut" (autToStr (buildAut (useN 7 10))).
+
+#load("test2.aut", "hoa", test2(n))
+#load("test4.aut", "hoa", test4(n))
+#load("test7.aut", "hoa", test7(n))
+
+test_thm() := forall x. (test2(x) => test7(x)) & (test4(x) => test7(x)) & (test2(x) => test4(x))
+#assert_prop(true, test_thm)
+
+test_thm2() := exists x. (test7(x) & !test2(x)) & (test7(x) & !test4(x))
+#assert_prop(true, test_thm2)
+
+Execute deleteFile "test2.aut".
+Execute deleteFile "test4.aut".
+Execute deleteFile "test7.aut".
+

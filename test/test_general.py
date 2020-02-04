@@ -9,6 +9,9 @@ def run_file(filename):
     prog = program.load(filename)
     assert prog.evaluate().result.succeeded()
 
+def test_praline_define_aut():
+    run_file('examples/test_praline_define_aut.pn')
+
 def test_load_pred():
     run_file('examples/test_load_aut.pn')
 
@@ -77,3 +80,4 @@ def test_zeckendorf():
 
 def test_bounded_ostrowski_2():
     run_file('examples/test_bounded_ostrowski_2.pn')
+

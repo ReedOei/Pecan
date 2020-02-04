@@ -98,3 +98,6 @@ class PralineToPecan(IRTransformer):
     def transform_PralineDo(self, node):
         raise Exception('"{}" cannot be translated into to Pecan'.format(node))
 
+    def transform_PralineAutomaton(self, node):
+        raise Exception('"{}" cannot be translated into to Pecan'.format(node))
+

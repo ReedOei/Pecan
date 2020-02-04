@@ -179,6 +179,9 @@ class BuchiAutomaton(Automaton):
     def save(self, filename):
         self.aut.save(filename)
 
+    def to_str(self):
+        return self.aut.to_str('hoa')
+
 def buchi_transform(original_aut, builder):
     # Build a new automata with different edges
     new_aut = spot.make_twa_graph()

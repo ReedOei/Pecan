@@ -11,6 +11,17 @@ Medium:
 - Add new __repr__ functions that do a more standard repr (e.g., Class(field_1, field_2, ...)) that turn on with debug 2
 - See if we can reduce the usage of the `type` function...
 - Combine unification code for looking up dynamic calls and doing typechecking
+- Add a "Alias" system so we can define things like:
+
+Example stdFormat term.
+
+which expands to:
+
+Display example stdFormat term.
+
+or even just
+
+Example term.
 
 Short:
 - Move SpotFormula out of prog to keep the main program automata/library independent

@@ -44,6 +44,9 @@ class Automaton:
     def accepting_word(self):
         raise NotImplementedError
 
+    def to_str(self):
+        raise NotImplementedError
+
     # Should return a string of SVG data
     def show(self):
         raise NotImplementedError
@@ -119,6 +122,9 @@ class TrueAutomaton(Automaton):
     def custom_convert(self, other):
         return other
 
+    def to_str(self):
+        return str(self)
+
 class FalseAutomaton(Automaton):
     def __init__(self):
         super().__init__('false')
@@ -153,4 +159,7 @@ class FalseAutomaton(Automaton):
 
     def custom_convert(self, other):
         return other
+
+    def to_str(self):
+        return str(self)
 
