@@ -110,11 +110,12 @@ def adjust_base(line):
                 base = 1
         return bases
 
-def convert_aut(txt, inp_names = []):
+def convert_aut(txt, inp_names = None):
     with open(txt, 'r') as f:
         return convert_aut_lines(f.readlines(), inp_names)
 
-def convert_aut_lines(lines, inp_names = []):
+def convert_aut_lines(lines, inp_names = None):
+    inp_names = inp_names or []
     reset_global()
 
     bases = []

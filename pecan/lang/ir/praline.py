@@ -3,6 +3,8 @@
 
 from pecan.lang.ir.base import *
 
+from pecan.tools.labeled_aut_converter import *
+
 class PralineTerm(IRNode):
     def __init__(self):
         super().__init__()
@@ -669,14 +671,13 @@ class Closure(PralineTerm):
         self.body = body
 
     def evaluate(self, prog):
-        # Evaluate as though we are in the environment specified
-        if len(self.args) == 0:
+        if self.args: # If we still require more arguments
+            return self
+        else: # Evaluate as though we are in the environment specified
             prog.praline_local_define_all(self.env)
             result = self.body.evaluate(prog)
             prog.praline_local_cleanup(self.env.keys())
             return result
-        else:
-            return self
 
     def transform(self, transformer):
         return transformer.transform_Closure(self)
@@ -685,7 +686,7 @@ class Closure(PralineTerm):
         return 'Closure({}, {}, {})'.format(self.env, self.args, self.body)
 
     def apply(self, prog, arg):
-        if len(self.args) == 0:
+        if not self.args:
             raise Exception('Closure accepts no arguments!')
 
         new_env = dict(self.env)
@@ -840,4 +841,50 @@ class PralineDo(PralineTerm):
             result = term.evaluate(prog)
 
         return result
+
+class PralineAutomaton(PralineTerm):
+    def __init__(self, input_names, input_bases, states, state_map):
+        super().__init__()
+        self.input_names = input_names
+        self.input_bases = input_bases
+        self.alphabet_line = ' '.join('{' + ','.join(map(str, range(base))) + '}' for base in input_bases)
+
+        self.states = states
+        self.state_map = state_map
+        self.state_idx = len(self.states)
+
+    def transform(self, transformer):
+        return transformer.transform_PralineAutomaton(self)
+
+    def __repr__(self):
+        return 'PralineAutomaton({}, {}, {}, {})'.format(self.input_names, self.input_bases, self.state_map, self.states)
+
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.input_bases == other.input_bases and self.alphabet_line == other.alphabet_line and self.states == other.states and self.state_idx == other.state_idx and self.state_map == other.state_map and self.input_names == other.input_names
+
+    def __hash__(self):
+        return hash((self.alphabet_line, self.state_idx, len(self.states)))
+
+    def evaluate(self, prog):
+        return self
+
+    def add_state(self, state_line):
+        new_state = State(self.state_idx, state_line)
+        self.states.append(new_state)
+        self.state_map[new_state.label] = self.state_idx
+
+        self.state_idx += 1
+
+        return self
+
+    def add_transition(self, state_label, transition_line):
+        if state_label not in self.state_map:
+            raise Exception('No state "{}" in {}'.format(state_label, self))
+
+        self.states[self.state_map[state_label]].add_transition(Transition(transition_line))
+
+        return self
+
+    def build(self):
+        return build_aut(self.alphabet_line, self.states, self.state_map, self.input_names)
 

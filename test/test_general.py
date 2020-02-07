@@ -1,3 +1,6 @@
+#!/usr/bin/env python3.6
+# -*- coding=utf-8 -*-
+
 from pecan import program
 from pecan.settings import settings
 
@@ -5,6 +8,9 @@ def run_file(filename):
     settings.set_quiet(True)
     prog = program.load(filename)
     assert prog.evaluate().result.succeeded()
+
+def test_praline_define_aut():
+    run_file('examples/test_praline_define_aut.pn')
 
 def test_load_pred():
     run_file('examples/test_load_aut.pn')

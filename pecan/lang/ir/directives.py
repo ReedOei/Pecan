@@ -1,10 +1,16 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
+<<<<<<< HEAD
+=======
+import sys
+
+>>>>>>> origin/master
 from pecan.tools.shuffle_automata import ShuffleAutomata
 from pecan.tools.convert_hoa import convert_aut
 from pecan.tools.hoa_loader import load_hoa
 from pecan.tools.labeled_aut_converter import convert_labeled_aut
+from pecan.tools.hoa_loader import load_hoa
 from pecan.automata.buchi import BuchiAutomaton
 from pecan.lang.ir import *
 
@@ -17,7 +23,7 @@ class DirectiveSaveAut(IRNode):
         self.pred_name = pred_name
 
     def evaluate(self, prog):
-        settings.log(f'[INFO] Saving {self.pred_name} as {self.filename}')
+        settings.log(lambda: f'[INFO] Saving {self.pred_name} as {self.filename}')
 
         prog.call(self.pred_name).save(self.filename)
         return None
@@ -42,7 +48,7 @@ class DirectiveSaveAutImage(IRNode):
 
     def evaluate(self, prog):
         # TODO: Support formats other than SVG?
-        settings.log(f'[INFO] Saving {self.pred_name} as an SVG in {self.filename}')
+        settings.log(lambda: f'[INFO] Saving {self.pred_name} as an SVG in {self.filename}')
 
         evaluated = prog.call(self.pred_name)
         with open(self.filename, 'w') as f:
@@ -116,7 +122,7 @@ class DirectiveAssertProp(IRNode):
         return Call(self.pred_name, []).evaluate(prog).truth_value()
 
     def evaluate(self, prog):
-        settings.log(f'[INFO] Checking if {self.pred_name} is {self.display_truth_val()}.')
+        settings.log(lambda: f'[INFO] Checking if {self.pred_name} is {self.display_truth_val()}.')
 
         pred_truth_value = self.pred_truth_value(prog)
 
@@ -125,7 +131,7 @@ class DirectiveAssertProp(IRNode):
         else:
             result = Result(f'{self.pred_name} is not {self.display_truth_val()}.', False)
 
-        settings.log(result.result_str())
+        settings.log(lambda: result.result_str())
 
         return result
 
@@ -152,7 +158,7 @@ class DirectiveLoadAut(IRNode):
         super().__init__()
         self.filename = filename
         self.aut_format = aut_format
-        self.pred = pred.with_parent(self)
+        self.pred = pred
 
     def evaluate(self, prog):
         # TODO: Support argument restrictions on loaded automata
@@ -167,6 +173,8 @@ class DirectiveLoadAut(IRNode):
             aut = convert_labeled_aut(realpath, [v.var_name for v in self.pred.args])
         else:
             raise Exception('Unknown format: {}'.format(self.aut_format))
+
+        # print('loaded ap: ', aut.aut.ap())
 
         prog.preds[self.pred.name] = NamedPred(self.pred.name, self.pred.args, {}, AutLiteral(aut))
 
@@ -237,7 +245,7 @@ class DirectiveType(IRNode):
     def __init__(self, pred_ref, val_dict):
         super().__init__()
         self.pred_ref = pred_ref
-        self.val_dict = {k: v.with_parent(self) for k, v in val_dict.items()}
+        self.val_dict = val_dict
 
     def evaluate(self, prog):
         prog.declare_type(self.pred_ref, self.val_dict)

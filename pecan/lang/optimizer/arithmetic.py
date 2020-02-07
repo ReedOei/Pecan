@@ -27,3 +27,15 @@ class ArithmeticOptimizer(BasicOptimizer):
         else:
             return Sub(self.transform(node.a), self.transform(node.b)).with_type(node.get_type())
 
+    def transform_Equals(self, node):
+        # we can only do the following transformation once we know types, otherwise we will be unable to resolve the dynamic call to 'adder'
+        if node.a.get_type() is not None and node.b.get_type() is not None:
+            if type(node.a) is VarRef and type(node.b) is Add:
+                self.changed = True
+                return self.transform(Call('adder', [node.b.a, node.b.b, node.a]))
+            elif type(node.b) is VarRef and type(node.a) is Add:
+                self.changed = True
+                return self.transform(Call('adder', [node.a.a, node.a.b, node.b]))
+
+        return super().transform_Equals(node)
+

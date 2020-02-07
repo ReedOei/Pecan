@@ -1,0 +1,29 @@
+Long:
+- Decouple variables and APs in BuchiAutomaton (see substiution-overhaul branch, which works, but is much slower because of all the new variable generation)
+- Try changing the encoding to multiple variables per character instead of multiple transitions per character
+- Convert all operators to predicate calls after the last stage of optimizations
+    - Long because this may introduce new issues
+
+Medium:
+- Maybe merge type inference and execution phases in pecan/lang/ir/prog.py
+    - Somewhat more complicated than I originally thought because we have to move TypedIRLowering and Typed optimization into the evaluate loop
+    - Add an evaluate_type or something method so that we don't have to manually check the type of the nodes when running type inference
+- Add new __repr__ functions that do a more standard repr (e.g., Class(field_1, field_2, ...)) that turn on with debug 2
+- See if we can reduce the usage of the `type` function...
+- Combine unification code for looking up dynamic calls and doing typechecking
+- Add a "Alias" system so we can define things like:
+
+Example stdFormat term.
+
+which expands to:
+
+Display example stdFormat term.
+
+or even just
+
+Example term.
+
+Short:
+- Move SpotFormula out of prog to keep the main program automata/library independent
+- Make all parsing functions in pecan.lang.parser into proper functions (b/c it gives better debug info)
+

@@ -1,0 +1,8 @@
+Define tmpFileEcho str := do
+    writeFile "testing" str;
+    readFile "testing".
+
+Display tmpFileEcho "blah blah\n".
+
+Execute deleteFile "testing".
+

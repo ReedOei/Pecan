@@ -47,8 +47,14 @@ class Automaton:
     def accepting_word(self):
         raise NotImplementedError
 
+    def to_str(self):
+        raise NotImplementedError
+
     # Should return a string of SVG data
     def show(self):
+        raise NotImplementedError
+
+    def save(self, filename):
         raise NotImplementedError
 
     # -------------------------------------------------------
@@ -67,8 +73,13 @@ class Automaton:
     def custom_convert(self, other):
         raise NotImplementedError
 
+<<<<<<< HEAD
     def shuffle(self, is_disj, other):
         raise NotImplementedError
+=======
+    def relabel(self, arguments=None):
+        return {arg: arg for arg in arguments} or {}, self
+>>>>>>> origin/master
 
     # -------------------------------------------------------
     # Default implementations:
@@ -125,6 +136,9 @@ class TrueAutomaton(Automaton):
     def custom_convert(self, other):
         return other
 
+    def to_str(self):
+        return str(self)
+
 class FalseAutomaton(Automaton):
     def __init__(self):
         super().__init__('false')
@@ -162,4 +176,7 @@ class FalseAutomaton(Automaton):
 
     def custom_convert(self, other):
         return other
+
+    def to_str(self):
+        return str(self)
 

@@ -159,7 +159,7 @@ class Call(IRPredicate):
     def __init__(self, name, args):
         super().__init__()
         self.name = name
-        self.args = [arg.with_parent(self) for arg in args]
+        self.args = args
 
     def arity(self):
         return len(self.args)
@@ -217,17 +217,17 @@ class Call(IRPredicate):
         return hash((self.name, tuple(self.args)))
 
 class NamedPred(IRNode):
-    def __init__(self, name, args, arg_restrictions, body, restriction_env=None, body_evaluated=None):
+    def __init__(self, name, args, arg_restrictions, body, restriction_env=None, body_evaluated=None, arg_name_map=None):
         super().__init__()
         self.name = name
 
-        self.args = [arg.with_parent(self) for arg in args]
-        self.arg_restrictions = {var.with_parent(self): restriction.with_parent(self) for var, restriction in arg_restrictions.items()}
-        self.body = body.with_parent(self)
+        self.args = args
+        self.arg_restrictions = arg_restrictions
+        self.body = body
 
         self.restriction_env = restriction_env or {}
-
         self.body_evaluated = body_evaluated
+        self.arg_name_map = arg_name_map or {}
 
     def evaluate(self, prog):
         # Here we keep track of all restrictions that were in scope when we are evaluated;
@@ -257,13 +257,24 @@ class NamedPred(IRNode):
         prog.enter_scope(dict(self.restriction_env))
 
         if self.body_evaluated is None:
+<<<<<<< HEAD
             self.body_evaluated = self.body.evaluate(prog).postprocess()
+=======
+            self.body_evaluated = self.body.evaluate(prog)
+            self.arg_name_map, self.body_evaluated = self.body_evaluated.relabel([arg.var_name for arg in self.args])
+            # print(self.name, self.args, self.arg_name_map)
+>>>>>>> origin/master
 
-        if arg_names is None or len(arg_names) == 0:
+        if not arg_names:
             result = self.body_evaluated
         else:
+<<<<<<< HEAD
             subs_dict = {arg.var_name: name.var_name for arg, name in zip(self.args, arg_names)}
             result = self.body_evaluated.call(subs_dict, prog.get_var_map())
+=======
+            subs_dict = {self.arg_name_map[arg.var_name]: name.var_name for arg, name in zip(self.args, arg_names)}
+            result = self.body_evaluated.substitute(subs_dict)
+>>>>>>> origin/master
 
         prog.exit_scope()
 
@@ -285,7 +296,7 @@ class Program(IRNode):
     def __init__(self, defs, *args, **kwargs):
         super().__init__()
 
-        self.defs = [d.with_parent(self) for d in defs]
+        self.defs = defs
         self.preds = kwargs.get('preds', {})
         self.context = kwargs.get('context', {})
         self.restrictions = kwargs.get('restrictions', [{}])
@@ -357,9 +368,9 @@ class Program(IRNode):
 
     def include(self, other_prog):
         # Note: Intentionally do NOT merge restrictions, because it would be super confusing if variable restrictions "leaked" from imports
-        self.preds.update({k: v.with_parent(self) for k, v in other_prog.preds.items()})
+        self.preds.update(other_prog.preds)
         self.context.update(other_prog.context)
-        self.types.update({k: {pred_k: pred_v.with_parent(self) for pred_k, pred_v in v.items()} for k, v in other_prog.types.items()})
+        self.types.update(other_prog.types)
 
         self.praline_defs.update(other_prog.praline_defs)
 
@@ -378,32 +389,17 @@ class Program(IRNode):
         from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle
         from pecan.lang.ir.praline import PralineDef, PralineExecute, PralineDisplay
 
-        settings.log(0, '[DEBUG] Processing: {}'.format(d))
+        to_run = [DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle, Restriction, PralineDef, PralineExecute, PralineDisplay, NamedPred]
 
-        # TODO: Cleanup this part relative to evaluate below (e.g., lots of repeated if tree). Instead we could add a evaluate_type method or something, and let dispatch handle it for us
-        if type(d) is NamedPred:
-            self.defs[i] = self.type_infer(d).with_parent(self)
-            self.preds[d.name] = self.defs[i]
-            self.preds[d.name].evaluate(self)
-            settings.log(0, self.preds[d.name])
-        elif type(d) is Restriction:
-            d.evaluate(self)
-        elif type(d) is DirectiveForget:
-            d.evaluate(self)
-        elif type(d) is DirectiveType:
-            d.evaluate(self)
-        elif type(d) is DirectiveLoadAut:
-            d.evaluate(self)
-        elif type(d) is DirectiveImport:
-            d.evaluate(self)
-        elif type(d) is DirectiveShuffle:
-            d.evaluate(self)
-        elif type(d) is PralineDef:
-            d.evaluate(self)
-        elif type(d) is PralineExecute:
-            d.evaluate(self)
-        elif type(d) is PralineDisplay:
-            d.evaluate(self)
+        if type(d) in to_run:
+            settings.log(0, lambda: '[DEBUG] Processing: {}'.format(d))
+            if type(d) is NamedPred:
+                self.defs[i] = self.type_infer(d)
+                self.preds[d.name] = self.defs[i]
+                self.preds[d.name].evaluate(self)
+                settings.log(0, lambda: self.preds[d.name])
+            else:
+                d.evaluate(self)
 
     def run_type_inference(self):
         from pecan.lib.praline.builtins import builtins
@@ -433,6 +429,8 @@ class Program(IRNode):
         from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle
         from pecan.lang.ir.praline import PralineDef, PralineExecute, PralineDisplay
 
+        to_ignore = [DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle, Restriction, PralineDef, PralineExecute, PralineDisplay]
+
         if old_env is not None:
             self.include(old_env)
 
@@ -440,32 +438,16 @@ class Program(IRNode):
         msgs = []
 
         for d in self.defs:
-            settings.log(0, '[DEBUG] Processing: {}'.format(d))
-
             # Ignore these constructs because we should have run them earlier in run_type_inference
             # TODO: Fix here and above in run_type_inferences, all these passes are probably somewhat inefficient for larger programs and it doesn't scale particularly well
+            if type(d) in to_ignore:
+                continue
+
+            settings.log(0, lambda: '[DEBUG] Processing: {}'.format(d))
             if type(d) is NamedPred:
                 # If we already computed it, it doesn't matter if we replace it with a more efficient version
                 if self.preds[d.name].body_evaluated is None:
                     self.preds[d.name] = d
-            elif type(d) is Restriction:
-                pass
-            elif type(d) is DirectiveType:
-                pass
-            elif type(d) is DirectiveForget:
-                pass
-            elif type(d) is DirectiveLoadAut:
-                pass
-            elif type(d) is DirectiveImport:
-                pass
-            elif type(d) is DirectiveShuffle:
-                pass
-            elif type(d) is PralineDef:
-                pass
-            elif type(d) is PralineExecute:
-                pass
-            elif type(d) is PralineDisplay:
-                pass
 
             else:
                 result = d.evaluate(self)
@@ -486,7 +468,7 @@ class Program(IRNode):
 
     def restrict(self, var_name, pred):
         if pred is not None and pred not in self.get_restrictions(var_name):
-            if type(pred) is not Call or len(pred.args) == 0:
+            if type(pred) is not Call or not pred.args:
                 raise Exception('Unexpected predicate used as restriction (must be Call with the first argument as the variable to restrict): {}'.format(pred))
 
             if var_name in self.restrictions[-1]:
@@ -509,11 +491,17 @@ class Program(IRNode):
         self.restrictions.append(dict(new_restrictions))
 
     def exit_scope(self):
+<<<<<<< HEAD
         if len(self.restrictions) <= 0:
             raise Exception('Cannot exit the last scope!')
         else:
             self.var_map.pop()
+=======
+        if self.restrictions:
+>>>>>>> origin/master
             self.restrictions.pop(-1)
+        else:
+            raise Exception('Cannot exit the last scope!')
 
     def get_restrictions(self, var_name: str):
         result = []
@@ -525,7 +513,7 @@ class Program(IRNode):
 
     def call(self, pred_name, args=None):
         try:
-            if args is None or len(args) == 0:
+            if not args:
                 if pred_name in self.preds:
                     return self.preds[pred_name].call(self, args)
                 else:
@@ -650,7 +638,7 @@ class Restriction(IRNode):
     def __init__(self, restrict_vars, pred):
         super().__init__()
         self.restrict_vars = restrict_vars
-        self.pred = pred.with_parent(self)
+        self.pred = pred
 
     def evaluate(self, prog):
         for var in self.restrict_vars:
