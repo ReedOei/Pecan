@@ -9,8 +9,9 @@ Medium:
     - Somewhat more complicated than I originally thought because we have to move TypedIRLowering and Typed optimization into the evaluate loop
     - Add an evaluate_type or something method so that we don't have to manually check the type of the nodes when running type inference
 - Add new __repr__ functions that do a more standard repr (e.g., Class(field_1, field_2, ...)) that turn on with debug 2
-- See if we can reduce the usage of the `type` function...
-- Combine unification code for looking up dynamic calls and doing typechecking
+- See if we can reduce the usage of the `type` function...(either replace with isinstance or just remove altogether)
+- Combine unification code for looking up dynamic calls (in ir/prog.py and doing typechecking)
+
 - Add a "Alias" system so we can define things like:
 
 Example stdFormat term.

@@ -2,12 +2,12 @@
 
 set -ex
 
-echo "$(git rev-parse HEAD)"
+git rev-parse HEAD
 date
 
 dockerfile="./Dockerfile"
 
-if [[ ! -z "$1" ]]; then
+if [[ -z "$1" ]]; then
     dockerfile="$1"
 fi
 

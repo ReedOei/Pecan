@@ -43,7 +43,7 @@ python3 pecan.py -i
 If you have Docker, you can run Pecan with:
 
 ```bash
-bash start-docker.sh OPTIONS
+./pecan-docker OPTIONS
 ```
 
 This will automatically build the image if you don't have it already.
