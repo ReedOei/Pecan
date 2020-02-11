@@ -1,7 +1,7 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-from pecan.tools.convert_hoa import convert_aut_lines
+from pecan.tools.walnut_converter import convert_walnut_lines
 
 class Transition:
     def __init__(self, input_line):
@@ -35,7 +35,7 @@ class State:
             lines.append(transition.to_str(state_map))
         return lines
 
-# TODO: It would be nice if we used a real parser for all this stuff (same for convert_hoa.py)
+# TODO: It would be nice if we used a real parser for all this stuff
 def convert_labeled_aut(filename, input_names):
     state_idx = 0
     cur_state = None
@@ -72,5 +72,5 @@ def build_aut(alphabet_line, states, state_map, input_names):
     for state in states:
         lines.extend(state.to_str(state_map))
 
-    return convert_aut_lines(lines, input_names)
+    return convert_walnut_lines(lines, input_names)
 

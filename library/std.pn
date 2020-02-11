@@ -291,3 +291,32 @@ Define abelianGroupCheck ADD T :=
         theoremCheck COMM_ID { forall VAR1 is T. forall VAR2 is T. ADD(VAR1, VAR2) = ADD(VAR2, VAR1) }
     .
 
+Define withStates :=
+    foldl (\aut state_info =>
+        match state_info with
+        case (name, acc) => addState aut name acc
+        end).
+
+Define genZero base :=
+    let baseAut := withStates (mkAut ["n"] [base]) [("0", true)] in
+    let finalAut := buildAut (addTransition baseAut "0" "0" "0") in
+    let ZERO := "zero_" ^ toString base in
+
+    emit { ZERO(n) := finalAut }.
+
+Define genFinite base :=
+    let baseAut := withStates (mkAut ["n"] [base]) [("0", false), ("1", true)] in
+    let temp := foldl (\aut sym => addTransition aut "0" "0" (toString sym)) baseAut [0..base - 1] in
+    let finalAut := buildAut (addTransition (addTransition temp "0" "1" "0") "1" "1" "0") in
+    let ALL_FINITE := "finite_" ^ toString base in
+
+    emit { ALL_FINITE(n) := finalAut }.
+
+Define genEqual base :=
+    let baseAut := withStates (mkAut ["n", "m"] [base, base]) [("0", true)] in
+    let syms := map (\i => toString i ^ " " ^ toString i) [0..base - 1] in
+    let finalAut := buildAut (foldl (\aut sym => addTransition aut "0" "0" sym) baseAut syms) in
+    let EQUAL := "equal_" ^ toString base in
+
+    emit { EQUAL(n, m) := finalAut } .
+

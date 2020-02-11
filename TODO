@@ -12,6 +12,8 @@ Medium:
 - See if we can reduce the usage of the `type` function...(either replace with isinstance or just remove altogether)
 - Combine unification code for looking up dynamic calls (in ir/prog.py and doing typechecking)
 
+- When we cache variable representations (in class Program's var_map), we need to make sure that we don't accidentally cahce two different represenations of the same constnat, because it may be encoded differently. To be safe, probably just don't cache constants aps at all?
+
 - Add a "Alias" system so we can define things like:
 
 Example stdFormat term.

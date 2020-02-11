@@ -102,12 +102,6 @@ class IntConst(IRExpression):
         if self.val < 0:
             return Sub(IntConst(0), IntConst(-self.val)).with_type(self.get_type()).evaluate(prog)
 
-        zero_const_var = VarRef("__constant0").with_type(self.get_type())
-        zero_const = IntConst(0).with_type(self.get_type())
-        one_const_var = VarRef("__constant1").with_type(self.get_type())
-
-        b_const = VarRef('b').with_type(self.get_type())
-
         if (self.val, self.get_type()) in constants_map:
             return constants_map[(self.val, self.get_type())]
 
@@ -119,6 +113,9 @@ class IntConst(IRExpression):
 
             # This means we didn't find a user-defined "one", so just use the default expression
             if res.name == 'one':
+                b_const = VarRef('b').with_type(self.get_type())
+                zero_const = IntConst(0).with_type(self.get_type())
+
                 leq = Disjunction(Less(self.label_var(), b_const), Equals(self.label_var(), b_const))
                 b_in_0_1 = Conjunction(Less(zero_const, b_const), Less(b_const, self.label_var()))
                 formula_1 = Conjunction(Less(zero_const, self.label_var()), Complement(Exists(b_const, self.get_type().restrict(b_const), b_in_0_1)))

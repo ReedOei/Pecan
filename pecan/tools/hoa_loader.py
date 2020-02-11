@@ -1,6 +1,8 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
+import ast
+
 import spot
 
 from pecan.automata.buchi import BuchiAutomaton
@@ -15,7 +17,18 @@ def from_spot_aut(base_aut):
     return BuchiAutomaton(base_aut, var_map)
 
 def load_hoa(path):
-    base_aut = spot.automaton(path)
+    with open(path, 'r') as f:
+        lines = f.readlines()
 
-    return from_spot_aut(spot.automaton(path))
+    try:
+        if lines[0].startswith('VAR_MAP: '):
+            idx = lines[0].index(':')
+            var_map_str = lines[0][idx + 1:].strip()
+            var_map = ast.literal_eval(var_map_str)
+
+            return BuchiAutomaton(spot.automaton('\n'.join(lines[1:])), var_map)
+    except ValueError:
+        pass
+
+    return from_spot_aut(spot.automaton('\n'.join(lines)))
 

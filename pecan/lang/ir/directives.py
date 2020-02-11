@@ -2,7 +2,7 @@
 # -*- coding=utf-8 -*-
 
 from pecan.tools.shuffle_automata import ShuffleAutomata
-from pecan.tools.convert_hoa import convert_aut
+from pecan.tools.walnut_converter import convert_aut
 from pecan.tools.hoa_loader import load_hoa
 from pecan.tools.labeled_aut_converter import convert_labeled_aut
 from pecan.tools.hoa_loader import load_hoa
