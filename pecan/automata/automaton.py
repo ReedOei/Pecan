@@ -23,10 +23,7 @@ class Automaton:
     def complement(self):
         raise NotImplementedError
 
-    def call(self, arg_map, env_var_map):
-        raise NotImplementedError
-
-    def substitute(self, subs):
+    def substitute(self, subs, env_var_map):
         raise NotImplementedError
 
     def project(self, var_refs, env_var_map):
@@ -73,13 +70,11 @@ class Automaton:
     def custom_convert(self, other):
         raise NotImplementedError
 
-<<<<<<< HEAD
     def shuffle(self, is_disj, other):
         raise NotImplementedError
-=======
-    def relabel(self, arguments=None):
-        return {arg: arg for arg in arguments} or {}, self
->>>>>>> origin/master
+
+    def relabel(self):
+        return self
 
     # -------------------------------------------------------
     # Default implementations:
@@ -112,10 +107,7 @@ class TrueAutomaton(Automaton):
     def complement(self):
         return FalseAutomaton()
 
-    def call(self, arg_map, env_var_map):
-        return self
-
-    def substitute(self, subs):
+    def substitute(self, arg_map, env_var_map):
         return self
 
     def project(self, var_refs, env_var_map):
@@ -153,10 +145,7 @@ class FalseAutomaton(Automaton):
     def complement(self):
         return TrueAutomaton()
 
-    def call(self, arg_map, env_var_map):
-        return self
-
-    def substitute(self, subs):
+    def substitute(self, arg_map, env_var_map):
         return self
 
     def project(self, var_refs, env_var_map):

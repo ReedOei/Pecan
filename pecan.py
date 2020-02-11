@@ -6,7 +6,7 @@ import colorama
 import readline
 import os
 
-from lark import UnexpectedToken
+from pecan.lang.lark.parser import UnexpectedToken
 
 import spot
 
@@ -76,8 +76,13 @@ def main():
         for pred in theorem_generator.gen_thms(args.generate):
             print(pred)
     elif args.file is not None:
-        prog = program.load(args.file)
-        env = prog.evaluate()
+        try:
+            prog = program.load(args.file)
+            env = prog.evaluate()
+        except UnexpectedToken as e:
+            print(e)
+            return None
+
     elif not args.interactive:
         parser.print_help()
 

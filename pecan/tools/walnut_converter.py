@@ -102,7 +102,7 @@ def parse_bases(line):
             base = len([int(part) for part in base_str[1:-1].split(',')])
             bases.append(base)
         else:
-            raise Exception('Improperly formatted base string (expected it to be wrapped in "{" and "}"): "{}"'.format(base_str))
+            raise Exception('Improperly formatted base string (expected it to be wrapped in "{{" and "}}"): "{}"'.format(base_str))
 
     return bases
 

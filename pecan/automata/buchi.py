@@ -1,43 +1,30 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-import copy
-from functools import reduce
-
 import buddy
 import spot
 
 from pecan.automata.automaton import Automaton
+from pecan.tools.shuffle_automata import ShuffleAutomata
+from pecan.utility import VarMap
 
-def merge(aut, var_map, other_var_map):
-    merged_var_map = copy.deepcopy(var_map)
-    subs = {}
+def merge(merge_f, aut_a, aut_b):
+    if aut_a.num_states() < aut_b.num_states():
+        merged_var_map, subs = aut_b.get_var_map().merge_with(aut_a.get_var_map())
+        # print('merge(a into b)', merged_var_map, subs)
+        new_a = BuchiAutomaton(aut_a.get_aut(), aut_a.get_var_map()).ap_substitute(subs)
+        new_b = aut_b
+    else:
+        merged_var_map, subs = aut_a.get_var_map().merge_with(aut_b.get_var_map())
+        # print('merge(b into a)', merged_var_map, subs)
+        new_a = aut_a
+        new_b = BuchiAutomaton(aut_b.get_aut(), aut_b.get_var_map()).ap_substitute(subs)
 
-    for var, aps in other_var_map.items():
-        if var in merged_var_map:
-            merged_aps = merged_var_map[var]
+    return BuchiAutomaton(merge_f(new_a.get_aut(), new_b.get_aut()), merged_var_map)
 
-            if len(merged_aps) != len(aps):
-                raise Exception('Cannot merge {}: representations differ in length ({}, {})'.format(var, merged_aps, aps))
-
-            for a, b in zip(merged_aps, aps):
-                subs[b] = a
-        else:
-            merged_var_map[var] = aps
-
-    # print('merge()', var_map, other_var_map, merged_var_map, subs)
-
+def merge_maps(aut, map_a: VarMap, map_b: VarMap):
+    merged_var_map, subs = map_a.merge_with(map_b)
     return BuchiAutomaton(aut, merged_var_map).ap_substitute(subs)
-
-def clean_subs(subs):
-    to_pop = []
-
-    for k, v in subs.items():
-        if k == v:
-            to_pop.append(k)
-
-    for k in to_pop:
-        subs.pop(k)
 
 class BuchiAutomaton(Automaton):
     id = 0
@@ -47,28 +34,18 @@ class BuchiAutomaton(Automaton):
         BuchiAutomaton.id += 1
         return label
 
-    @staticmethod
-    def as_buchi(aut):
+    @classmethod
+    def as_buchi(cls, aut):
         if aut.get_aut_type() == 'buchi':
             return aut
         elif aut.get_aut_type() == 'true':
-            return BuchiAutomaton(spot.translate('1'))
+            return BuchiAutomaton(spot.translate('1'), VarMap())
         elif aut.get_aut_type() == 'false':
-            return BuchiAutomaton(spot.translate('0'))
+            return BuchiAutomaton(spot.translate('0'), VarMap())
         else:
             raise NotImplementedError
 
-<<<<<<< HEAD
     def __init__(self, aut, var_map):
-=======
-    id = 0
-    def fresh_ap(self):
-        name = f'__ap{BuchiAutomaton.id}'
-        BuchiAutomaton.id += 1
-        return name
-
-    def __init__(self, aut):
->>>>>>> origin/master
         super().__init__('buchi')
 
         # The interal automaton representation
@@ -80,150 +57,87 @@ class BuchiAutomaton(Automaton):
     def get_var_map(self):
         return self.var_map
 
-    def combine_var_map(self, other):
-        new_var_map = copy.deepcopy(self.get_var_map())
-
-        for var_name in self.get_var_map():
-            if var_name in other.get_var_map():
-                if self.get_var_map()[var_name] != other.get_var_map()[var_name]:
-                    raise Exception('Underlying representation of variable {} does not match ({}, {})'.format(var_name, self.get_var_map(), other.get_var_map()))
-
-        new_var_map.update(other.get_var_map())
-        return new_var_map
-
     def conjunction(self, other):
-        return merge(spot.product(self.get_aut(), other.get_aut()), self.get_var_map(), other.get_var_map())
+        return merge(spot.product, self, other)
 
     def disjunction(self, other):
-        return merge(spot.product_or(self.get_aut(), other.get_aut()), self.get_var_map(), other.get_var_map())
+        return merge(spot.product_or, self, other)
 
     def complement(self):
         return BuchiAutomaton(spot.complement(self.get_aut()), self.var_map)
 
-    def call(self, arg_map, env_var_map):
-        call_var_map = {}
-        arg_var_map = {}
-        ap_subs = {}
-
-        for formal_arg, actual_arg in arg_map.items():
-            if actual_arg in call_var_map:
-                for a, b in zip(self.get_var_map()[formal_arg], call_var_map[actual_arg]):
-                    ap_subs[a] = b
-            else:
-                call_var_map[actual_arg] = self.get_var_map()[formal_arg]
-
-            if actual_arg not in env_var_map:
-                env_var_map[actual_arg] = [ self.fresh_ap() for i in self.get_var_map()[formal_arg] ]
-
-            arg_var_map[actual_arg] = env_var_map[actual_arg]
-
-        # print('call()', arg_map, env_var_map, arg_var_map, call_var_map, ap_subs)
-
-        return merge(self.ap_substitute(ap_subs).aut, arg_var_map, call_var_map)
-
-        # TODO: Remove this if it's no longer needed
-        # Generate fresh aps for all the aps in this automaton
-        new_var_map = {}
-        ap_subs = {}
-        subs = {}
-
-        for v, old_aps in self.get_var_map().items():
-            aps = []
-
-            for ap in old_aps:
-                new_ap = self.fresh_ap()
-                subs[ap] = new_ap
-                aps.append(new_ap)
-
-            if v in arg_map:
-                if arg_map[v] in new_var_map:
-                    final_aps = new_var_map[arg_map[v]]
-
-                    for final, temp in zip(final_aps, aps):
-                        ap_subs[temp] = final
-                else:
-                    new_var_map[arg_map[v]] = aps
-            else:
-                new_var_map[v] = aps
-
-        for orig_ap in subs:
-            while subs[orig_ap] in ap_subs:
-                subs[orig_ap] = ap_subs[subs[orig_ap]]
-
-        # print('call()', self.get_var_map(), subs, new_var_map, subs)
-
-        return BuchiAutomaton(self.get_aut(), new_var_map).ap_substitute(subs)
-
-    def relabel(self, arguments=None):
+    def relabel(self):
         new_aps = {}
         for ap in self.aut.ap():
             new_aps[ap.ap_name()] = self.fresh_ap()
 
-        for ap in arguments or []:
-            new_aps[ap] = self.fresh_ap()
+        # print('relabel()', new_aps)
+        return self.ap_substitute(new_aps)
 
-        return new_aps, self.substitute(new_aps)
-
-    def substitute(self, subs):
-<<<<<<< HEAD
-        new_var_map = {}
+    def substitute(self, arg_map, env_var_map):
+        new_var_map = VarMap()
         ap_subs = {}
 
-        for v, aps in self.get_var_map().items():
-            if v in subs:
-                if subs[v] in new_var_map:
-                    final_aps = new_var_map[subs[v]]
+        for formal_arg, actual_arg in arg_map.items():
+            # Get the aps for the formal argument in this automaton
+            formal_aps = self.var_map[formal_arg]
 
-                    for final, temp in zip(final_aps, aps):
-                        ap_subs[temp] = final
-                else:
-                    new_var_map[subs[v]] = aps
-            else:
-                new_var_map[v] = aps
-=======
+            # Get the aps for the actual argument in the current environment
+            actual_aps = env_var_map.get_or_gen(actual_arg, self.fresh_ap, len(formal_aps))
+
+            # Set up the substitutions we need to do
+            for formal_ap, actual_ap in zip(formal_aps, actual_aps):
+                ap_subs[formal_ap] = actual_ap
+
+            # Rename the formal arg to the actual arg, but leave the aps as the formal aps because that'll be done by `ap_substitute` below
+            new_var_map[actual_arg] = formal_aps
+
+        # print('substitute()', arg_map, new_var_map, env_var_map, ap_subs)
+
+        return BuchiAutomaton(self.aut, new_var_map).ap_substitute(ap_subs)
+
+    def ap_substitute(self, ap_subs):
+        # If we try something like [x/x]P, just don't do anything
+        ap_subs = {k: v for k, v in ap_subs.items() if k != v}
+
+        if not ap_subs:
+            return self
+
         self.postprocess()
 
-        bdd_subs = {}
-        for k,v in subs.items():
-            # If we try something like [x/x]P, just don't do anything
-            if k == v:
-                continue
+        bdd_subs = {self.aut.register_ap(k): v for k, v in ap_subs.items()}
 
-            kvar = self.aut.register_ap(k)
-            bdd_subs[kvar] = v
+        new_var_map = VarMap()
+        to_register = []
+        for v, aps in self.var_map.items():
+            new_var_map[v] = []
+            for ap in aps:
+                # Get the new name of this ap, or just the ap if the name didn't get
+                new_ap = ap_subs.get(ap, ap)
 
-        if not bdd_subs:
-            return self
+                new_var_map[v].append(new_ap)
+                to_register.append(new_ap)
 
-        return BuchiAutomaton(buchi_transform(self.aut, Substitution(bdd_subs)))
->>>>>>> origin/master
+        # print('ap_subs()', ap_subs, self.var_map, new_var_map)
 
-        # print('substitute()', self.get_var_map(), subs, new_var_map, ap_subs)
+        new_aut = buchi_transform(self.aut, Substitution(bdd_subs))
 
-        return BuchiAutomaton(self.get_aut(), new_var_map).ap_substitute(ap_subs)
+        for new_ap in to_register:
+            new_aut.register_ap(new_ap)
 
-    def ap_substitute(self, subs):
-        clean_subs(subs)
-
-        if len(subs) == 0:
-            return self
-
-        return BuchiTransformer(self, Substitution(subs)).transform()
+        return BuchiAutomaton(new_aut, new_var_map)
 
     def project(self, var_refs, env_var_map):
         from pecan.lang.ir.prog import VarRef
-<<<<<<< HEAD
-        var_names = []
+        aps = []
         pecan_var_names = []
 
         for v in var_refs:
             if type(v) is VarRef:
-                var_names.extend(self.var_map[v.var_name])
+                aps.extend(self.var_map[v.var_name])
                 pecan_var_names.append(v.var_name)
 
-        result = self
-        for var_name in var_names:
-            result = BuchiTransformer(result.postprocess(), BuchiProjection(var_name)).transform()
+        result = self.ap_project(aps)
 
         for var_name in pecan_var_names:
             # It may not be there (e.g., it's perfectly valid to do "exists x. y = y", even if it's pointless)
@@ -234,18 +148,18 @@ class BuchiAutomaton(Automaton):
                 env_var_map.pop(var_name)
 
         return result
-=======
-        var_names = [v.var_name for v in var_refs if type(v) is VarRef]
 
-        res_aut = self.aut.postprocess('BA')
-        for var_name in var_names:
+    def ap_project(self, aps):
+        # print('ap_project()', aps)
+        self.postprocess()
+        res_aut = self.aut
+        for ap in aps:
             if not res_aut.is_sba():
                 res_aut = res_aut.postprocess('BA')
 
-            res_aut = buchi_transform(res_aut, BuchiProjection(res_aut, var_name))
+            res_aut = buchi_transform(res_aut, BuchiProjection(res_aut, ap))
 
-        return BuchiAutomaton(res_aut)
->>>>>>> origin/master
+        return BuchiAutomaton(res_aut, self.get_var_map())
 
     def is_empty(self):
         return self.aut.is_empty()
@@ -287,7 +201,6 @@ class BuchiAutomaton(Automaton):
 
         acc_word.simplify()
 
-        var_vals = {}
         var_names = []
         for formula in list(acc_word.prefix) + list(acc_word.cycle):
             for f in spot.atomic_prop_collect(spot.bdd_to_formula(formula)):
@@ -297,9 +210,13 @@ class BuchiAutomaton(Automaton):
         prefixes = self.to_binary(var_names, acc_word.prefix)
         cycles = self.to_binary(var_names, acc_word.cycle)
 
-        result = {}
+        ap_result = {}
         for var_name in var_names:
-            result[var_name] = (prefixes[var_name], cycles[var_name])
+            ap_result[var_name] = (prefixes[var_name], cycles[var_name])
+
+        result = {}
+        for var, aps in self.var_map.items():
+            result[var] = [ap_result[ap] for ap in aps]
         return result
 
     def to_binary(self, var_names, bdd_list):
@@ -332,12 +249,7 @@ class BuchiAutomaton(Automaton):
             raise Exception('Cannot process formula: {}'.format(formula))
 
     def custom_convert(self, other):
-        if other.get_aut_type() == 'true':
-            return BuchiAutomaton(spot.translate('1'), {})
-        elif other.get_aut_type() == 'false':
-            return BuchiAutomaton(spot.translate('0'), {})
-        else:
-            raise NotImplementedError
+        return BuchiAutomaton.as_buchi(other)
 
     def postprocess(self):
         if not self.aut.is_sba():
@@ -345,79 +257,20 @@ class BuchiAutomaton(Automaton):
         return self
 
     def shuffle(self, is_disj, other):
-        new_var_map = self.combine_var_map(other)
-        return BuchiAutomaton(ShuffleAutomata(a_aut.get_aut(), b_aut.get_aut()).shuffle(self.disjunction), new_var_map)
+        # Don't need to convert ourselves, but may need to convert other aut to Buchi
+        aut_a = self
+        aut_b = self.convert(other)
 
-def build_bdd(kind, children):
-    if kind == spot.op_And:
-        return reduce(lambda a, b: a & b, children)
-    elif kind == spot.op_Or:
-        return reduce(lambda a, b: a | b, children)
-    elif kind == spot.op_Not:
-        return buddy.bdd_not(children[0])
-    elif kind == spot.op_tt:
-        return buddy.bddtrue
-    elif kind == spot.op_ff:
-        return buddy.bddfalse
-    else:
-        raise Exception('Unhandled formula kind: {}'.format(kind))
-
-def formula_to_bdd(aut, formula):
-    if formula._is(spot.op_ap): # op_ap is 'atomic proposition' (i.e., variable)
-        return buddy.bdd_ithvar(aut.register_ap(formula.ap_name()))
-    else:
-        new_children = []
-        for i in range(formula.size()):
-            new_child = formula_to_bdd(aut, formula[i])
-
-            if new_child is not None:
-                new_children.append(new_child)
-
-        return build_bdd(formula.kind(), new_children)
-
-<<<<<<< HEAD
-class BuchiTransformer:
-    def __init__(self, original_aut, builder):
-        self.original_aut = original_aut
-        self.builder = builder
-=======
-    def save(self, filename):
-        self.aut.save(filename)
+        return merge_maps(ShuffleAutomata(aut_a.get_aut(), aut_b.get_aut()).shuffle(is_disj), aut_a.get_var_map(), aut_b.get_var_map())
 
     def to_str(self):
         return self.aut.to_str('hoa')
->>>>>>> origin/master
+
 
 def buchi_transform(original_aut, builder):
     # Build a new automata with different edges
     new_aut = spot.make_twa_graph()
 
-<<<<<<< HEAD
-        inner_aut = self.original_aut.get_aut()
-
-        # Set the acceptance condition to be same as the input automata
-        acc = inner_aut.get_acceptance()
-        new_aut.set_acceptance(acc.used_sets().max_set(), acc)
-        new_aut.new_states(inner_aut.num_states())
-        new_aut.set_init_state(inner_aut.get_init_state_number())
-
-        for e in inner_aut.edges():
-            # Convert to a formula because formulas are nicer to work with than the bdd's
-            formula = spot.bdd_to_formula(e.cond)
-            new_formula = self.builder.transform_formula(formula)
-            cond = spot.formula_to_bdd(new_formula, new_aut.get_dict(), new_aut)
-            # print('Adding edge', e.src, e.dst, '(', formula, ')', '(', new_formula, ')', e.acc)
-            new_aut.new_edge(e.src, e.dst, cond, e.acc)
-
-        return BuchiAutomaton(new_aut, self.builder.transform_var_map(self.original_aut.get_var_map()))
-
-class Builder:
-    def transform_formula(self, formula):
-        return formula
-
-    def transform_var_map(self, var_map):
-        return copy.deepcopy(var_map)
-=======
     # Set the acceptance condition to be same as the input automata
     acc = original_aut.get_acceptance()
     new_aut.set_acceptance(acc.used_sets().max_set(), acc)
@@ -443,45 +296,11 @@ class Builder:
 
     def build_cond(self, cond):
         return cond
->>>>>>> origin/master
 
 class Substitution(Builder):
     def __init__(self, subs):
         self.subs = subs
 
-<<<<<<< HEAD
-    def transform_formula(self, formula):
-        if formula._is(spot.op_ap):
-            if formula.ap_name() in self.subs:
-                return spot.formula(self.subs[formula.ap_name()])
-            else:
-                return formula
-        else:
-            return formula.map(self.transform_formula)
-
-    def transform_var_map(self, var_map):
-        new_var_map = {}
-
-        for v, aps in var_map.items():
-            new_var_map[v] = [self.subs.get(ap, ap) for ap in aps]
-
-        return new_var_map
-
-class BuchiProjection(Builder):
-    def __init__(self, var_name):
-        super().__init__()
-        self.var_name = var_name
-
-    def transform_formula(self, formula):
-        if_0 = Substitution({self.var_name: spot.formula('0')}).transform_formula(formula)
-        if_1 = Substitution({self.var_name: spot.formula('1')}).transform_formula(formula)
-
-        # The new edge condition should be:
-        # [0/y]cond | [1/y]cond
-        # where cond is the original condition. That is, the edge is taken if it holds with y being false or y being true.
-        return spot.formula_Or([if_0, if_1])
-
-=======
     def pre_build(self, new_aut):
         for k, v in self.subs.items():
             if type(v) is str:
@@ -517,4 +336,3 @@ class BuchiProjection(Builder):
         # [F/y]cond | [T/y]cond
         # where cond is the original condition. That is, the edge is taken if it holds with y being false or y being true.
         return if_0 | if_1
->>>>>>> origin/master

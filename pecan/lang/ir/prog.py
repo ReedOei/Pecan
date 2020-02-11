@@ -13,6 +13,7 @@ import spot
 from pecan.tools.hoa_loader import from_spot_aut
 from pecan.lang.ir.base import *
 from pecan.settings import settings
+from pecan.utility import VarMap
 
 class VarRef(IRExpression):
     def __init__(self, var_name):
@@ -257,24 +258,13 @@ class NamedPred(IRNode):
         prog.enter_scope(dict(self.restriction_env))
 
         if self.body_evaluated is None:
-<<<<<<< HEAD
-            self.body_evaluated = self.body.evaluate(prog).postprocess()
-=======
-            self.body_evaluated = self.body.evaluate(prog)
-            self.arg_name_map, self.body_evaluated = self.body_evaluated.relabel([arg.var_name for arg in self.args])
-            # print(self.name, self.args, self.arg_name_map)
->>>>>>> origin/master
+            self.body_evaluated = self.body.evaluate(prog).relabel()
 
         if not arg_names:
             result = self.body_evaluated
         else:
-<<<<<<< HEAD
             subs_dict = {arg.var_name: name.var_name for arg, name in zip(self.args, arg_names)}
-            result = self.body_evaluated.call(subs_dict, prog.get_var_map())
-=======
-            subs_dict = {self.arg_name_map[arg.var_name]: name.var_name for arg, name in zip(self.args, arg_names)}
-            result = self.body_evaluated.substitute(subs_dict)
->>>>>>> origin/master
+            result = self.body_evaluated.substitute(subs_dict, prog.get_var_map())
 
         prog.exit_scope()
 
@@ -410,12 +400,16 @@ class Program(IRNode):
         self.idx = 0
 
         while self.idx < len(self.defs):
+            self.enter_var_map_scope()
+
             self.emit_offset = 0
             d = self.defs[self.idx]
 
             self.run_definition(self.idx, d)
 
             self.idx += 1
+
+            self.exit_var_map_scope()
 
         # Clear all restrictions. All relevant restrictions will be held inside the restriction_env of the relevant predicates.
         # Having them also in our restrictions list just leads to double restricting, which is a waste of computation time
@@ -438,8 +432,9 @@ class Program(IRNode):
         msgs = []
 
         for d in self.defs:
+            self.enter_var_map_scope()
+
             # Ignore these constructs because we should have run them earlier in run_type_inference
-            # TODO: Fix here and above in run_type_inferences, all these passes are probably somewhat inefficient for larger programs and it doesn't scale particularly well
             if type(d) in to_ignore:
                 continue
 
@@ -455,6 +450,8 @@ class Program(IRNode):
                     if result.failed():
                         succeeded = False
                         msgs.append(result.message())
+
+            self.exit_var_map_scope()
 
         self.result = Result('\n'.join(msgs), succeeded)
 
@@ -485,23 +482,21 @@ class Program(IRNode):
         return result
 
     def enter_scope(self, new_restrictions=None):
-        self.var_map.append({})
         if new_restrictions is None:
             new_restrictions = {}
         self.restrictions.append(dict(new_restrictions))
 
     def exit_scope(self):
-<<<<<<< HEAD
-        if len(self.restrictions) <= 0:
-            raise Exception('Cannot exit the last scope!')
-        else:
-            self.var_map.pop()
-=======
         if self.restrictions:
->>>>>>> origin/master
             self.restrictions.pop(-1)
         else:
             raise Exception('Cannot exit the last scope!')
+
+    def enter_var_map_scope(self, var_map=None):
+        self.var_map.append(var_map or VarMap())
+
+    def exit_var_map_scope(self):
+        return self.var_map.pop()
 
     def get_restrictions(self, var_name: str):
         result = []

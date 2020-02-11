@@ -34,7 +34,6 @@ def reset_global():
         states = dict()
         org_states = []
 
-
 # STATE FUNCTIONS
 def state_line(line):
         acc = line[-1]
@@ -48,67 +47,65 @@ def state(acc):
         state_counter += 1
         states[str(state_counter)] = state
 
-
 # EDGE FUNCTIONS
 def intermediate_edge(b_inputs, start_state, end_state, base):
-        global states
-        s = states[str(start_state)]
-        for i in range(base):
-            inp = column(b_inputs, i)
+    global states
+    s = states[str(start_state)]
+    for i in range(base):
+        inp = column(b_inputs, i)
 
-            if i == base - 1:
-                if inp in s:
-                    s[inp].append('o' + str(end_state))
-                else:
-                    s[inp] = ['o' + str(end_state)]
-            elif inp in s.keys():
-                key = s[inp]
-                for i, key in enumerate(s[inp]):
-                    if key[0] == 'o':
-                        key = org_states[int(key[1:])]
-                    s[inp][i] = key
-                s = states[key]
+        if i == base - 1:
+            if inp in s:
+                s[inp].append('o' + str(end_state))
             else:
-                new_state = state(0)
+                s[inp] = ['o' + str(end_state)]
+        elif inp in s.keys():
+            key = s[inp]
+            for i, key in enumerate(s[inp]):
+                if key[0] == 'o':
+                    key = org_states[int(key[1:])]
+                s[inp][i] = key
+            s = states[key]
+        else:
+            new_state = state(0)
 
-                name = str(state_counter)
-                if inp in s:
-                    s[inp].append(name)
-                else:
-                    s[inp] = [name]
+            name = str(state_counter)
+            if inp in s:
+                s[inp].append(name)
+            else:
+                s[inp] = [name]
 
-                s = states[name]
+            s = states[name]
 
 def edge(old_line, base):
-        curr_inp = []
-        while old_line[0] != '-':
-            (inp, old_line) = first_word(old_line)
-            curr_inp.append(('{0:b}'.format(int(inp))).zfill(base))
-        end_state = old_line[3:].strip()
-        intermediate_edge(curr_inp, org_states[-1], end_state, base)
+    curr_inp = []
+    while old_line[0] != '-':
+        (inp, old_line) = first_word(old_line)
+        curr_inp.append(('{0:b}'.format(int(inp))).zfill(base))
+    end_state = old_line[3:].strip()
+    intermediate_edge(curr_inp, org_states[-1], end_state, base)
 
 def make_edge(aps, inp):
-        ans = buddy.bddtrue
-        for i in range(len(inp)):
-            if inp[i] == '0':
-                ans &= -aps[i]
-            else:
-                ans &= aps[i]
-        return ans
-
+    ans = buddy.bddtrue
+    for i in range(len(inp)):
+        if inp[i] == '0':
+            ans &= -aps[i]
+        else:
+            ans &= aps[i]
+    return ans
 
 # BASE FUNCTION
 def adjust_base(line):
-        bases = []
-        base = 1
-        for c in line:
-            if c == ',':
-                base += 1
-            elif c == '}':
-                bases.append(base)
-            elif c == '{':
-                base = 1
-        return bases
+    bases = []
+    base = 1
+    for c in line:
+        if c == ',':
+            base += 1
+        elif c == '}':
+            bases.append(base)
+        elif c == '{':
+            base = 1
+    return bases
 
 def convert_aut(txt, inp_names = None):
     with open(txt, 'r') as f:
@@ -135,15 +132,16 @@ def convert_aut_lines(lines, inp_names = None):
     aut = spot.make_twa_graph()
     aps = []
     var_map = {}
-    for i in range(len(bases)):
-        # TODO: should require same length?
-        if len(inp_names) > i:
-            var_name = inp_names[i]
-        else:
-            var_name = f'p{i+1}'
 
+    if len(bases) > len(inp_names):
+        raise Exception('More inputs to automaton than variables provided ({} vs {})'.format(bases, inp_names))
+
+    for i in range(len(bases)):
+        var_name = inp_names[i]
         aps.append(buddy.bdd_ithvar(aut.register_ap(var_name)))
-        # TODO: Change this if variables are encoded with multiple variables per variable (e.g., instead of encoding symbols via multiple states, encode via multiple variables).
+
+        # TODO: Change this if variables are encoded with multiple variables per variable (e.g., instead of encoding
+        #  symbols via multiple states, encode via multiple variables).
         var_map[var_name] = [var_name]
 
     aut.set_buchi()

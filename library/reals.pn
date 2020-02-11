@@ -64,11 +64,14 @@ Define realFormatHelper sign cycleOffset prefix cycle :=
             snd (stdFormat "" ((if sign = "+" then 0 else 1) :: prefix) cycle) ^ " (NOT A VALID REAL NUMBER)" ^ toString (prefixIntegral, cycleIntegral, prefixFractional, cycleFractional)
     end.
 
-Define realFormat var prefix cycle :=
-    (var,
-        if isEmpty prefix then
-            realFormatHelper (if head cycle = 0 then "+" else "-") 1 (tail prefix) cycle
-        else
-            realFormatHelper (if head prefix = 0 then "+" else "-") 0 (tail prefix) cycle
-    ).
+Define realFormat var reps :=
+    match reps with
+    case [(prefix, cycle)] =>
+        (var,
+            if isEmpty prefix then
+                realFormatHelper (if head cycle = 0 then "+" else "-") 1 (tail prefix) cycle
+            else
+                realFormatHelper (if head prefix = 0 then "+" else "-") 0 (tail prefix) cycle
+        )
+    end.
 

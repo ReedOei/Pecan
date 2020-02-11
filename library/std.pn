@@ -107,12 +107,6 @@ Define binaryToBase3 binList :=
     case 0 :: 1 :: xs => 1 :: binaryToBase3 xs
     case 1 :: 0 :: xs => 2 :: binaryToBase3 xs
     end.
-Define base3Format var prefix cycle :=
-    let actualPrefix := if isEven (length prefix) then prefix else concat prefix [head cycle] in
-    let actualCycle := if isEven (length cycle) then cycle else concat cycle [head cycle] in
-    let base3Prefix := concatenate (binaryToBase3 actualPrefix) in
-    let base3Cycle := concatenate (binaryToBase3 actualCycle) in
-    var ^ ": " ^ base3Prefix ^ "(" ^ base3Cycle ^ ")^w { " ^ concatenate prefix ^ "(" ^ concatenate cycle ^ ")^w }" .
 
 Define length := foldl (\cur _ => cur + 1) 0.
 Define map f := foldr (\x rest => f x :: rest) [].
@@ -175,24 +169,36 @@ Define showWord word := concatenate ∘ map (\i => checkToInt { word(i) }).
 
 Define wordToBinary inputWord :=
     match inputWord with
-    case (var, (prefix, cycle)) => (var, (map boolToInt prefix, map boolToInt cycle))
+    case (var, reps) =>
+        (var, map (\rep =>
+                match rep with
+                case (prefix, cycle) => (map boolToInt prefix, map boolToInt cycle)
+                end) reps)
     end.
 
 // Note this function converts from **LSD** binary
 Define fromBinary := foldr (\a b => a + 2*b) 0.
 
-Define stdFormat var prefix cycle := (var, concatenate prefix ^ "(" ^ concatenate cycle ^ ")^ω").
+Define stdFormat var reps :=
+    (var, map (\rep => match rep with
+                        case (prefix, cycle) => concatenate prefix ^ "(" ^ concatenate cycle ^ ")^ω"
+                       end) reps).
 
-Define natFormat var prefix cycle :=
-    if cycle = [0] then
-        (var, if isEmpty prefix then "0" else toString (fromBinary prefix))
-    else
-        stdFormat var prefix cycle ^ " (NOT A VALID NATURAL NUMBER)"
-    .
+Define natFormat var reps :=
+    match reps with
+    case [(prefix, cycle)] =>
+        if cycle = [0] then
+            (var, if isEmpty prefix then "0" else toString (fromBinary prefix))
+        else
+            stdFormat var prefix cycle ^ " (NOT A VALID NATURAL NUMBER)"
+    end.
+
+Define curry f := \p => match p with case (a, b) => f a b end .
+Define uncurry f a b := f (a, b) .
 
 Define runFormat format inputWord :=
     match inputWord with
-    case (var, (prefix, cycle)) => format var prefix cycle
+    case (var, reps) => format var reps
     end.
 
 Define example format t := map (runFormat format ∘ wordToBinary) (acceptingWord t).
