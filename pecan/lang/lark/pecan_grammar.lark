@@ -174,7 +174,7 @@ DISJ: "|" | "\\/" | "∨" | "or"
 ?forall_sym: "forall" | "∀"
 ?exists_sym: "exists" | "∃"
 
-VAR: /(?!(match|with|do|if|then|else|otherwise|iff|is|are|forall|exists|not|or|and|sometimes|true|false)\b)[a-zA-Z_][a-zA-Z_0-9]*/i
+VAR: /(?!(match|with|do|if|then|else|otherwise|iff|is|are|forall|exists|not|or|and|sometimes|true|false)\b)[a-z_][a-zA-Z_0-9]*/i
 
 %import common.INT
 %import common.WS
