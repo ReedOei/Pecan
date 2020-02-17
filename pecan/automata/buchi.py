@@ -11,12 +11,12 @@ from pecan.utility import VarMap
 def merge(merge_f, aut_a, aut_b):
     if aut_a.num_states() < aut_b.num_states():
         merged_var_map, subs = aut_b.get_var_map().merge_with(aut_a.get_var_map())
-        print('merge(a into b)', merged_var_map, subs)
+        # print('merge(a into b)', merged_var_map, subs)
         new_a = BuchiAutomaton(aut_a.get_aut(), aut_a.get_var_map()).ap_substitute(subs)
         new_b = aut_b
     else:
         merged_var_map, subs = aut_a.get_var_map().merge_with(aut_b.get_var_map())
-        print('merge(b into a)', merged_var_map, subs)
+        # print('merge(b into a)', merged_var_map, subs)
         new_a = aut_a
         new_b = BuchiAutomaton(aut_b.get_aut(), aut_b.get_var_map()).ap_substitute(subs)
 
@@ -71,7 +71,7 @@ class BuchiAutomaton(Automaton):
         for ap in self.aut.ap():
             new_aps[ap.ap_name()] = self.fresh_ap()
 
-        print('relabel()', new_aps)
+        #.print('relabel()', new_aps)
         return self.ap_substitute(new_aps)
 
     def substitute(self, arg_map, env_var_map):
@@ -92,7 +92,7 @@ class BuchiAutomaton(Automaton):
             # Rename the formal arg to the actual arg, but leave the aps as the formal aps because that'll be done by `ap_substitute` below
             new_var_map[actual_arg] = formal_aps
 
-        print('substitute()', arg_map, new_var_map, env_var_map, ap_subs)
+        # print('substitute()', arg_map, new_var_map, env_var_map, ap_subs)
 
         return BuchiAutomaton(self.aut, new_var_map).ap_substitute(ap_subs)
 
@@ -118,7 +118,7 @@ class BuchiAutomaton(Automaton):
                 new_var_map[v].append(new_ap)
                 to_register.append(new_ap)
 
-        print('ap_subs()', ap_subs, self.var_map, new_var_map)
+        # print('ap_subs()', ap_subs, self.var_map, new_var_map)
 
         new_aut = buchi_transform(self.aut, Substitution(bdd_subs))
 
@@ -147,25 +147,26 @@ class BuchiAutomaton(Automaton):
             if var_name in env_var_map:
                 env_var_map.pop(var_name)
 
+        # print('projected:', result.var_map, [v.ap_name() for v in result.aut.ap()])
+
         return result
 
     def ap_project(self, aps):
         if not aps:
             return self
 
-        print('ap_project()', aps)
-        # self.postprocess()
+        # print('ap_project()', aps)
+
+        self.postprocess()
+
         res_aut = self.aut
         for ap in aps:
-            print('ap_project()', aps, ap)
             # if not res_aut.is_sba():
             #     res_aut = res_aut.postprocess('BA')
 
             res_aut = buchi_transform(res_aut, BuchiProjection(res_aut, ap))
 
-        print(self.var_map, [v.ap_name() for v in res_aut.ap()])
-
-        return BuchiAutomaton(res_aut, self.get_var_map()).postprocess()
+        return BuchiAutomaton(res_aut, self.get_var_map()) #.postprocess()
 
     def is_empty(self):
         return self.aut.is_empty()
