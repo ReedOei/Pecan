@@ -487,7 +487,10 @@ class PralineMatchTuple(PralineMatchPat):
         match_env = {}
 
         for pat, t in zip(self.vals, term.vals):
-            match_env.update(pat.match(t))
+            m = pat.match(t)
+            if m is None:
+                return None
+            match_env.update(m)
 
         return match_env
 

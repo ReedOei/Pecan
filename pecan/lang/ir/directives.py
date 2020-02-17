@@ -1,10 +1,9 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
-import sys
-
 from pecan.tools.shuffle_automata import ShuffleAutomata
-from pecan.tools.convert_hoa import convert_aut
+from pecan.tools.walnut_converter import convert_aut
+from pecan.tools.hoa_loader import load_hoa
 from pecan.tools.labeled_aut_converter import convert_labeled_aut
 from pecan.tools.hoa_loader import load_hoa
 from pecan.automata.buchi import BuchiAutomaton
@@ -272,13 +271,15 @@ class DirectiveShuffle(IRNode):
         return transformer.transform_DirectiveShuffle(self)
 
     def evaluate(self, prog):
-        a_aut = prog.call(self.pred_a.name, self.pred_a.args)
-        b_aut = prog.call(self.pred_b.name, self.pred_b.args)
-        aut_res = BuchiAutomaton(ShuffleAutomata(BuchiAutomaton.as_buchi(a_aut).get_aut(), BuchiAutomaton.as_buchi(b_aut).get_aut()).shuffle(self.disjunction))
-        prog.preds[self.output_pred.name] = NamedPred(self.output_pred.name, self.output_pred.args, {}, AutLiteral(aut_res))
+        # TODO: Support shuffling other kinds of automata, once we have them
+        a_aut = BuchiAutomaton.as_buchi(prog.call(self.pred_a.name, self.pred_a.args))
+        b_aut = BuchiAutomaton.as_buchi(prog.call(self.pred_b.name, self.pred_b.args))
+
+        res = a_aut.shuffle(self.disjunction, b_aut)
+
+        prog.preds[self.output_pred.name] = NamedPred(self.output_pred.name, self.output_pred.args, {}, AutLiteral(res))
 
         return None
 
     def __repr__(self):
         return '#shuffle({}, {}, {})'.format(self.pred_a, self.pred_b, self.output_pred)
-

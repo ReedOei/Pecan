@@ -43,8 +43,8 @@ def test_praline_split():
 
 def test_praline_accepting_word():
     run_file('examples/test_praline_accepting_word.pn', '''
-[(x,([],[false]))]
-[(x,([false,false,true,true,true,false,true],[false]))]
+[(x,[([],[false])])]
+[(x,[([false,false,true,true,true,false,true],[false])])]
 ''')
 
 def test_praline_examples():
@@ -73,9 +73,9 @@ def test_praline_graphing():
 
 def test_praline_real_format():
     run_file('examples/test_praline_real_format.pn', '''
-[(x,+1.0(0)^w)]
-[(y,+0.1(0)^w)]
-[(y,+11.10(10)^w)]
+[(x,+1.0(0)^ω)]
+[(y,+0.1(0)^ω)]
+[(y,+11.10(10)^ω)]
 ''')
 
 def test_praline_file_io():

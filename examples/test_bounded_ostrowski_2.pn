@@ -1,21 +1,30 @@
 #load("ostrowski/add_2.txt", "walnut", add2(alpha, a, b, c))
 #load("ostrowski/recog_2.txt", "walnut", recog2(alpha, x))
 #load("ostrowski/all_ones_2.txt", "walnut", all_ones2(a))
+#load("ostrowski/lt_2.txt", "walnut", lt2(a, b))
 #load("sturmian2.txt", "walnut", sturmian(n))
 
-x is ostrowski(a) := x is finite_num & recog2(a, x)
+Execute genFinite 3.
+Execute genEqual 3.
+Execute genZero 3.
+
+x is ostrowski(a) := x is finite_3 & recog2(a, x)
 
 #type(ostrowski(a), {
     "adder": add2(a, any, any, any),
-    "less": lt2(any, any)
+    "less": lt2(any, any),
+    "zero": zero_3(any),
+    "equal": equal_3(any, any)
 })
 
-x is zeckendorf := x is ostrowski(all_ones2())
-zeck_add(a, b, c) := add2(all_ones2(), a, b, c)
+x is zeckendorf := exists o. all_ones2(o) & x is ostrowski(o)
+zeck_add(a, b, c) := exists o. all_ones2(o) & add2(o, a, b, c)
 
 #type(zeckendorf, {
     "adder": zeck_add(any, any, any),
-    "less": lt2(any, any)
+    "less": lt2(any, any),
+    "equal": equal_3(any, any),
+    "zero": zero_3(any)
 })
 
 Restrict x, y, z are ostrowski(alpha).
@@ -30,6 +39,10 @@ zero_add_refl() := forall alpha. forall x. x + 0 = x
 add_assoc_const() := forall alpha. forall x. x + (1 + 1) = (x + 1) + 1
 #assert_prop(true, add_assoc_const)
 
-add_assoc() := forall alpha. forall x. forall y. forall z. x + (y + z) = (x + y) + z
+typ_add(alpha, x, y, z) := add2(alpha, x, y, z)
+
+// add_assoc() := forall alpha. forall x. forall y. forall z. x + (y + z) = (x + y) + z
+// add_assoc() := forall alpha. forall x. forall y. forall z. exists xy is ostrowski(alpha). exists yz is ostrowski(alpha). typ_add(alpha, xy, z, typ_add(alpha, x, yz))
+add_assoc() := forall alpha. forall x. forall y. forall z. forall xy is ostrowski(alpha). forall yz is ostrowski(alpha). (typ_add(alpha, x, y, xy) & typ_add(alpha, y, z, yz)) => forall s is ostrowski(alpha). typ_add(alpha, xy, z, s) <=> typ_add(alpha, x, yz, s)
 #assert_prop(true, add_assoc)
 

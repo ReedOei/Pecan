@@ -9,7 +9,7 @@ cache:
         - /home/travis/build/ReedOei/Pecan/spot-2.8.5
 
 before_install:
-    - bash install-spot.sh
+    - bash scripts/install-spot.sh
     - pip3 install pytest
     - export PYTHONPATH="$HOME/.local/lib/python3.6/site-packages":"$PYTHONPATH"
 

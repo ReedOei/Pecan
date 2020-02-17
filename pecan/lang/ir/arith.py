@@ -27,7 +27,7 @@ class Add(BinaryIRExpression):
 
         aut_add = prog.call('adder', [val_a, val_b, self.label_var()])
 
-        result = self.project_intermediates(val_a, val_b, aut_a & aut_b & aut_add)
+        result = self.project_intermediates(prog, val_a, val_b, aut_a & aut_b & aut_add)
 
         return (result, self.label_var())
 
@@ -54,7 +54,7 @@ class Sub(BinaryIRExpression):
 
         aut_sub = prog.call('adder', [self.label_var(), val_b, val_a])
 
-        result = self.project_intermediates(val_a, val_b, aut_a & aut_b & aut_sub)
+        result = self.project_intermediates(prog, val_a, val_b, aut_a & aut_b & aut_sub)
         return (result, self.label_var())
 
     def transform(self, transformer):
@@ -102,12 +102,6 @@ class IntConst(IRExpression):
         if self.val < 0:
             return Sub(IntConst(0), IntConst(-self.val)).with_type(self.get_type()).evaluate(prog)
 
-        zero_const_var = VarRef("__constant0").with_type(self.get_type())
-        zero_const = IntConst(0).with_type(self.get_type())
-        one_const_var = VarRef("__constant1").with_type(self.get_type())
-
-        b_const = VarRef('b').with_type(self.get_type())
-
         if (self.val, self.get_type()) in constants_map:
             return constants_map[(self.val, self.get_type())]
 
@@ -119,6 +113,9 @@ class IntConst(IRExpression):
 
             # This means we didn't find a user-defined "one", so just use the default expression
             if res.name == 'one':
+                b_const = VarRef('b').with_type(self.get_type())
+                zero_const = IntConst(0).with_type(self.get_type())
+
                 leq = Disjunction(Less(self.label_var(), b_const), Equals(self.label_var(), b_const))
                 b_in_0_1 = Conjunction(Less(zero_const, b_const), Less(b_const, self.label_var()))
                 formula_1 = Conjunction(Less(zero_const, self.label_var()), Complement(Exists(b_const, self.get_type().restrict(b_const), b_in_0_1)))
@@ -175,7 +172,7 @@ class Equals(BinaryIRPredicate):
 
         eq_aut = prog.call('equal', [val_a, val_b])
 
-        return self.project_intermediates(val_a, val_b, eq_aut & aut_a & aut_b)
+        return self.project_intermediates(prog, val_a, val_b, eq_aut & aut_a & aut_b)
 
     def transform(self, transformer):
         return transformer.transform_Equals(self)
@@ -196,7 +193,7 @@ class Less(BinaryIRPredicate):
 
         aut_less = prog.call('less', [val_a, val_b])
 
-        return self.project_intermediates(val_a, val_b, aut_a & aut_b & aut_less)
+        return self.project_intermediates(prog, val_a, val_b, aut_a & aut_b & aut_less)
 
     def transform(self, transformer):
         return transformer.transform_Less(self)

@@ -4,7 +4,6 @@ Define useN n base :=
     let baseAut := mkAut ["n"] [base] in
     foldl (\aut sym => addTransition aut "0" "0" (toString sym)) (addState baseAut "0" true) [0..n].
 
-
 // Normally you'd just emit Pecan definitions, but do this to test all these other builtins
 Execute writeFile "test2.aut" (autToStr (buildAut (useN 2 10))).
 Execute writeFile "test4.aut" (autToStr (buildAut (useN 4 10))).

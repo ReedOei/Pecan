@@ -8,9 +8,29 @@ Medium:
 - Maybe merge type inference and execution phases in pecan/lang/ir/prog.py
     - Somewhat more complicated than I originally thought because we have to move TypedIRLowering and Typed optimization into the evaluate loop
     - Add an evaluate_type or something method so that we don't have to manually check the type of the nodes when running type inference
+- Improve optimization so that we don't need to do what we do in test_bounded_ostrowski_2
+- Improve CSE optimization so that we use `forall` or `exists` to reduce the number of complements, when valid.
+    For example, we should optimize
+
+    forall x. x + (y + z) = k
+
+    as
+
+    forall x. forall yz. y + z = yz => x + yz = k
+
+    instead of
+
+    forall x. exists yz. y + z = yz & x + yz = k
+
+    when these two statements are equivalent (probably as long as addition is real function (i.e., with unique output)).
+
 - Add new __repr__ functions that do a more standard repr (e.g., Class(field_1, field_2, ...)) that turn on with debug 2
 - See if we can reduce the usage of the `type` function...(either replace with isinstance or just remove altogether)
 - Combine unification code for looking up dynamic calls (in ir/prog.py and doing typechecking)
+
+- When we cache variable representations (in class Program's var_map), we need to make sure that we don't accidentally cahce two different represenations of the same constnat, because it may be encoded differently. To be safe, probably just don't cache constants aps at all?
+
+- Combine quantifiers if possible (e.g., make exists x. exists y. into a single projection run, combining conditions if necessary?)
 
 - Add a "Alias" system so we can define things like:
 

@@ -23,10 +23,10 @@ class Automaton:
     def complement(self):
         raise NotImplementedError
 
-    def substitute(self, subs):
+    def substitute(self, subs, env_var_map):
         raise NotImplementedError
 
-    def project(self, var_refs):
+    def project(self, var_refs, env_var_map):
         raise NotImplementedError
 
     def is_empty(self):
@@ -63,12 +63,18 @@ class Automaton:
     def merge_states(self):
         return self
 
+    def postprocess(self):
+        return self
+
     # Allows conversion between types of automata, if desired
     def custom_convert(self, other):
         raise NotImplementedError
 
-    def relabel(self, arguments=None):
-        return {arg: arg for arg in arguments} or {}, self
+    def shuffle(self, is_disj, other):
+        raise NotImplementedError
+
+    def relabel(self):
+        return self
 
     # -------------------------------------------------------
     # Default implementations:
@@ -101,10 +107,10 @@ class TrueAutomaton(Automaton):
     def complement(self):
         return FalseAutomaton()
 
-    def substitute(self, subs):
+    def substitute(self, arg_map, env_var_map):
         return self
 
-    def project(self, var_refs):
+    def project(self, var_refs, env_var_map):
         return self
 
     def is_empty(self):
@@ -139,10 +145,10 @@ class FalseAutomaton(Automaton):
     def complement(self):
         return TrueAutomaton()
 
-    def substitute(self, subs):
+    def substitute(self, arg_map, env_var_map):
         return self
 
-    def project(self, var_refs):
+    def project(self, var_refs, env_var_map):
         return self
 
     def is_empty(self):

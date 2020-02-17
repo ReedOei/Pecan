@@ -22,7 +22,6 @@ test_bco_adder_base_case() := forall a. forall x. forall y. forall z. (bco_zero(
 // test_bco_adder_inductive_case() := forall a. forall x. bco_valid(a, x) => forall y. bco_valid(a, y) => forall z. bco_valid(a, z) => forall u. bco_succ(a,u,x) => forall v. bco_succ(a,v,z) => (bco_adder(a,x,y,z) <=> bco_adder(a,u,y,v))
 test_bco_adder_inductive_case_fail(a,x,y,z) := exists u. exists v. bco_valid(a, x) & bco_valid(a, y) & bco_valid(a, z) & bco_adder(a,x,y,z) & bco_succ(a,u,x) & bco_succ(a,v,z) & !bco_adder(a,u,y,v)
 Display example stdFormat { test_bco_adder_inductive_case_fail(a, x, y, z) }.
-Display example base3Format { test_bco_adder_inductive_case_fail(a, x, y, z) }.
 test_bco_adder_inductive_case() := forall a. forall x. bco_valid(a, x) => forall y. bco_valid(a, y) => forall z. bco_valid(a, z) => !test_bco_adder_inductive_case_fail(a,x,y,z)
 #assert_prop(true, test_bco_adder_inductive_case)
 
