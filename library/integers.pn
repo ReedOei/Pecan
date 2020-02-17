@@ -1,5 +1,6 @@
 #load("integer/positive.txt", "walnut", positive(n))
 #load("integer/negate.txt", "walnut", negate(n, m))
+#load("integer/default_abs.txt", "walnut", default_abs(n, m))
 
 negative(a) := !positive(a)
 int_less(a, b) := (positive(a) & positive(b) & bin_less(a, b)) |
@@ -20,7 +21,8 @@ int_add(a, b, c) := a is int & b is int & c is int & (pos_int_add(a, b, c) | neg
 
 #type(int, {
     "adder": int_add(any, any, any),
-    "less": int_less(any, any)
+    "less": int_less(any, any),
+    "abs": default_abs(any, any)
 })
 
 Define intFormat var prefix cycle :=
