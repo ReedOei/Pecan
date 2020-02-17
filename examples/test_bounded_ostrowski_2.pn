@@ -39,6 +39,10 @@ zero_add_refl() := forall alpha. forall x. x + 0 = x
 add_assoc_const() := forall alpha. forall x. x + (1 + 1) = (x + 1) + 1
 #assert_prop(true, add_assoc_const)
 
-add_assoc() := forall alpha. forall x. forall y. forall z. x + (y + z) = (x + y) + z
+typ_add(alpha, x, y, z) := add2(alpha, x, y, z)
+
+// add_assoc() := forall alpha. forall x. forall y. forall z. x + (y + z) = (x + y) + z
+// add_assoc() := forall alpha. forall x. forall y. forall z. exists xy is ostrowski(alpha). exists yz is ostrowski(alpha). typ_add(alpha, xy, z, typ_add(alpha, x, yz))
+add_assoc() := forall alpha. forall x. forall y. forall z. forall xy is ostrowski(alpha). forall yz is ostrowski(alpha). (typ_add(alpha, x, y, xy) & typ_add(alpha, y, z, yz)) => forall s is ostrowski(alpha). typ_add(alpha, xy, z, s) <=> typ_add(alpha, x, yz, s)
 #assert_prop(true, add_assoc)
 
