@@ -47,4 +47,5 @@ Example term.
 Short:
 - Move SpotFormula out of prog to keep the main program automata/library independent
 - Make all parsing functions in pecan.lang.parser into proper functions (b/c it gives better debug info)
+- Make converter warn when you try to use states that don't exist, but just map them to new, empty states
 

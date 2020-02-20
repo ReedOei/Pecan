@@ -103,9 +103,13 @@ class BuchiAutomaton(Automaton):
         if not ap_subs:
             return self
 
-        self.postprocess()
-
         bdd_subs = {self.aut.register_ap(k): v for k, v in ap_subs.items()}
+
+        # print('ap_sub postprocess:', self.aut.num_states(), self.aut.num_edges(), list(map(str, self.aut.ap())), self.aut.acc())
+        # self.aut.merge_edges()
+        # self.aut.merge_states()
+        # print('ap_sub postprocess (post merge):', self.aut.num_states(), self.aut.num_edges(), list(map(str, self.aut.ap())), self.aut.acc())
+        self.postprocess()
 
         new_var_map = VarMap()
         to_register = []
@@ -125,7 +129,7 @@ class BuchiAutomaton(Automaton):
         for new_ap in to_register:
             new_aut.register_ap(new_ap)
 
-        return BuchiAutomaton(new_aut, new_var_map)
+        return BuchiAutomaton(new_aut, new_var_map) #.postprocess()
 
     def project(self, var_refs, env_var_map):
         from pecan.lang.ir.prog import VarRef
@@ -161,6 +165,7 @@ class BuchiAutomaton(Automaton):
 
         res_aut = self.aut
         for ap in aps:
+            # print('projecting:', ap)
             # if not res_aut.is_sba():
             #     res_aut = res_aut.postprocess('BA')
 
@@ -201,7 +206,7 @@ class BuchiAutomaton(Automaton):
         return self
 
     def accepting_word(self):
-        acc_word = self.postprocess().get_aut().accepting_word()
+        acc_word = self.get_aut().accepting_word()
 
         if acc_word is None:
             return None

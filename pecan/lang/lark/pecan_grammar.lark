@@ -44,7 +44,7 @@ prop_val: PROP_VAL -> prop_val_tok
                  | praline_arith
 
 ?operator_sym: operator_sym_char+ -> operator_sym
-?operator_sym_char: PERCENT | EQ | GT | LT | COLON | DISJ | CONJ | COMP | /[^\x00-\xFF]/
+?operator_sym_char: PERCENT | EQ | GT | LT | COLON | DISJ | CONJ | COMP | /[^\x00-\xFF]/ | "@"
 
 PERCENT: "%"
 _DEFEQ: ":="

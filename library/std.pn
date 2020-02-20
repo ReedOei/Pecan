@@ -99,14 +99,7 @@ Define concat a b :=
     case x :: xs => x :: concat xs b
     end.
 
-// binList should have even length
-Define binaryToBase3 binList :=
-    match binList with
-    case [] => []
-    case 0 :: 0 :: xs => 0 :: binaryToBase3 xs
-    case 0 :: 1 :: xs => 1 :: binaryToBase3 xs
-    case 1 :: 0 :: xs => 2 :: binaryToBase3 xs
-    end.
+Define a @ b := concat a b.
 
 Define length := foldl (\cur _ => cur + 1) 0.
 Define map f := foldr (\x rest => f x :: rest) [].
@@ -130,12 +123,22 @@ Define rmap g := bimap id g.
 Define split n l :=
     if n = 0 then ([], l)
     else match l with
-         case [] => ([], l)
+         case []      => ([], l)
          case x :: xs => lmap (\before => x :: before) (split (n - 1) xs)
          end.
 
 Define take n l := fst (split n l).
 Define drop n l := snd (split n l).
+
+Define splitOn sep l :=
+    match l with
+    case []      => []
+    case x :: xs =>
+        match splitOn sep xs with
+        case []      => if x = sep then [[]] else [[x]]
+        case y :: ys => if x = sep then [] :: y :: ys else (x :: y) :: ys
+        end
+    end.
 
 Define head l :=
     match l with
@@ -147,9 +150,15 @@ Define tail l :=
     case _ :: xs => xs
     end.
 
+Define last l :=
+    match l with
+    case [x] => x
+    case x :: y :: xs => last (y :: xs)
+    end.
+
 Define find f l :=
     match l with
-    case [] => []
+    case []      => []
     case x :: xs => if f x then [x] else find f xs
     end.
 
@@ -167,6 +176,31 @@ Define boolToInt b := if b then 1 else 0.
 Define checkToInt := boolToInt ∘ check.
 Define showWord word := concatenate ∘ map (\i => checkToInt { word(i) }).
 
+Define zipWith f a b :=
+    match (a, b) with
+    case ([], _) => []
+    case (_, []) => []
+    case (x :: xs, y :: ys) => f x y :: zipWith f xs ys
+    end.
+
+Define zip := zipWith (\x y => (x, y)).
+
+Define padMatch padVal l :=
+    match l with
+    case [] => []
+    case x :: xs => padVal :: padMatch padVal xs
+    end.
+
+Define padLength padVal l1 l2 :=
+    match (l1, l2) with
+    case ([], rest) => (padMatch padVal rest, rest)
+    case (rest, []) => (rest, padMatch padVal rest)
+    case (x :: xs, y :: ys) =>
+        match padLength padVal xs ys with
+        case (newL1, newL2) => (x :: newL1, y :: newL2)
+        end
+    end.
+
 Define wordToBinary inputWord :=
     match inputWord with
     case (var, reps) =>
@@ -176,8 +210,9 @@ Define wordToBinary inputWord :=
                 end) reps)
     end.
 
-// Note this function converts from **LSD** binary
-Define fromBinary := foldr (\a b => a + 2*b) 0.
+// Note this function converts from **LSD** numbers (since that's what we typically use in Pecan)
+Define fromBase base := foldr (\a b => a + base*b) 0.
+Define fromBinary := fromBase 2.
 
 Define stdFormat var reps :=
     (var, map (\rep => match rep with
@@ -195,6 +230,7 @@ Define natFormat var reps :=
 
 Define curry f := \p => match p with case (a, b) => f a b end .
 Define uncurry f a b := f (a, b) .
+Define flip f a b := f b a .
 
 Define runFormat format inputWord :=
     match inputWord with

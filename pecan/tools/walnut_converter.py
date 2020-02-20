@@ -11,9 +11,9 @@ from pecan.utility import VarMap
 class Transition:
     def __init__(self, input_line):
         split = input_line.split('->')
-        # Something like [1,2,3], representing a transition from (1,2,3) -> dest_state_num
+        # Something like [1,2,3], representing a transition from (1,2,3) -> dest_state_name
         self.inputs = [int(inp) for inp in split[0].split()]
-        self.dest_state_num = int(split[1])
+        self.dest_state_name = int(split[1])
 
     # Suppose we have the following transition
     def encode(self, aut, hoa_aut, state):
@@ -27,12 +27,12 @@ class Transition:
                 else:
                     cond &= ap
 
-            acc_sets = aut.acc_for(self.dest_state_num)
+            acc_sets = aut.acc_for(self.dest_state_name)
 
         if acc_sets:
-            hoa_aut.new_edge(state.state_num, self.dest_state_num, cond, acc_sets)
+            hoa_aut.new_edge(state.state_num, aut.num_of(self.dest_state_name), cond, acc_sets)
         else:
-            hoa_aut.new_edge(state.state_num, self.dest_state_num, cond)
+            hoa_aut.new_edge(state.state_num, aut.num_of(self.dest_state_name), cond)
 
         return hoa_aut
 
@@ -106,7 +106,10 @@ class BinaryAutomaton:
             yield bin(sym)[2:].rjust(base_len(base), '0'), self.bdds[formal]
 
     def acc_for(self, state_name):
-        return self.state_num_map[self.state_name_map[state_name]].get_acc()
+        return self.state_num_map[self.num_of(state_name)].get_acc()
+
+    def num_of(self, state_name):
+        return self.state_name_map[state_name]
 
     def to_buchi(self):
         for state in self.states:
