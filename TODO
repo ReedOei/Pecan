@@ -44,6 +44,20 @@ or even just
 
 Example term.
 
+- Allow writing things like:
+Define fst (a, b) := a .
+Define fst pair := let (a, b) := pair in a .
+
+These should expand to something like:
+
+Define fst __var := match __var with
+                    case (a, b) => a
+                    end.
+Define fst pair :=
+    match pair with
+    case (a, b) => a
+    end.
+
 Short:
 - Move SpotFormula out of prog to keep the main program automata/library independent
 - Make all parsing functions in pecan.lang.parser into proper functions (b/c it gives better debug info)

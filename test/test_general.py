@@ -81,3 +81,6 @@ def test_zeckendorf():
 def test_bounded_ostrowski_2():
     run_file('examples/test_bounded_ostrowski_2.pn')
 
+def test_parse_not_precedence():
+    run_file('examples/test_bounded_ostrowski_2.pn')
+

@@ -228,8 +228,8 @@ Define natFormat var reps :=
             stdFormat var prefix cycle ^ " (NOT A VALID NATURAL NUMBER)"
     end.
 
-Define curry f := \p => match p with case (a, b) => f a b end .
-Define uncurry f a b := f (a, b) .
+Define uncurry f p := match p with case (a, b) => f a b end .
+Define curry f a b := f (a, b) .
 Define flip f a b := f b a .
 
 Define runFormat format inputWord :=

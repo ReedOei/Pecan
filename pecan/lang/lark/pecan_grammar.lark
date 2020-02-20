@@ -110,7 +110,6 @@ varlist: var ("," var)*
      | bool CONJ pred -> conj
      | forall_sym formal "." pred       -> forall
      | exists_sym formal "." pred       -> exists
-     | COMP pred -> comp
 
 ?bool: expr
      | "true"  -> formula_true
@@ -118,6 +117,7 @@ varlist: var ("," var)*
      | string                           -> spot_formula
      | "(" pred ")"
      | comparison
+     | COMP bool -> comp
 
 ?comparison: expr EQ expr                     -> equal
            | expr _ne expr                     -> not_equal

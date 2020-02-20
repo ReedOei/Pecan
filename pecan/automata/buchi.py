@@ -161,7 +161,7 @@ class BuchiAutomaton(Automaton):
 
         # print('ap_project()', aps)
 
-        self.postprocess()
+        # self.postprocess()
 
         res_aut = self.aut
         for ap in aps:
