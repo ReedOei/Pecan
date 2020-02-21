@@ -1,0 +1,3 @@
+[submodule "foma"]
+	path = foma
+	url = https://github.com/mhulden/foma
