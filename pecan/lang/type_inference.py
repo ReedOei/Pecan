@@ -209,8 +209,9 @@ class TypeInferer(IRTransformer):
     def transform_Exists(self, node: Exists):
         self.prog.enter_scope()
 
-        if node.cond is not None:
-            self.prog.restrict(node.var.var_name, node.cond)
+        for v, cond in zip(node.var_refs, node.conds):
+            if cond is not None:
+                self.prog.restrict(v.var_name, cond)
 
         res = super().transform_Exists(node)
 

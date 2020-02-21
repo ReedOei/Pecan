@@ -100,6 +100,10 @@ formal: var -> formal_var
       | var _IS var -> formal_is
       | var _IS var "(" varlist ")" -> formal_is_call
 
+quant_formal: varlist -> quant_formal_list
+            | varlist _IS var -> quant_formal_is
+            | varlist _IS var "(" varlist ")" -> quant_formal_is_call
+
 varlist: var ("," var)*
 
 ?pred: bool
@@ -108,8 +112,8 @@ varlist: var ("," var)*
      | bool _IFF pred                    -> iff
      | bool DISJ pred -> disj
      | bool CONJ pred -> conj
-     | forall_sym formal "." pred       -> forall
-     | exists_sym formal "." pred       -> exists
+     | forall_sym quant_formal "." pred       -> forall
+     | exists_sym quant_formal "." pred       -> exists
 
 ?bool: expr
      | "true"  -> formula_true

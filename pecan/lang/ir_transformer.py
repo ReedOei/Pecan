@@ -96,7 +96,7 @@ class IRTransformer:
         return EqualsCompareRange(node.is_equals, self.transform(node.index_a), self.transform(node.index_b))
 
     def transform_Exists(self, node: Exists):
-        return Exists(self.transform(node.var), self.transform(node.cond), self.transform(node.pred))
+        return Exists([self.transform(var) for var in node.var_refs], [self.transform(cond) for cond in node.conds], self.transform(node.pred))
 
     def transform_VarRef(self, node: VarRef):
         return node

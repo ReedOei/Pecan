@@ -10,7 +10,7 @@ from pecan.lang.ir import *
 class CustomNodeSubstitution(NodeSubstitution):
     def transform_Exists(self, node: Exists):
         # Don't change the variable, or it could go out of scope too soon
-        return Exists(node.var, self.transform(node.cond), self.transform(node.pred))
+        return Exists(node.var_refs, [self.transform(cond) for cond in node.conds], self.transform(node.pred))
 
 class RedundantVariableOptimizer(BasicOptimizer):
     def __init__(self, master_optimizer):
@@ -66,7 +66,9 @@ class RedundantVariableOptimizer(BasicOptimizer):
     def transform_Exists(self, node: Exists):
         self.cur_level += 1
 
-        self.decl_level[node.var.var_name] = self.cur_level
+        for v in node.var_refs:
+            self.decl_level[v.var_name] = self.cur_level
+
         result = super().transform_Exists(node)
 
         self.cur_level -= 1

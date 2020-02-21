@@ -202,7 +202,7 @@ class Call(IRPredicate):
 
             final_pred = AutLiteral(prog.call(self.name, final_args), display_node=Call(self.name, final_args))
             for pred, var in arg_preds:
-                final_pred = Exists(var, None, Conjunction(pred, final_pred))
+                final_pred = Exists([var], [None], Conjunction(pred, final_pred))
 
             return final_pred.evaluate(prog)
         else:

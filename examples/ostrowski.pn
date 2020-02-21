@@ -87,8 +87,9 @@ test_bco_adder_commutative() := forall a. forall x. forall y. forall z. bco_adde
 #assert_prop(true, test_bco_adder_commutative)
 
 // This proves that bco_adder is associative.
-test_bco_adder_associative() := forall a. forall x. forall y. forall z. forall w. (exists u. bco_adder(a,x,y,u) & bco_adder(a,u,z,w)) <=> (exists v. bco_adder(a,y,z,v) & bco_adder(a,x,v,w))
-// #assert_prop(true, test_bco_adder_associative)
+// test_bco_adder_associative() := forall a. forall x. forall y. forall z. forall w. (exists u. bco_adder(a,x,y,u) & bco_adder(a,u,z,w)) <=> (exists v. bco_adder(a,y,z,v) & bco_adder(a,x,v,w))
+test_bco_adder_associative() := forall a. forall x,y,z. forall w,u,v. (bco_adder(a,x,y,u) & bco_adder(a,u,z,w)) <=> (bco_adder(a,y,z,v) & bco_adder(a,x,v,w))
+#assert_prop(true, test_bco_adder_associative)
 
 // This proves that if x = y, there is always a z such that x + z = y, and this z is equal to zero as we expect.
 test_bco_adder_identity() := forall a. forall x. forall y. (bco_valid2(a,x,y) & bco_eq(x,y)) => exists z. bco_adder(a,x,z,y) & bco_zero(z)

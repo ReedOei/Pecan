@@ -140,6 +140,15 @@ class PecanTransformer(Transformer):
     def formal_var(self, var_name):
         return VarRef(var_name)
 
+    def quant_formal_is(self, var_refs, call_name):
+        return [Call(call_name, [v]) for v in var_refs]
+
+    def quant_formal_is_call(self, var_refs, call_name, call_args):
+        return [Call(call_name, [v] + call_args) for v in var_refs]
+
+    def quant_formal_list(self, var_list):
+        return var_list
+
     def call_args(self, name, args):
         return Call(name, args)
 
@@ -281,11 +290,11 @@ class PecanTransformer(Transformer):
     def comp(self, sym, a):
         return Complement(a)
 
-    def forall(self, quant, var_name, pred):
-        return Forall(var_name, pred)
+    def forall(self, quant, var_preds, pred):
+        return Forall(var_preds, pred)
 
-    def exists(self, quant, var_name, pred):
-        return Exists(var_name, pred)
+    def exists(self, quant, var_preds, pred):
+        return Exists(var_preds, pred)
 
     def var_ref(self, name):
         return VarRef(str(name))

@@ -141,7 +141,7 @@ class BuchiAutomaton(Automaton):
                 aps.extend(self.var_map[v.var_name])
                 pecan_var_names.append(v.var_name)
 
-        result = self.ap_project(aps)
+        result = self.ap_project(aps).postprocess()
 
         for var_name in pecan_var_names:
             # It may not be there (e.g., it's perfectly valid to do "exists x. y = y", even if it's pointless)
@@ -161,7 +161,7 @@ class BuchiAutomaton(Automaton):
 
         # print('ap_project()', aps)
 
-        # self.postprocess()
+        self.postprocess()
 
         res_aut = self.aut
         for ap in aps:
@@ -171,7 +171,7 @@ class BuchiAutomaton(Automaton):
 
             res_aut = buchi_transform(res_aut, BuchiProjection(res_aut, ap))
 
-        return BuchiAutomaton(res_aut, self.get_var_map()) #.postprocess()
+        return BuchiAutomaton(res_aut, self.get_var_map())
 
     def is_empty(self):
         return self.aut.is_empty()
@@ -268,6 +268,9 @@ class BuchiAutomaton(Automaton):
             self.aut = self.aut.postprocess('BA') # Ensure that the automata we have is a Buchi (possible nondeterministic) automata
         return self
 
+    def simplify(self):
+        return self.postprocess()
+
     def shuffle(self, is_disj, other):
         # Don't need to convert ourselves, but may need to convert other aut to Buchi
         aut_a = self
@@ -294,7 +297,9 @@ def buchi_transform(original_aut, builder):
 
     builder.pre_build(new_aut)
 
-    for e in original_aut.edges():
+    ne = original_aut.num_edges()
+
+    for i, e in enumerate(original_aut.edges()):
         cond = builder.build_cond(e.cond)
         new_aut.new_edge(e.src, e.dst, cond, e.acc)
 
