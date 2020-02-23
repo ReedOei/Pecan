@@ -66,33 +66,43 @@ bco_succ(a, x, y) := bco_valid2(a, x, y) & bco_leq(x, y) & (!bco_eq(x, y)) & for
 // Display example ostrowskiFormat { all_twos(a) & bco_succ(a,x,y) & bco_zero(x) & bco_succ(a,y,z) & bco_succ(a,z,w) & bco_succ(a,w,v) & bco_succ(a,v,u) & bco_succ(a,u,k) } .
 
 bco_succ_unique() := forall a. forall x. forall y. forall z. (bco_succ(a,x,y) & bco_succ(a,x,z)) => bco_eq(y,z)
-#assert_prop(true, bco_succ_unique)
+// #assert_prop(true, bco_succ_unique)
 
 bco_adder_total() := forall a. forall x. forall y. bco_valid2(a,x,y) => exists z. bco_valid(a,z) & bco_adder(a,x,y,z)
-#assert_prop(true, bco_adder_total)
+// #assert_prop(true, bco_adder_total)
 
 test_bco_adder_base_case() := forall a. forall x. forall y. forall z. (bco_zero(x) & bco_valid3(a, x, y, z)) => (bco_adder(a,x,y,z) <=> bco_eq(y,z))
-#assert_prop(true, test_bco_adder_base_case)
-test_bco_adder_inductive_case() := forall a. forall x. bco_valid(a, x) => forall y. bco_valid(a, y) => forall z. bco_valid(a, z) => forall u. bco_succ(a,u,x) => forall v. bco_succ(a,v,z) => (bco_adder(a,x,y,z) <=> bco_adder(a,u,y,v))
-#assert_prop(true, test_bco_adder_inductive_case)
+// #assert_prop(true, test_bco_adder_base_case)
+test_bco_adder_inductive_case() := forall a. forall x,y,z. bco_valid3(a,x,y,z) => forall u,v. (bco_succ(a,u,x) & bco_succ(a,v,z)) => (bco_adder(a,x,y,z) <=> bco_adder(a,u,y,v))
+// #assert_prop(true, test_bco_adder_inductive_case)
 
-test_bco_pred() := forall a. forall x. bco_valid(a,x) => (bco_zero(x) | (exists u. bco_succ(a,u,x)))
-#assert_prop(true, test_bco_pred)
+test_bco_pred() := forall a, x. bco_valid(a,x) => (bco_zero(x) | (exists u. bco_succ(a,u,x)))
+// #assert_prop(true, test_bco_pred)
 
-test_bco_adder_not_zero() := forall a. forall x. forall y. forall z. (bco_adder(a,x,y,z) & bco_zero(z)) => bco_zero(x)
-#assert_prop(true, test_bco_adder_not_zero)
+test_bco_adder_not_zero() := forall a,x,y,z. (bco_adder(a,x,y,z) & bco_zero(z)) => bco_zero(x)
+// #assert_prop(true, test_bco_adder_not_zero)
 
 // This proves that bco_adder is commutative.
-test_bco_adder_commutative() := forall a. forall x. forall y. forall z. bco_adder(a,x,y,z) <=> bco_adder(a,y,x,z)
-#assert_prop(true, test_bco_adder_commutative)
+test_bco_adder_commutative() := forall a,x,y,z. bco_adder(a,x,y,z) <=> bco_adder(a,y,x,z)
+// #assert_prop(true, test_bco_adder_commutative)
+
+// sum3_l(a,x,y,z,xyz) := exists xy. bco_adder(a,x,y,xy) & bco_adder(a,xy,z,xyz)
+// #save_aut("sum3_l.aut", sum3_l)
+
+// assoc_fail(a,x,y,z,w) := bco_valid3(a,x,y,z) & bco_valid(a,w) & !((exists u. bco_adder(a,x,y,u) & bco_adder(a,u,z,w)) => (exists v. bco_adder(a,y,z,v) & bco_adder(a,x,v,w)))
+// Display example stdFormat { assoc_fail(a,x,y,z,w) } .
+// Display example base3Format { assoc_fail(a,x,y,z,w) } .
+// Display example ostrowskiFormat { assoc_fail(a,x,y,z,w) } .
 
 // This proves that bco_adder is associative.
 // test_bco_adder_associative() := forall a. forall x. forall y. forall z. forall w. (exists u. bco_adder(a,x,y,u) & bco_adder(a,u,z,w)) <=> (exists v. bco_adder(a,y,z,v) & bco_adder(a,x,v,w))
-test_bco_adder_associative() := forall a. forall x,y,z. forall w,u,v. (bco_adder(a,x,y,u) & bco_adder(a,u,z,w)) <=> (bco_adder(a,y,z,v) & bco_adder(a,x,v,w))
-#assert_prop(true, test_bco_adder_associative)
+test_bco_adder_not_associative_implies() := bco_valid3(a,x,y,z) & bco_valid(a,w) & !(exists u. bco_adder(a,x,y,u) & bco_adder(a,u,z,w)) & (exists v. bco_adder(a,y,z,v) & bco_adder(a,x,v,w))
+#assert_prop(false, test_bco_adder_not_associative_implies)
+test_bco_adder_not_associative_implied_by() := bco_valid3(a,x,y,z) & bco_valid(a,w) & (exists u. bco_adder(a,x,y,u) & bco_adder(a,u,z,w)) & !(exists v. bco_adder(a,y,z,v) & bco_adder(a,x,v,w))
+#assert_prop(false, test_bco_adder_not_associative_implied_by)
 
 // This proves that if x = y, there is always a z such that x + z = y, and this z is equal to zero as we expect.
-test_bco_adder_identity() := forall a. forall x. forall y. (bco_valid2(a,x,y) & bco_eq(x,y)) => exists z. bco_adder(a,x,z,y) & bco_zero(z)
+test_bco_adder_identity() := forall a,x,y. (bco_valid2(a,x,y) & bco_eq(x,y)) => exists z. bco_adder(a,x,z,y) & bco_zero(z)
 #assert_prop(true, test_bco_adder_identity)
 
 // This proves that there is only one valid zero representation for a given base. Together with the above, this proves the existence of an identity (because it ensures that “zero” is the same element regardless of what we’re adding it to).
@@ -103,7 +113,7 @@ test_bco_zero_unique() := forall a. forall x. forall y. (bco_valid2(a,x,y) & bco
 test_bco_leq_trans() := forall x. forall y. forall z. (bco_valid3(a,x,y,z) & bco_leq(x,y) & bco_leq(y,z)) => bco_leq(x,z)
 #assert_prop(true, test_bco_leq_trans)
 
-// All the same, let's prove all the properties that we care about:
+// All the same, let's prove them anyway:
 x is possibly_valid := exists a. bco_valid(a, x)
 Execute equivalenceRelationCheck bco_eq possibly_valid.
 

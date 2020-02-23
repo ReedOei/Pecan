@@ -5,6 +5,21 @@ Long:
     - Long because this may introduce new issues
 
 Medium:
+**************************************************************************
+**************************************************************************
+**************************************************************************
+**************************************************************************
+**************************************************************************
+**************************************************************************
+- Emptiness checking is cheap---try just replacing all empty automata with the simplest Buchi false automata (e..g, after projection)
+**************************************************************************
+**************************************************************************
+**************************************************************************
+**************************************************************************
+**************************************************************************
+**************************************************************************
+**************************************************************************
+
 - Maybe merge type inference and execution phases in pecan/lang/ir/prog.py
     - Somewhat more complicated than I originally thought because we have to move TypedIRLowering and Typed optimization into the evaluate loop
     - Add an evaluate_type or something method so that we don't have to manually check the type of the nodes when running type inference
