@@ -94,12 +94,6 @@ def main():
         run_repl(env)
 
 if __name__ == '__main__':
-    # TODO: Remove this...
-    import sys
-    import resource
-    sys.setrecursionlimit(10000)
-    resource.setrlimit(resource.RLIMIT_STACK, [0x10000000, resource.RLIM_INFINITY])
-
     colorama.init()
     spot.setup()
     main()
