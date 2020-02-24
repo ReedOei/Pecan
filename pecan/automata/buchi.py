@@ -4,9 +4,10 @@
 import buddy
 import spot
 
-from pecan.automata.automaton import Automaton
+from pecan.automata.automaton import Automaton, FalseAutomaton
 from pecan.tools.shuffle_automata import ShuffleAutomata
 from pecan.utility import VarMap
+from pecan.settings import settings
 
 def merge(merge_f, aut_a, aut_b):
     if aut_a.num_states() < aut_b.num_states():
@@ -56,6 +57,18 @@ class BuchiAutomaton(Automaton):
 
     def get_var_map(self):
         return self.var_map
+
+    def with_var_map(self, new_var_map):
+        self.var_map = new_var_map
+
+        for v, aps in self.var_map.items():
+            for ap in aps:
+                self.aut.register_ap(ap)
+
+        return self
+
+    def make_empty_aut(self):
+        return BuchiAutomaton.as_buchi(FalseAutomaton()).with_var_map(self.var_map)
 
     def conjunction(self, other):
         return merge(spot.product, self, other)
@@ -109,7 +122,7 @@ class BuchiAutomaton(Automaton):
         # self.aut.merge_edges()
         # self.aut.merge_states()
         # print('ap_sub postprocess (post merge):', self.aut.num_states(), self.aut.num_edges(), list(map(str, self.aut.ap())), self.aut.acc())
-        # self.postprocess()
+        self.postprocess()
 
         new_var_map = VarMap()
         to_register = []
@@ -141,7 +154,7 @@ class BuchiAutomaton(Automaton):
                 aps.extend(self.var_map[v.var_name])
                 pecan_var_names.append(v.var_name)
 
-        result = self.ap_project(aps) #.postprocess()
+        result = self.ap_project(aps) # .postprocess()
 
         for var_name in pecan_var_names:
             # It may not be there (e.g., it's perfectly valid to do "exists x. y = y", even if it's pointless)
@@ -159,19 +172,25 @@ class BuchiAutomaton(Automaton):
         if not aps:
             return self
 
-        print('ap_project()', aps)
+        # print('ap_project()', aps)
+
+        # Do a quick check here to simplify if we're empty; the emptiness checking algorithm is very fast (can be done in linear time)
+        # Compared to the cost of postprocessing (depends on the underlying automaton, but generally atrocious)
+        # this is very cheap, and gives us an easy simplification if it works.
+        if self.aut.is_empty():
+            return self.make_empty_aut()
 
         # self.postprocess()
 
         res_aut = self.aut
         for ap in aps:
-            print('projecting:', ap)
+            # print('projecting:', ap)
             # if not res_aut.is_sba():
             #     res_aut = res_aut.postprocess('BA')
 
             res_aut = buchi_transform(res_aut, BuchiProjection(res_aut, ap))
 
-            print('is_empty', res_aut.is_empty())
+            # print('is_empty', res_aut.is_empty())
 
         return BuchiAutomaton(res_aut, self.get_var_map())
 
@@ -301,16 +320,25 @@ def buchi_transform(original_aut, builder):
 
     ne = original_aut.num_edges()
 
-    import sys
+    if settings.get_debug_level() > 1:
+        import sys
 
-    for i, e in enumerate(original_aut.edges()):
-        cond = builder.build_cond(e.cond)
-        new_aut.new_edge(e.src, e.dst, cond, e.acc)
+        for i, e in enumerate(original_aut.edges()):
+            cond = builder.build_cond(e.cond)
+            new_aut.new_edge(e.src, e.dst, cond, e.acc)
 
-        if i % 10000 == 0:
-            sys.stdout.write('\r{} of {} edges ({:.2f}%)'.format(i, ne, 100 * i / ne))
+            if i % 10000 == 0:
+                sys.stdout.write('\r{} of {} edges ({:.2f}%)'.format(i, ne, 100 * i / ne))
 
-    print()
+        print()
+    else:
+        # TODO: This does the same thing as above, but it just doesn't run the check/print every time.
+        #       We could run the same loop and check for debug every time, but this minor overhead
+        #       accumulates a fair bit once you get to having millions of edges, so we duplicate it.
+        #       It would still be nice to avoid this, though.
+        for e in original_aut.edges():
+            cond = builder.build_cond(e.cond)
+            new_aut.new_edge(e.src, e.dst, cond, e.acc)
 
     builder.post_build(new_aut)
 

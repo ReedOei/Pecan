@@ -10,6 +10,7 @@ import time
 from lark import Lark, Transformer, v_args
 import spot
 
+from pecan.automata.automaton import FalseAutomaton
 from pecan.tools.hoa_loader import from_spot_aut
 from pecan.lang.ir.base import *
 from pecan.settings import settings
