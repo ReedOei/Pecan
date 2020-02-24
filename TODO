@@ -6,7 +6,6 @@ Medium:
 - Add performance annotations---e.g., so I can write:
 
 #no_simplify(forall x. P(x))
-
 or #simplify(P(x) & Q(x))
 
 e.g., so we can turn on sipmlifcations in places where they wouldn't normally occur
@@ -50,24 +49,9 @@ or even just
 
 Example term.
 
-- Allow writing things like:
-Define fst (a, b) := a .
-Define fst pair := let (a, b) := pair in a .
-
-These should expand to something like:
-
-Define fst __var := match __var with
-                    case (a, b) => a
-                    end.
-Define fst pair :=
-    match pair with
-    case (a, b) => a
-    end.
-
-respectively.
-
 Short:
 - Move SpotFormula out of prog to keep the main program automata/library independent
 - Make all parsing functions in pecan.lang.parser into proper functions (b/c it gives better debug info)
 - Make converter warn when you try to use states that don't exist, but just map them to new, empty states
+- Allow matching on booleans (practically, this is useless, but it'd be nice to have for consistency's sake)
 

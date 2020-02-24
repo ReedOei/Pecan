@@ -91,3 +91,9 @@ def test_praline_split_on():
 [[],[1],[0,1],[0,0,0,1]]
 ''')
 
+def test_praline_match_syntax():
+    run_file('examples/test_praline_match_syntax.pn', '''
+(8,10)
+(88,83109)
+''')
+

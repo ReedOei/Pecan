@@ -24,7 +24,7 @@ prop_val: PROP_VAL -> prop_val_tok
 ?term: "if" term "then" term "else" term -> praline_if
      | "\\" app _IMPLIES term -> praline_lambda
      | "let" var "be" pecan_term "in" term -> praline_let_pecan
-     | "let" var _DEFEQ term "in" term -> praline_let
+     | "let" match_expr _DEFEQ term "in" term -> praline_let
      | "match" term "with" (match_arm)+ "end" -> praline_match
      | "do" term (";" term)* [";"] -> praline_do
      | praline_operator

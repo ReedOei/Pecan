@@ -3,15 +3,36 @@
 
 from pecan.lang.ast.base import *
 
-def app_to_list(app):
-    if type(app) is PralineApp:
-        return app_to_list(app.receiver) + [app.arg]
+def process_args(app, body):
+    if isinstance(app, PralineApp):
+        rest_args, new_body = process_args(app.receiver, body)
+        new_arg, final_body = split_arg(app.arg, new_body)
+        return rest_args + [new_arg], final_body
     else:
-        return [app]
+        return [app], body
+
+def split_arg(arg, body):
+    if isinstance(arg, PralineVar):
+        return arg, body
+    elif isinstance(arg, PralineTuple):
+        placeholder_arg = PralineVar(PralineTerm.fresh_name())
+        return placeholder_arg, PralineMatch(placeholder_arg, [PralineMatchArm(arg.build_match(), body)])
+    else:
+        raise Exception('Unexpected term in argument position: {}'.format(arg))
 
 class PralineTerm(ASTNode):
+    var_counter = 0
+    @staticmethod
+    def fresh_name():
+        label = "__arg{}".format(PralineTerm.var_counter)
+        PralineTerm.var_counter += 1
+        return label
+
     def __init__(self):
         super().__init__()
+
+    def as_match(self):
+        raise NotImplementedError
 
 class PralineDisplay(ASTNode):
     def __init__(self, term):
@@ -37,10 +58,11 @@ class PralineExecute(ASTNode):
 
 class PralineDef(ASTNode):
     def __init__(self, def_id, body):
-        def_params = app_to_list(def_id)
+        def_params, new_body = process_args(def_id, body)
+
         self.name = def_params[0]
         self.args = def_params[1:]
-        self.body = body
+        self.body = new_body
 
     def transform(self, transformer):
         return transformer.transform_PralineDef(self)
@@ -67,6 +89,9 @@ class PralineVar(PralineTerm):
 
     def transform(self, transformer):
         return transformer.transform_PralineVar(self)
+
+    def build_match(self):
+        return PralineMatchVar(self.var_name)
 
     def show(self):
         return '{}'.format(self.var_name)
@@ -150,6 +175,9 @@ class PralineList(PralineTerm):
 
     def transform(self, transformer):
         return transformer.transform_PralineList(self)
+
+    def build_match(self):
+        return PralineMatchList(self.head.build_match(), self.tail.build_match())
 
     def show(self):
         if self.head is None:
@@ -268,8 +296,7 @@ class PralinePecanTerm(PralineTerm):
 class PralineLambda(PralineTerm):
     def __init__(self, params, body):
         super().__init__()
-        self.params = app_to_list(params)
-        self.body = body
+        self.params, self.body = process_args(params, body)
 
     def transform(self, transformer):
         return transformer.transform_PralineLambda(self)
@@ -308,6 +335,9 @@ class PralineTuple(PralineTerm):
         super().__init__()
         self.vals = vals
 
+    def build_match(self):
+        return PralineMatchTuple([v.build_match() for v in self.vals])
+
     def transform(self, transformer):
         return transformer.transform_PralineTuple(self)
 
@@ -322,6 +352,9 @@ class PralineInt(PralineTerm):
     def transform(self, transformer):
         return transformer.transform_PralineInt(self)
 
+    def build_match(self):
+        return PralineMatchInt(self.val)
+
     def show(self):
         return 'PralineInt({})'.format(self.val)
 
@@ -332,6 +365,9 @@ class PralineString(PralineTerm):
 
     def transform(self, transformer):
         return transformer.transform_PralineString(self)
+
+    def build_match(self):
+        return PralineMatchInt(self.val)
 
     def show(self):
         return 'PralineString({})'.format(self.val)

@@ -46,7 +46,12 @@ class PecanTransformer(Transformer):
 
     praline_if = PralineIf
     praline_let_pecan = PralineLetPecan
-    praline_let = PralineLet
+
+    def praline_let(self, match_pat, expr, body):
+        if isinstance(match_pat, PralineMatchVar):
+            return PralineLet(match_pat.var, expr, body)
+        else:
+            return PralineMatch(expr, [PralineMatchArm(match_pat, body)])
 
     def praline_tuple(self, *args):
         return PralineTuple(list(args))

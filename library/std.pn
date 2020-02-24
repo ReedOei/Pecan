@@ -71,16 +71,6 @@ Define a % b := mod a b.
 Define isEven x := (x % 2) = 0.
 Define isOdd x := (x % 2) = 1.
 
-Define factorial n :=
-    if n = 0 then 1
-    else n * factorial (n - 1).
-
-Define isEmpty l :=
-    match l with
-    case [] => true
-    case x :: xs => false
-    end.
-
 Define foldl f init l :=
     match l with
     case [] => init
@@ -93,12 +83,13 @@ Define foldr f init l :=
     case x :: xs => f x (foldr f init xs)
     end.
 
-Define concat a b :=
-    match a with
-    case [] => b
-    case x :: xs => x :: concat xs b
+Define isEmpty l :=
+    match l with
+    case [] => true
+    case x :: xs => false
     end.
 
+Define concat := flip (foldr cons).
 Define a @ b := concat a b.
 
 Define length := foldl (\cur _ => cur + 1) 0.
@@ -109,6 +100,8 @@ Define all f := foldl (\a b => a & f b) true.
 Define any f := foldl (\a b => a | f b) false.
 Define sum := foldl (\a b => a + b) 0.
 Define product := foldl (\a b => a * b) 1.
+
+Define factorial n := product [1..n].
 
 Define strLength := length ∘ toChars.
 
