@@ -7,11 +7,15 @@ import pecan.lang.ir as ir
 from pecan.lang.ast_transformer import AstTransformer
 from pecan.lang.type_inference import RestrictionType
 
+from pecan.utility import unzip
+
+# TODO: Reduce duplicated code between here and ast/quant.py
+#   Unfortunately, this uses the IR classes, the one in ast/quant.py naturally uses the AST classes, so it's not as simple just calling those
 def to_ref(var_ref):
     if type(var_ref) is ir.VarRef:
-        return ir.VarRef(var_ref.var_name)
-    else:
         return var_ref
+    else:
+        return ir.VarRef(var_ref)
 
 def extract_var_cond(var_pred):
     if type(var_pred) is ir.Call:
@@ -188,26 +192,12 @@ class ASTToIR(AstTransformer):
         return res
 
     def transform_Forall(self, node: Forall):
-        if node.cond is not None:
-            var, cond = extract_var_cond(self.transform(node.cond))
-        else:
-            var, cond = extract_var_cond(self.transform(node.var))
-
-        if cond is not None:
-            return ir.Complement(ir.Exists(var, cond, ir.Complement(self.transform(node.pred))))
-        else:
-            return ir.Complement(ir.Exists(var, None, ir.Complement(self.transform(node.pred))))
+        var_refs, conds = unzip(map(extract_var_cond, map(self.transform, node.var_preds)))
+        return ir.Complement(ir.Exists(var_refs, conds, ir.Complement(self.transform(node.pred))))
 
     def transform_Exists(self, node: Exists):
-        if node.cond is not None:
-            var, cond = extract_var_cond(self.transform(node.cond))
-        else:
-            var, cond = extract_var_cond(self.transform(node.var))
-
-        if cond is not None:
-            return ir.Exists(var, cond, self.transform(node.pred))
-        else:
-            return ir.Exists(var, None, self.transform(node.pred))
+        var_refs, conds = unzip(map(extract_var_cond, map(self.transform, node.var_preds)))
+        return ir.Exists(var_refs, conds, self.transform(node.pred))
 
     def transform_VarRef(self, node: VarRef):
         return ir.VarRef(node.var_name)

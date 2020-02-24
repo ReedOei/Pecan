@@ -1,10 +1,16 @@
 Long:
-- Decouple variables and APs in BuchiAutomaton (see substiution-overhaul branch, which works, but is much slower because of all the new variable generation)
-- Try changing the encoding to multiple variables per character instead of multiple transitions per character
 - Convert all operators to predicate calls after the last stage of optimizations
-    - Long because this may introduce new issues
+    - Long because this may introduce new issues (including performance issues)
 
 Medium:
+- Add performance annotations---e.g., so I can write:
+
+#no_simplify(forall x. P(x))
+
+or #simplify(P(x) & Q(x))
+
+e.g., so we can turn on sipmlifcations in places where they wouldn't normally occur
+
 - Maybe merge type inference and execution phases in pecan/lang/ir/prog.py
     - Somewhat more complicated than I originally thought because we have to move TypedIRLowering and Typed optimization into the evaluate loop
     - Add an evaluate_type or something method so that we don't have to manually check the type of the nodes when running type inference
@@ -44,7 +50,24 @@ or even just
 
 Example term.
 
+- Allow writing things like:
+Define fst (a, b) := a .
+Define fst pair := let (a, b) := pair in a .
+
+These should expand to something like:
+
+Define fst __var := match __var with
+                    case (a, b) => a
+                    end.
+Define fst pair :=
+    match pair with
+    case (a, b) => a
+    end.
+
+respectively.
+
 Short:
 - Move SpotFormula out of prog to keep the main program automata/library independent
 - Make all parsing functions in pecan.lang.parser into proper functions (b/c it gives better debug info)
+- Make converter warn when you try to use states that don't exist, but just map them to new, empty states
 

@@ -84,3 +84,10 @@ blah blah
 
 ''') # Note: the extra space is important. I want to test that we can write strings with newlines in them
 
+def test_praline_split_on():
+    run_file('examples/test_praline_split_on.pn', '''
+[]
+[[]]
+[[],[1],[0,1],[0,0,0,1]]
+''')
+

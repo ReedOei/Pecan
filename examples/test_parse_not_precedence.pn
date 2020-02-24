@@ -1,0 +1,7 @@
+// The following will be false if we parse it as (!test(x,y)) & test(x,y)
+//   but it will be true if we parse it as !(test(x,y) & test(x,y))
+// This test exists because in the past we used to do the wrong thing, and that sometimes caused bugs...
+foo(x,y) := x = y
+test() := forall x. exists y. !foo(x,y) & foo(x,y)
+#assert_prop(false, test)
+

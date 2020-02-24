@@ -10,6 +10,7 @@ import time
 from lark import Lark, Transformer, v_args
 import spot
 
+from pecan.automata.automaton import FalseAutomaton
 from pecan.tools.hoa_loader import from_spot_aut
 from pecan.lang.ir.base import *
 from pecan.settings import settings
@@ -202,7 +203,7 @@ class Call(IRPredicate):
 
             final_pred = AutLiteral(prog.call(self.name, final_args), display_node=Call(self.name, final_args))
             for pred, var in arg_preds:
-                final_pred = Exists(var, None, Conjunction(pred, final_pred))
+                final_pred = Exists([var], [None], Conjunction(pred, final_pred))
 
             return final_pred.evaluate(prog)
         else:

@@ -1,0 +1,8 @@
+Restrict x, y, z are nat.
+
+test() := forall x,y,z. x + (y + z) = (x + y) + z + 0
+#assert_prop(true, test)
+
+test2() := forall i,j,k are binary. i + j + j + k + k + k + k = i + 2*j + 4*k
+#assert_prop(true, test)
+

@@ -28,7 +28,7 @@ class TypedIRLowering(IRTransformer):
         # Only do bounds check on the first index, because we've verified the bounds are the same
         bounds_checks = node.index_a.bounds_check(idx_var)
         equality_check = self.transform(iff(node.index_a.index_expr(idx_var), node.index_b.index_expr(idx_var)))
-        all_equal = Complement(Exists(idx_var, None, Conjunction(bounds_checks, Complement(equality_check))))
+        all_equal = Complement(Exists([idx_var], [None], Conjunction(bounds_checks, Complement(equality_check))))
         base_pred = Conjunction(same_range, all_equal)
 
         if node.is_equals:

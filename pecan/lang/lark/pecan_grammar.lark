@@ -44,7 +44,7 @@ prop_val: PROP_VAL -> prop_val_tok
                  | praline_arith
 
 ?operator_sym: operator_sym_char+ -> operator_sym
-?operator_sym_char: PERCENT | EQ | GT | LT | COLON | DISJ | CONJ | COMP | /[^\x00-\xFF]/
+?operator_sym_char: PERCENT | EQ | GT | LT | COLON | DISJ | CONJ | COMP | /[^\x00-\xFF]/ | "@"
 
 PERCENT: "%"
 _DEFEQ: ":="
@@ -100,6 +100,10 @@ formal: var -> formal_var
       | var _IS var -> formal_is
       | var _IS var "(" varlist ")" -> formal_is_call
 
+quant_formal: varlist -> quant_formal_list
+            | varlist _IS var -> quant_formal_is
+            | varlist _IS var "(" varlist ")" -> quant_formal_is_call
+
 varlist: var ("," var)*
 
 ?pred: bool
@@ -108,9 +112,8 @@ varlist: var ("," var)*
      | bool _IFF pred                    -> iff
      | bool DISJ pred -> disj
      | bool CONJ pred -> conj
-     | forall_sym formal "." pred       -> forall
-     | exists_sym formal "." pred       -> exists
-     | COMP pred -> comp
+     | forall_sym quant_formal "." pred       -> forall
+     | exists_sym quant_formal "." pred       -> exists
 
 ?bool: expr
      | "true"  -> formula_true
@@ -118,6 +121,7 @@ varlist: var ("," var)*
      | string                           -> spot_formula
      | "(" pred ")"
      | comparison
+     | COMP bool -> comp
 
 ?comparison: expr EQ expr                     -> equal
            | expr _ne expr                     -> not_equal
