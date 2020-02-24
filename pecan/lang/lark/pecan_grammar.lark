@@ -39,6 +39,7 @@ prop_val: PROP_VAL -> prop_val_tok
     | "[" ( match_expr ("," match_expr)* )? "]" -> praline_match_list
     | match_expr COLON COLON match_expr -> praline_match_prepend
     | "(" (match_expr ",")+ (match_expr)? ")" -> praline_match_tuple
+    | "(" match_expr ")"
 
 ?praline_operator: praline_operator operator_sym praline_operator -> praline_operator
                  | praline_arith

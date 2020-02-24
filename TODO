@@ -35,8 +35,6 @@ e.g., so we can turn on sipmlifcations in places where they wouldn't normally oc
 
 - When we cache variable representations (in class Program's var_map), we need to make sure that we don't accidentally cahce two different represenations of the same constnat, because it may be encoded differently. To be safe, probably just don't cache constants aps at all?
 
-- Combine quantifiers if possible (e.g., make exists x. exists y. into a single projection run, combining conditions if necessary?)
-
 - Add a "Alias" system so we can define things like:
 
 Example stdFormat term.
