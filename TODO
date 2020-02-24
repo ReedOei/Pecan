@@ -35,18 +35,6 @@ e.g., so we can turn on sipmlifcations in places where they wouldn't normally oc
 
 - When we cache variable representations (in class Program's var_map), we need to make sure that we don't accidentally cahce two different represenations of the same constnat, because it may be encoded differently. To be safe, probably just don't cache constants aps at all?
 
-- Add a "Alias" system so we can define things like:
-
-Example stdFormat term.
-
-which expands to:
-
-Display example stdFormat term.
-
-or even just
-
-Example term.
-
 Short:
 - Move SpotFormula out of prog to keep the main program automata/library independent
 - Make all parsing functions in pecan.lang.parser into proper functions (b/c it gives better debug info)

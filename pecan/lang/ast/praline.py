@@ -34,27 +34,30 @@ class PralineTerm(ASTNode):
     def as_match(self):
         raise NotImplementedError
 
-class PralineDisplay(ASTNode):
-    def __init__(self, term):
+class PralineAlias(ASTNode):
+    def __init__(self, name, directive_name, term):
         super().__init__()
+        self.name = name
+        self.directive_name = directive_name
         self.term = term
 
     def transform(self, transformer):
-        return transformer.transform_PralineDisplay(self)
+        return transformer.transform_PralineAlias(self)
 
     def show(self):
-        return 'Display {} .'.format(self.term)
+        return 'Alias "{}" ==> {} {} .'.format(self.name, self.directive_name, self.term)
 
-class PralineExecute(ASTNode):
-    def __init__(self, term):
+class PralineDirective(ASTNode):
+    def __init__(self, name, term):
         super().__init__()
+        self.name = name
         self.term = term
 
     def transform(self, transformer):
-        return transformer.transform_PralineExecute(self)
+        return transformer.transform_PralineDirective(self)
 
     def show(self):
-        return 'Execute {} .'.format(self.term)
+        return '{} {} .'.format(self.name, self.term)
 
 class PralineDef(ASTNode):
     def __init__(self, def_id, body):

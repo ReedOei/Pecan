@@ -29,8 +29,14 @@ class PecanTransformer(Transformer):
     def praline_def(self, t, body):
         return PralineDef(t, body)
 
-    praline_display = PralineDisplay
-    praline_execute = PralineExecute
+    def directive_name(self, name_tok):
+        return str(name_tok)
+
+    def praline_alias(self, name, _sym1, _sym2, _sym3, directive_name, term):
+        return PralineAlias(name, directive_name, term)
+
+    def praline_directive(self, name, term):
+        return PralineDirective(name, term)
 
     def operator_sym(self, *syms):
         return PralineVar(''.join(str(sym) for sym in syms))

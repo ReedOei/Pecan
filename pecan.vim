@@ -18,7 +18,8 @@ syntax keyword bool true false sometimes
 syntax keyword directive save_aut save_aut_img save_pred context end_context load assert_prop import forget type accepting_word shuffle Restrict
 syntax match directiveOp '#'
 
-syntax keyword praline_directive Display Execute Define
+" syntax keyword praline_directive Alias Example Display Execute Define
+syntax match praline_directive '^\s*[A-Z][a-zA-Z_0-9]*\>'
 
 syntax match operator '+\|-\|=\|:=\|=>\|*\|/\|!\|\.\|>\|<\||\|&\|∧\|:\|∈\|≠\|¬\|⟺\|≤\|≥\|⇒\|⟹\|⇔\|∨\|\^\|\\\|∘'
 

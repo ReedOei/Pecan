@@ -38,12 +38,13 @@ Define normalizeOstrowski prefix cycle :=
     else if (last prefix = 2) & (last cycle = 2) then (prefix, cycle)
     else uncurry normalizeOstrowski (rotateOnto prefix cycle) .
 
+Define bracket str := "[" ^ toString str ^ "]" .
+
 // We want the prefix to end in 2 so everything is nice
 Define ostrowskiStr prefix cycle :=
-    match normalizeOstrowski prefix cycle with
+    let (newPrefix, newCycle) := normalizeOstrowski prefix cycle in
     // Take tail because all strings start with "2..." (i.e., an empty number), which we ignore because it's uninteresting (and shouldn't actually matter)
-    case (newPrefix, newCycle) => concatenate (tail (fromSeparatedBinary newPrefix)) ^ "(" ^ concatenate (fromSeparatedBinary newCycle) ^ ")^ω"
-    end.
+        concatenate (map bracket (tail (fromSeparatedBinary newPrefix))) ^ "(" ^ concatenate (map bracket (fromSeparatedBinary newCycle)) ^ ")^ω" .
 
 Define ostrowskiFormat var reps :=
     match reps with
@@ -59,6 +60,7 @@ bco_eq(x, y) := bco_leq(x, y) & bco_leq(y, x)
 
 bco_zero(z) := exists a. bco_valid(a,z) & forall y. bco_valid(a,y) => bco_leq(z,y)
 bco_succ(a, x, y) := bco_valid2(a, x, y) & bco_leq(x, y) & (!bco_eq(x, y)) & forall z. bco_valid(a,z) => (bco_leq(z,x) | bco_leq(y,z))
+Display example ostrowskiFormat { bco_succ(a,x,y) }.
 
 bco_succ_unique() := forall a. forall x. forall y. forall z. (bco_succ(a,x,y) & bco_succ(a,x,z)) => bco_eq(y,z)
 #assert_prop(true, bco_succ_unique)

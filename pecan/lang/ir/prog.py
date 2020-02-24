@@ -301,6 +301,7 @@ class Program(IRNode):
 
         self.praline_envs = kwargs.get('praline_envs', [])
         self.praline_defs = kwargs.get('praline_defs', {})
+        self.praline_aliases = kwargs.get('praline_aliases', {})
 
         # The current to-process index in self.defs
         # This is used for emitting new definitions via Praline (see Program.emit_definition and pecan.lib.praline.builtins.Emit)
@@ -340,6 +341,15 @@ class Program(IRNode):
     def praline_env_clone(self):
         return dict(self.praline_envs[-1])
 
+    def define_alias(self, name, alias):
+        self.praline_aliases[name] = alias
+
+    def lookup_alias(self, name):
+        if name in self.praline_aliases:
+            return self.praline_aliases[name]
+        else:
+            raise Exception('Unknown alias name: {}'.format(name))
+
     def praline_define(self, name, val):
         self.praline_defs[name] = val
 
@@ -367,6 +377,7 @@ class Program(IRNode):
         self.types.update(other_prog.types)
 
         self.praline_defs.update(other_prog.praline_defs)
+        self.praline_aliases.update(other_prog.praline_aliases)
 
     def declare_type(self, pred_ref, val_dict):
         self.types[pred_ref] = val_dict
@@ -381,9 +392,9 @@ class Program(IRNode):
 
     def run_definition(self, i, d):
         from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle
-        from pecan.lang.ir.praline import PralineDef, PralineExecute, PralineDisplay
+        from pecan.lang.ir.praline import PralineDef, PralineDirective, PralineAlias
 
-        to_run = [DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle, Restriction, PralineDef, PralineExecute, PralineDisplay, NamedPred]
+        to_run = [DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle, Restriction, PralineDef, PralineAlias, PralineDirective, NamedPred]
 
         if type(d) in to_run:
             settings.log(0, lambda: '[DEBUG] Processing: {}'.format(d))
@@ -425,9 +436,9 @@ class Program(IRNode):
 
     def evaluate(self, old_env=None):
         from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle
-        from pecan.lang.ir.praline import PralineDef, PralineExecute, PralineDisplay
+        from pecan.lang.ir.praline import PralineDef, PralineDirective, PralineAlias
 
-        to_ignore = [DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle, Restriction, PralineDef, PralineExecute, PralineDisplay]
+        to_ignore = [DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle, Restriction, PralineDef, PralineAlias, PralineDirective, NamedPred]
 
         if old_env is not None:
             self.include(old_env)

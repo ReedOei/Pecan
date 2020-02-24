@@ -18,8 +18,10 @@
 prop_val: PROP_VAL -> prop_val_tok
 
 ?praline: "Define" praline_operator _DEFEQ term "." -> praline_def
-        | "Execute" term "."             -> praline_execute
-        | "Display" term "."             -> praline_display
+        | "Alias" string EQ EQ GT directive_name term "." -> praline_alias
+        | directive_name term "." -> praline_directive
+
+directive_name: /(?!(Define|Alias|Restrict)\b)[A-Z][a-zA-Z_0-9]*/
 
 ?term: "if" term "then" term "else" term -> praline_if
      | "\\" app _IMPLIES term -> praline_lambda
@@ -179,7 +181,7 @@ DISJ: "|" | "\\/" | "∨" | "or"
 ?forall_sym: "forall" | "∀"
 ?exists_sym: "exists" | "∃"
 
-VAR: /(?!(match|with|do|if|then|else|otherwise|iff|is|are|forall|exists|not|or|and|sometimes|true|false)\b)[a-z_][a-zA-Z_0-9]*/i
+VAR: /(?!(case|end|match|with|do|if|then|else|otherwise|iff|is|are|forall|exists|not|or|and|sometimes|true|false)\b)[a-z_$][\$a-zA-Z_0-9]*/
 
 %import common.INT
 %import common.WS

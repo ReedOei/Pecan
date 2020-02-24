@@ -154,11 +154,11 @@ class AstTransformer:
     def transform_FunctionExpression(self, node):
         return FunctionExpression(node.pred_name, list(map(self.transform, node.args)), node.val_idx)
 
-    def transform_PralineDisplay(self, node):
-        return PralineDisplay(self.transform(node.term))
+    def transform_PralineAlias(self, node):
+        return PralineAlias(self.transform(node.name), self.transform(node.directive_name), self.transform(node.term))
 
-    def transform_PralineExecute(self, node):
-        return PralineExecute(self.transform(node.term))
+    def transform_PralineDirective(self, node):
+        return PralineDirective(self.transform(node.name), self.transform(node.term))
 
     def transform_PralineDef(self, node):
         return PralineDef(reduce(PralineApp, [self.transform(node.name)] + list(map(self.transform, node.args))), self.transform(node.body))

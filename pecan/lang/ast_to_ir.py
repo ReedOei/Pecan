@@ -251,11 +251,11 @@ class ASTToIR(AstTransformer):
     def transform_Restriction(self, node):
         return ir.Restriction(list(map(self.transform, node.restrict_vars)), self.transform(node.pred))
 
-    def transform_PralineDisplay(self, node):
-        return ir.PralineDisplay(self.transform(node.term))
+    def transform_PralineAlias(self, node):
+        return ir.PralineAlias(self.transform(node.name), self.transform(node.directive_name), self.transform(node.term))
 
-    def transform_PralineExecute(self, node):
-        return ir.PralineExecute(self.transform(node.term))
+    def transform_PralineDirective(self, node):
+        return ir.PralineDirective(self.transform(node.name), self.transform(node.term))
 
     def transform_PralineDef(self, node):
         return ir.PralineDef(self.transform(node.name), list(map(self.transform, node.args)), self.transform(node.body))

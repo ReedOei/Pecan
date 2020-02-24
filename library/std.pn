@@ -44,6 +44,8 @@ default_equal(x, y) := "G((x -> y) & (y -> x))"
     "odd": bin_odd(any)
 })
 
+Alias "Display" ==> Execute print .
+
 Define enumFromTo low high :=
     if low > high then
         []
@@ -222,10 +224,10 @@ Define runFormat format inputWord :=
 
 Define example format t := map (runFormat format ∘ wordToBinary) (acceptingWord t).
 
-Define graphPoint format F x :=
-    let y be { F(x, y) } in
+Define graphPoint format func x :=
+    let y be { func(x, y) } in
     (x, lookup "y" (example format y)).
-Define graph format F := map (graphPoint format F).
+Define graph format func := map (graphPoint format func).
 
 Define fst pair :=
     match pair with
@@ -237,68 +239,68 @@ Define snd pair :=
     case (a, b) => b
     end.
 
-Define theoremCheck ID BODY := do
-    emit { ID() := BODY };
-    emit { #assert_prop(true, ID) }
+Define theoremCheck $ID $BODY := do
+    emit { $ID() := $BODY };
+    emit { #assert_prop(true, $ID) }
     .
 
-Define partialOrderCheck R EQ T :=
-    let (VAR1, VAR2, VAR3) := (freshVar, freshVar, freshVar) in
-    let IRREFL_ID := R ^ "_irrefl" in
-    let ANTISYM_ID := R ^ "_antisym" in
-    let TRANS_ID := R ^ "_trans" in do
-        theoremCheck IRREFL_ID { forall VAR1 is T. !R(VAR1, VAR1) };
-        theoremCheck ANTISYM_ID { forall VAR1 is T. forall VAR2 is T. if R(VAR1, VAR2) & R(VAR2, VAR1) then EQ(VAR1, VAR2) };
-        theoremCheck TRANS_ID { forall VAR1 is T. forall VAR2 is T. forall VAR3 is T. if R(VAR1, VAR2) & R(VAR2, VAR3) then R(VAR1, VAR3) }
+Define partialOrderCheck $R $EQ $T :=
+    let ($VAR1, $VAR2, $VAR3) := (freshVar, freshVar, freshVar) in
+    let $IRREFL_ID := $R ^ "_irrefl" in
+    let $ANTISYM_ID := $R ^ "_antisym" in
+    let $TRANS_ID := $R ^ "_trans" in do
+        theoremCheck $IRREFL_ID { forall $VAR1 is $T. !$R($VAR1, $VAR1) };
+        theoremCheck $ANTISYM_ID { forall $VAR1, $VAR2 are $T. if $R($VAR1, $VAR2) & $R($VAR2, $VAR1) then $EQ($VAR1, $VAR2) };
+        theoremCheck $TRANS_ID { forall $VAR1, $VAR2, $VAR3 are $T. if $R($VAR1, $VAR2) & $R($VAR2, $VAR3) then $R($VAR1, $VAR3) }
     .
 
-Define totalOrderCheck R EQ T :=
-    let (VAR1, VAR2) := (freshVar, freshVar) in
-    let TOTAL_ID := R ^ "_total" in do
-        partialOrderCheck R EQ T;
-        theoremCheck TOTAL_ID { forall VAR1 is T. forall VAR2 is T. R(VAR1, VAR2) | EQ(VAR1, VAR2) | R(VAR2, VAR1) }
+Define totalOrderCheck $R $EQ $T :=
+    let ($VAR1, $VAR2) := (freshVar, freshVar) in
+    let $TOTAL_ID := $R ^ "_total" in do
+        partialOrderCheck $R $EQ $T;
+        theoremCheck $TOTAL_ID { forall $VAR1 is $T. forall $VAR2 is $T. $R($VAR1, $VAR2) | $EQ($VAR1, $VAR2) | $R($VAR2, $VAR1) }
     .
 
-Define equivalenceRelationCheck EQ T :=
-    let (VAR1, VAR2, VAR3) := (freshVar, freshVar, freshVar) in
-    let REFL_ID := EQ ^ "_refl" in
-    let SYM_ID := EQ ^ "_sym" in
-    let TRANS_ID := EQ ^ "_trans" in do
-        theoremCheck REFL_ID { forall VAR1 is T. EQ(VAR1, VAR1) };
-        theoremCheck SYM_ID { forall VAR1 is T. forall VAR2 is T. EQ(VAR1, VAR2) <=> EQ(VAR2, VAR1) };
-        theoremCheck TRANS_ID { forall VAR1 is T. forall VAR2 is T. forall VAR3 is T. if EQ(VAR1, VAR2) & EQ(VAR2, VAR3) then EQ(VAR1, VAR3) }
+Define equivalenceRelationCheck $EQ $T :=
+    let ($VAR1, $VAR2, $VAR3) := (freshVar, freshVar, freshVar) in
+    let $REFL_ID := $EQ ^ "_refl" in
+    let $SYM_ID := $EQ ^ "_sym" in
+    let $TRANS_ID := $EQ ^ "_trans" in do
+        theoremCheck $REFL_ID { forall $VAR1 is $T. $EQ($VAR1, $VAR1) };
+        theoremCheck $SYM_ID { forall $VAR1 is $T. forall $VAR2 is $T. $EQ($VAR1, $VAR2) <=> $EQ($VAR2, $VAR1) };
+        theoremCheck $TRANS_ID { forall $VAR1 is $T. forall $VAR2 is $T. forall $VAR3 is $T. if $EQ($VAR1, $VAR2) & $EQ($VAR2, $VAR3) then $EQ($VAR1, $VAR3) }
     .
 
-Define createTypedAdder ADD T :=
-    let TYPED_ADDER := freshVar in do
-        emit { TYPED_ADDER(x is T, y is T, z is T) := ADD(x, y, z) };
-        TYPED_ADDER
+Define createTypedAdder $ADD $T :=
+    let $TYPED_ADDER := freshVar in do
+        emit { $TYPED_ADDER(x is $T, y is $T, z is $T) := $ADD(x, y, z) };
+        $TYPED_ADDER
     .
 
-Define monoidCheck ADD T :=
-    let TYPED_ADDER := createTypedAdder ADD T in
-    let (VAR1, VAR2, VAR3) := (freshVar, freshVar, freshVar) in
-    let CLOSED_ID := ADD ^ "_closed" in
-    let ASSOC_ID := ADD ^ "_assoc" in
-    let ZERO_ID_ID := ADD ^ "_zero_id" in do // Not a typo
-        theoremCheck CLOSED_ID { forall VAR1 is T. forall VAR2 is T. exists VAR3 is T. TYPED_ADDER(VAR1, VAR2, VAR3) };
-        theoremCheck ASSOC_ID { forall VAR1 is T. forall VAR2 is T. forall VAR3 is T. TYPED_ADDER(VAR1, TYPED_ADDER(VAR2, VAR3)) = TYPED_ADDER(TYPED_ADDER(VAR1, VAR2), VAR3) };
-        theoremCheck ZERO_ID_ID { forall VAR1 is T. TYPED_ADDER(VAR1, 0, VAR1) & TYPED_ADDER(0, VAR1, VAR1) }
+Define monoidCheck $ADD $T :=
+    let $TYPED_ADDER := createTypedAdder $ADD $T in
+    let ($VAR1, $VAR2, $VAR3) := (freshVar, freshVar, freshVar) in
+    let $CLOSED_ID := $ADD ^ "_closed" in
+    let $ASSOC_ID := $ADD ^ "_assoc" in
+    let $ZERO_ID_ID := $ADD ^ "_zero_id" in do // Not a typo
+        theoremCheck $CLOSED_ID { forall $VAR1 is $T. forall $VAR2 is $T. exists $VAR3 is $T. $TYPED_ADDER($VAR1, $VAR2, $VAR3) };
+        theoremCheck $ASSOC_ID { forall $VAR1 is $T. forall $VAR2 is $T. forall $VAR3 is $T. $TYPED_ADDER($VAR1, $TYPED_ADDER($VAR2, $VAR3)) = $TYPED_ADDER($TYPED_ADDER($VAR1, $VAR2), $VAR3) };
+        theoremCheck $ZERO_ID_ID { forall $VAR1 is $T. $TYPED_ADDER($VAR1, 0, $VAR1) & $TYPED_ADDER(0, $VAR1, $VAR1) }
     .
 
-Define groupCheck ADD T :=
-    let TYPED_ADDER := createTypedAdder ADD T in
-    let (VAR1, VAR2) := (freshVar, freshVar) in
-    let INVERSE_ID := ADD ^ "_inverse" in do
-        monoidCheck ADD T;
-        theoremCheck INVERSE_ID { forall VAR1 is T. exists VAR2 is T. TYPED_ADDER(VAR1, VAR2, 0) }
+Define groupCheck $ADD $T :=
+    let $TYPED_ADDER := createTypedAdder $ADD $T in
+    let ($VAR1, $VAR2) := (freshVar, freshVar) in
+    let $INVERSE_ID := $ADD ^ "_inverse" in do
+        monoidCheck $ADD $T;
+        theoremCheck $INVERSE_ID { forall $VAR1 is $T. exists $VAR2 is $T. $TYPED_ADDER($VAR1, $VAR2, 0) }
     .
 
-Define abelianGroupCheck ADD T :=
-    let (VAR1, VAR2) := (freshVar, freshVar) in
-    let COMM_ID := ADD ^ "_comm" in do
-        groupCheck ADD T;
-        theoremCheck COMM_ID { forall VAR1 is T. forall VAR2 is T. ADD(VAR1, VAR2) = ADD(VAR2, VAR1) }
+Define abelianGroupCheck $ADD $T :=
+    let ($VAR1, $VAR2) := (freshVar, freshVar) in
+    let $COMM_ID := $ADD ^ "_comm" in do
+        groupCheck $ADD $T;
+        theoremCheck $COMM_ID { forall $VAR1 is $T. forall $VAR2 is $T. $ADD($VAR1, $VAR2) = $ADD($VAR2, $VAR1) }
     .
 
 Define withStates :=
@@ -310,23 +312,23 @@ Define withStates :=
 Define genZero base :=
     let baseAut := withStates (mkAut ["n"] [base]) [("0", true)] in
     let finalAut := buildAut (addTransition baseAut "0" "0" "0") in
-    let ZERO := "zero_" ^ toString base in
+    let $ZERO := "zero_" ^ toString base in
 
-    emit { ZERO(n) := finalAut }.
+    emit { $ZERO(n) := finalAut }.
 
 Define genFinite base :=
     let baseAut := withStates (mkAut ["n"] [base]) [("0", false), ("1", true)] in
     let temp := foldl (\aut sym => addTransition aut "0" "0" (toString sym)) baseAut [0..base - 1] in
     let finalAut := buildAut (addTransition (addTransition temp "0" "1" "0") "1" "1" "0") in
-    let ALL_FINITE := "finite_" ^ toString base in
+    let $ALL_FINITE := "finite_" ^ toString base in
 
-    emit { ALL_FINITE(n) := finalAut }.
+    emit { $ALL_FINITE(n) := finalAut }.
 
 Define genEqual base :=
     let baseAut := withStates (mkAut ["n", "m"] [base, base]) [("0", true)] in
     let syms := map (\i => toString i ^ " " ^ toString i) [0..base - 1] in
     let finalAut := buildAut (foldl (\aut sym => addTransition aut "0" "0" sym) baseAut syms) in
-    let EQUAL := "equal_" ^ toString base in
+    let $EQUAL := "equal_" ^ toString base in
 
-    emit { EQUAL(n, m) := finalAut } .
+    emit { $EQUAL(n, m) := finalAut } .
 
