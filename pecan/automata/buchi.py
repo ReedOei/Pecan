@@ -154,7 +154,7 @@ class BuchiAutomaton(Automaton):
                 aps.extend(self.var_map[v.var_name])
                 pecan_var_names.append(v.var_name)
 
-        result = self.ap_project(aps) # .postprocess()
+        result = self.ap_project(aps).postprocess()
 
         for var_name in pecan_var_names:
             # It may not be there (e.g., it's perfectly valid to do "exists x. y = y", even if it's pointless)
