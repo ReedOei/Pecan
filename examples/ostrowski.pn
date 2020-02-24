@@ -57,45 +57,31 @@ bco_valid3(a, x, y, z) := bco_valid2(a, x, y) & bco_valid(a, z)
 
 bco_eq(x, y) := bco_leq(x, y) & bco_leq(y, x)
 
-// TODO: Remove the restriction that the last number in alpha can't be 1 or we won't be able to write numbers with Zeckendorf rep (or anything ending in infinitely many 1s)---it might improve speed too...
-
 bco_zero(z) := exists a. bco_valid(a,z) & forall y. bco_valid(a,y) => bco_leq(z,y)
 bco_succ(a, x, y) := bco_valid2(a, x, y) & bco_leq(x, y) & (!bco_eq(x, y)) & forall z. bco_valid(a,z) => (bco_leq(z,x) | bco_leq(y,z))
-// #save_aut_img("bco_succ.svg", bco_succ)
-// Display example base3Format { all_twos(a) & bco_succ(a,x,y) & bco_zero(x) & bco_succ(a,y,z) & bco_succ(a,z,w) & bco_succ(a,w,v) & bco_succ(a,v,u) & bco_succ(a,u,k) } .
-// Display example ostrowskiFormat { all_twos(a) & bco_succ(a,x,y) & bco_zero(x) & bco_succ(a,y,z) & bco_succ(a,z,w) & bco_succ(a,w,v) & bco_succ(a,v,u) & bco_succ(a,u,k) } .
 
 bco_succ_unique() := forall a. forall x. forall y. forall z. (bco_succ(a,x,y) & bco_succ(a,x,z)) => bco_eq(y,z)
-// #assert_prop(true, bco_succ_unique)
+#assert_prop(true, bco_succ_unique)
 
 bco_adder_total() := forall a. forall x. forall y. bco_valid2(a,x,y) => exists z. bco_valid(a,z) & bco_adder(a,x,y,z)
-// #assert_prop(true, bco_adder_total)
+#assert_prop(true, bco_adder_total)
 
 test_bco_adder_base_case() := forall a. forall x. forall y. forall z. (bco_zero(x) & bco_valid3(a, x, y, z)) => (bco_adder(a,x,y,z) <=> bco_eq(y,z))
-// #assert_prop(true, test_bco_adder_base_case)
+#assert_prop(true, test_bco_adder_base_case)
 test_bco_adder_inductive_case() := forall a. forall x,y,z. bco_valid3(a,x,y,z) => forall u,v. (bco_succ(a,u,x) & bco_succ(a,v,z)) => (bco_adder(a,x,y,z) <=> bco_adder(a,u,y,v))
-// #assert_prop(true, test_bco_adder_inductive_case)
+#assert_prop(true, test_bco_adder_inductive_case)
 
 test_bco_pred() := forall a, x. bco_valid(a,x) => (bco_zero(x) | (exists u. bco_succ(a,u,x)))
-// #assert_prop(true, test_bco_pred)
+#assert_prop(true, test_bco_pred)
 
 test_bco_adder_not_zero() := forall a,x,y,z. (bco_adder(a,x,y,z) & bco_zero(z)) => bco_zero(x)
-// #assert_prop(true, test_bco_adder_not_zero)
+#assert_prop(true, test_bco_adder_not_zero)
 
 // This proves that bco_adder is commutative.
 test_bco_adder_commutative() := forall a,x,y,z. bco_adder(a,x,y,z) <=> bco_adder(a,y,x,z)
-// #assert_prop(true, test_bco_adder_commutative)
-
-// sum3_l(a,x,y,z,xyz) := exists xy. bco_adder(a,x,y,xy) & bco_adder(a,xy,z,xyz)
-// #save_aut("sum3_l.aut", sum3_l)
-
-// assoc_fail(a,x,y,z,w) := bco_valid3(a,x,y,z) & bco_valid(a,w) & !((exists u. bco_adder(a,x,y,u) & bco_adder(a,u,z,w)) => (exists v. bco_adder(a,y,z,v) & bco_adder(a,x,v,w)))
-// Display example stdFormat { assoc_fail(a,x,y,z,w) } .
-// Display example base3Format { assoc_fail(a,x,y,z,w) } .
-// Display example ostrowskiFormat { assoc_fail(a,x,y,z,w) } .
+#assert_prop(true, test_bco_adder_commutative)
 
 // This proves that bco_adder is associative.
-// test_bco_adder_associative() := forall a. forall x. forall y. forall z. forall w. (exists u. bco_adder(a,x,y,u) & bco_adder(a,u,z,w)) <=> (exists v. bco_adder(a,y,z,v) & bco_adder(a,x,v,w))
 test_bco_adder_not_associative_implies() := exists a,x,y,z,w. bco_valid3(a,x,y,z) & bco_valid(a,w) & !(exists u. bco_adder(a,x,y,u) & bco_adder(a,u,z,w)) & (exists v. bco_adder(a,y,z,v) & bco_adder(a,x,v,w))
 #assert_prop(false, test_bco_adder_not_associative_implies)
 test_bco_adder_not_associative_implied_by() := exists a,x,y,z,w. bco_valid3(a,x,y,z) & bco_valid(a,w) & (exists u. bco_adder(a,x,y,u) & bco_adder(a,u,z,w)) & !(exists v. bco_adder(a,y,z,v) & bco_adder(a,x,v,w))
