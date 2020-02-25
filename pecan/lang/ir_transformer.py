@@ -236,3 +236,6 @@ class IRTransformer:
     def transform_PralineAutomaton(self, node):
         return node
 
+    def transform_Annotation(self, node):
+        return Annotation(node.annotation_name, self.transform(node.body))
+

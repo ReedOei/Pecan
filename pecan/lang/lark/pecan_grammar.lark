@@ -127,7 +127,7 @@ varlist: var ("," var)*
      | COMP bool -> comp
 
 ?comparison: expr EQ expr                     -> equal
-           | expr _ne expr                     -> not_equal
+           | expr ne expr                     -> not_equal
            | expr LT expr                     -> less
            | expr GT expr                     -> greater
            | expr le expr                     -> less_equal
@@ -149,6 +149,7 @@ varlist: var ("," var)*
      | "-" atom  -> neg
      | "(" arith ")"
      | call
+     | ANNOTATION "[" pred "]" -> annotation
 
 args: (arg ("," arg)*)?
 ?arg: expr
@@ -165,7 +166,8 @@ string: ESCAPED_STRING -> escaped_str
 
 PROP_VAL: "sometimes"i | "true"i | "false"i // case insensitive
 
-_ne: COMP "=" | "/" EQ | "≠"
+ne: COMP EQ -> elim_ne
+   | "/" EQ | "≠"
 COMP: "!" | "~" | "¬" | "not"
 ge: GT EQ -> elim_ge
    | "≥" -> elim_ge
@@ -182,6 +184,8 @@ DISJ: "|" | "\\/" | "∨" | "or"
 ?exists_sym: "exists" | "∃"
 
 VAR: /(?!(case|end|match|with|do|if|then|else|otherwise|iff|is|are|forall|exists|not|or|and|sometimes|true|false)\b)[a-z_$][\$a-zA-Z_0-9]*/
+
+ANNOTATION: /@[A-Za-z0-9_]+/
 
 %import common.INT
 %import common.WS

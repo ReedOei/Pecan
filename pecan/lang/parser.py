@@ -289,6 +289,9 @@ class PecanTransformer(Transformer):
     def elim_le(self, *args):
         return '<='
 
+    def elim_ne(self, *args):
+        return '!='
+
     iff = Iff
     implies = Implies
 
@@ -318,6 +321,9 @@ class PecanTransformer(Transformer):
 
     def spot_formula(self, formula_str):
         return SpotFormula(formula_str)
+
+    def annotation(self, annotation_tok, pred):
+        return Annotation(str(annotation_tok), pred)
 
 from pecan.lang.lark.parser import Lark_StandAlone
 

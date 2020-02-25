@@ -241,3 +241,6 @@ class AstTransformer:
     def transform_PralineDo(self, node):
         return PralineDo([self.transform(t) for t in node.terms])
 
+    def transform_Annotation(self, node):
+        return Annotation(node.annotation_name, self.transform(node.body))
+

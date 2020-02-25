@@ -16,8 +16,16 @@ class Settings:
         self.load_stdlib = True
         self.pecan_path_var = 'PECAN_PATH'
         self.history_file = 'pecan_history'
+        self.simplication_level = 1
 
         self.stdlib_prog = None
+
+    def get_simplication_level(self):
+        return self.simplication_level
+
+    def set_simplification_level(self, new_level):
+        self.simplication_level = new_level
+        return self
 
     def get_history_file(self):
         return Path.home() / self.history_file

@@ -122,7 +122,9 @@ class BuchiAutomaton(Automaton):
         # self.aut.merge_edges()
         # self.aut.merge_states()
         # print('ap_sub postprocess (post merge):', self.aut.num_states(), self.aut.num_edges(), list(map(str, self.aut.ap())), self.aut.acc())
-        self.postprocess()
+
+        if settings.get_simplication_level() > 0:
+            self.postprocess()
 
         new_var_map = VarMap()
         to_register = []
@@ -154,7 +156,10 @@ class BuchiAutomaton(Automaton):
                 aps.extend(self.var_map[v.var_name])
                 pecan_var_names.append(v.var_name)
 
-        result = self.ap_project(aps).postprocess()
+        result = self.ap_project(aps)
+
+        if settings.get_simplication_level() > 0:
+            result = result.postprocess()
 
         for var_name in pecan_var_names:
             # It may not be there (e.g., it's perfectly valid to do "exists x. y = y", even if it's pointless)
@@ -163,8 +168,6 @@ class BuchiAutomaton(Automaton):
 
             if var_name in env_var_map:
                 env_var_map.pop(var_name)
-
-        # print('projected:', result.var_map, [v.ap_name() for v in result.aut.ap()])
 
         return result
 
@@ -180,13 +183,9 @@ class BuchiAutomaton(Automaton):
         if self.aut.is_empty():
             return self.make_empty_aut()
 
-        # self.postprocess()
-
         res_aut = self.aut
         for ap in aps:
             # print('projecting:', ap)
-            # if not res_aut.is_sba():
-            #     res_aut = res_aut.postprocess('BA')
 
             res_aut = buchi_transform(res_aut, BuchiProjection(res_aut, ap))
 

@@ -87,3 +87,6 @@ def test_parse_not_precedence():
 def test_quant_multiple_vars():
     run_file('examples/test_quant_multiple_vars.pn')
 
+def test_annotations():
+    run_file('examples/test_annotations.pn')
+

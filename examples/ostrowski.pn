@@ -84,9 +84,9 @@ test_bco_adder_commutative() := forall a,x,y,z. bco_adder(a,x,y,z) <=> bco_adder
 #assert_prop(true, test_bco_adder_commutative)
 
 // This proves that bco_adder is associative.
-test_bco_adder_not_associative_implies() := exists a,x,y,z,w. bco_valid3(a,x,y,z) & bco_valid(a,w) & !(exists u. bco_adder(a,x,y,u) & bco_adder(a,u,z,w)) & (exists v. bco_adder(a,y,z,v) & bco_adder(a,x,v,w))
+test_bco_adder_not_associative_implies() := exists a,x,y,z,w. bco_valid3(a,x,y,z) & bco_valid(a,w) & @no_simplify[!(exists u. bco_adder(a,x,y,u) & bco_adder(a,u,z,w)) & (exists v. bco_adder(a,y,z,v) & bco_adder(a,x,v,w))]
 #assert_prop(false, test_bco_adder_not_associative_implies)
-test_bco_adder_not_associative_implied_by() := exists a,x,y,z,w. bco_valid3(a,x,y,z) & bco_valid(a,w) & (exists u. bco_adder(a,x,y,u) & bco_adder(a,u,z,w)) & !(exists v. bco_adder(a,y,z,v) & bco_adder(a,x,v,w))
+test_bco_adder_not_associative_implied_by() := exists a,x,y,z,w. bco_valid3(a,x,y,z) & bco_valid(a,w) & @no_simplify[(exists u. bco_adder(a,x,y,u) & bco_adder(a,u,z,w)) & !(exists v. bco_adder(a,y,z,v) & bco_adder(a,x,v,w))]
 #assert_prop(false, test_bco_adder_not_associative_implied_by)
 
 // This proves that if x = y, there is always a z such that x + z = y, and this z is equal to zero as we expect.

@@ -338,3 +338,6 @@ class ASTToIR(AstTransformer):
     def transform_PralineDo(self, node):
         return ir.PralineDo([self.transform(t) for t in node.terms])
 
+    def transform_Annotation(self, node):
+        return ir.Annotation(node.annotation_name, self.transform(node.body))
+

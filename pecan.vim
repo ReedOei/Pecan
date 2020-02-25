@@ -26,6 +26,8 @@ syntax match operator '+\|-\|=\|:=\|=>\|*\|/\|!\|\.\|>\|<\||\|&\|∧\|:\|∈\|�
 syntax match comment "//.*$"
 syntax match todo "TODO"
 
+syntax match annotation "@[A-Za-z0-9_]\+"
+
 syntax match num '\<#\?[-+]\?\d\+\.\?\d*'
 
 syntax region string start='"' end='"' skip='\\"'
@@ -41,4 +43,5 @@ hi def link directiveOp PreProc
 hi def link num Number
 hi def link bool Number
 hi def link todo Todo
+hi def link annotation Todo
 
