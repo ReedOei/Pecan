@@ -42,12 +42,8 @@ class Optimizer:
     def __init__(self, prog):
         self.prog = prog
 
-    def optimize(self):
-        for i, d in enumerate(self.prog.defs):
-            if type(d) is NamedPred:
-                self.prog.defs[i] = NamedPred(d.name, d.args, d.arg_restrictions, self.run_optimizations(d.body, d), restriction_env=d.restriction_env, arg_name_map=d.arg_name_map)
-
-        return self.prog
+    def optimize(self, pred):
+        return NamedPred(pred.name, pred.args, pred.arg_restrictions, self.run_optimizations(pred.body, pred), restriction_env=pred.restriction_env, arg_name_map=pred.arg_name_map)
 
     def run_optimizations(self, node, pred):
         settings.log(2, lambda: f'Optimizing: {node}')

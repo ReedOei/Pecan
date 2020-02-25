@@ -12,8 +12,9 @@ def iff(a, b):
 
 # This class performs a number of simplifications on the IR representation, eliminating constructs that we need to know the type of to eliminate
 class TypedIRLowering(IRTransformer):
-    def __init__(self):
+    def __init__(self, current_program):
         super().__init__()
+        self.current_program = current_program
 
     def transform_EqualsCompareRange(self, node):
         idx_var = VarRef(self.current_program.fresh_name()).with_type(node.index_a.start.get_type())
