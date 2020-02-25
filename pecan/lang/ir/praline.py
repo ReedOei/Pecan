@@ -33,49 +33,56 @@ class PralineTerm(IRNode):
     def display(self):
         return repr(self)
 
-class PralineDisplay(IRNode):
-    def __init__(self, term):
+class PralineAlias(IRNode):
+    def __init__(self, name, directive_name, term):
         super().__init__()
+        self.name = name
+        self.directive_name = directive_name
         self.term = term
 
     def evaluate(self, prog):
-        prog.enter_praline_env()
-        print(self.term.evaluate(prog).display())
-        prog.exit_praline_env()
+        prog.define_alias(self.name, self)
+
+    def with_term(self, new_term):
+        return PralineDirective(self.directive_name, PralineApp(self.term, new_term))
 
     def transform(self, transformer):
-        return transformer.transform_PralineDisplay(self)
+        return transformer.transform_PralineAlias(self)
 
     def __repr__(self):
-        return 'Display {} .'.format(self.term)
+        return 'Alias "{}" ==> {} {} .'.format(self.name, self.directive_name, self.term)
 
     def __eq__(self, other):
-        return other is not None and type(other) is self.__class__ and self.term == other.term
+        return other is not None and type(other) is self.__class__ and self.name == other.name and self.directive_name == other.directive_name and self.term == other.term
 
     def __hash__(self):
-        return hash(self.term)
+        return hash(self.name, self.directive_name, self.term)
 
-class PralineExecute(IRNode):
-    def __init__(self, term):
+class PralineDirective(IRNode):
+    def __init__(self, name, term):
         super().__init__()
+        self.name = name
         self.term = term
 
     def evaluate(self, prog):
-        prog.enter_praline_env()
-        self.term.evaluate(prog)
-        prog.exit_praline_env()
+        if self.name == 'Execute':
+            prog.enter_praline_env()
+            self.term.evaluate(prog)
+            prog.exit_praline_env()
+        else:
+            return prog.lookup_alias(self.name).with_term(self.term).evaluate(prog)
 
     def transform(self, transformer):
-        return transformer.transform_PralineExecute(self)
+        return transformer.transform_PralineDirective(self)
 
     def __repr__(self):
-        return 'Execute {} .'.format(self.term)
+        return '{} {} .'.format(self.name, self.term)
 
     def __eq__(self, other):
-        return other is not None and type(other) is self.__class__ and self.term == other.term
+        return other is not None and type(other) is self.__class__ and self.name == other.name and self.term == other.term
 
     def __hash__(self):
-        return hash(self.term)
+        return hash(self.name, self.term)
 
 class PralineDef(IRNode):
     def __init__(self, name, args, body):

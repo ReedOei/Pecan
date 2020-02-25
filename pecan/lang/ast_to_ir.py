@@ -7,11 +7,15 @@ import pecan.lang.ir as ir
 from pecan.lang.ast_transformer import AstTransformer
 from pecan.lang.type_inference import RestrictionType
 
+from pecan.utility import unzip
+
+# TODO: Reduce duplicated code between here and ast/quant.py
+#   Unfortunately, this uses the IR classes, the one in ast/quant.py naturally uses the AST classes, so it's not as simple just calling those
 def to_ref(var_ref):
     if type(var_ref) is ir.VarRef:
-        return ir.VarRef(var_ref.var_name)
-    else:
         return var_ref
+    else:
+        return ir.VarRef(var_ref)
 
 def extract_var_cond(var_pred):
     if type(var_pred) is ir.Call:
@@ -188,26 +192,12 @@ class ASTToIR(AstTransformer):
         return res
 
     def transform_Forall(self, node: Forall):
-        if node.cond is not None:
-            var, cond = extract_var_cond(self.transform(node.cond))
-        else:
-            var, cond = extract_var_cond(self.transform(node.var))
-
-        if cond is not None:
-            return ir.Complement(ir.Exists(var, cond, ir.Complement(self.transform(node.pred))))
-        else:
-            return ir.Complement(ir.Exists(var, None, ir.Complement(self.transform(node.pred))))
+        var_refs, conds = unzip(map(extract_var_cond, map(self.transform, node.var_preds)))
+        return ir.Complement(ir.Exists(var_refs, conds, ir.Complement(self.transform(node.pred))))
 
     def transform_Exists(self, node: Exists):
-        if node.cond is not None:
-            var, cond = extract_var_cond(self.transform(node.cond))
-        else:
-            var, cond = extract_var_cond(self.transform(node.var))
-
-        if cond is not None:
-            return ir.Exists(var, cond, self.transform(node.pred))
-        else:
-            return ir.Exists(var, None, self.transform(node.pred))
+        var_refs, conds = unzip(map(extract_var_cond, map(self.transform, node.var_preds)))
+        return ir.Exists(var_refs, conds, self.transform(node.pred))
 
     def transform_VarRef(self, node: VarRef):
         return ir.VarRef(node.var_name)
@@ -261,11 +251,11 @@ class ASTToIR(AstTransformer):
     def transform_Restriction(self, node):
         return ir.Restriction(list(map(self.transform, node.restrict_vars)), self.transform(node.pred))
 
-    def transform_PralineDisplay(self, node):
-        return ir.PralineDisplay(self.transform(node.term))
+    def transform_PralineAlias(self, node):
+        return ir.PralineAlias(self.transform(node.name), self.transform(node.directive_name), self.transform(node.term))
 
-    def transform_PralineExecute(self, node):
-        return ir.PralineExecute(self.transform(node.term))
+    def transform_PralineDirective(self, node):
+        return ir.PralineDirective(self.transform(node.name), self.transform(node.term))
 
     def transform_PralineDef(self, node):
         return ir.PralineDef(self.transform(node.name), list(map(self.transform, node.args)), self.transform(node.body))
@@ -347,4 +337,7 @@ class ASTToIR(AstTransformer):
 
     def transform_PralineDo(self, node):
         return ir.PralineDo([self.transform(t) for t in node.terms])
+
+    def transform_Annotation(self, node):
+        return ir.Annotation(node.annotation_name, self.transform(node.body))
 

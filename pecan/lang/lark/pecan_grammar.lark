@@ -18,13 +18,15 @@
 prop_val: PROP_VAL -> prop_val_tok
 
 ?praline: "Define" praline_operator _DEFEQ term "." -> praline_def
-        | "Execute" term "."             -> praline_execute
-        | "Display" term "."             -> praline_display
+        | "Alias" string EQ EQ GT directive_name term "." -> praline_alias
+        | directive_name term "." -> praline_directive
+
+directive_name: /(?!(Define|Alias|Restrict)\b)[A-Z][a-zA-Z_0-9]*/
 
 ?term: "if" term "then" term "else" term -> praline_if
      | "\\" app _IMPLIES term -> praline_lambda
      | "let" var "be" pecan_term "in" term -> praline_let_pecan
-     | "let" var _DEFEQ term "in" term -> praline_let
+     | "let" match_expr _DEFEQ term "in" term -> praline_let
      | "match" term "with" (match_arm)+ "end" -> praline_match
      | "do" term (";" term)* [";"] -> praline_do
      | praline_operator
@@ -39,12 +41,13 @@ prop_val: PROP_VAL -> prop_val_tok
     | "[" ( match_expr ("," match_expr)* )? "]" -> praline_match_list
     | match_expr COLON COLON match_expr -> praline_match_prepend
     | "(" (match_expr ",")+ (match_expr)? ")" -> praline_match_tuple
+    | "(" match_expr ")"
 
 ?praline_operator: praline_operator operator_sym praline_operator -> praline_operator
                  | praline_arith
 
 ?operator_sym: operator_sym_char+ -> operator_sym
-?operator_sym_char: PERCENT | EQ | GT | LT | COLON | DISJ | CONJ | COMP | /[^\x00-\xFF]/
+?operator_sym_char: PERCENT | EQ | GT | LT | COLON | DISJ | CONJ | COMP | /[^\x00-\xFF]/ | "@"
 
 PERCENT: "%"
 _DEFEQ: ":="
@@ -100,6 +103,10 @@ formal: var -> formal_var
       | var _IS var -> formal_is
       | var _IS var "(" varlist ")" -> formal_is_call
 
+quant_formal: varlist -> quant_formal_list
+            | varlist _IS var -> quant_formal_is
+            | varlist _IS var "(" varlist ")" -> quant_formal_is_call
+
 varlist: var ("," var)*
 
 ?pred: bool
@@ -108,9 +115,8 @@ varlist: var ("," var)*
      | bool _IFF pred                    -> iff
      | bool DISJ pred -> disj
      | bool CONJ pred -> conj
-     | forall_sym formal "." pred       -> forall
-     | exists_sym formal "." pred       -> exists
-     | COMP pred -> comp
+     | forall_sym quant_formal "." pred       -> forall
+     | exists_sym quant_formal "." pred       -> exists
 
 ?bool: expr
      | "true"  -> formula_true
@@ -118,9 +124,10 @@ varlist: var ("," var)*
      | string                           -> spot_formula
      | "(" pred ")"
      | comparison
+     | COMP bool -> comp
 
 ?comparison: expr EQ expr                     -> equal
-           | expr _ne expr                     -> not_equal
+           | expr ne expr                     -> not_equal
            | expr LT expr                     -> less
            | expr GT expr                     -> greater
            | expr le expr                     -> less_equal
@@ -142,6 +149,7 @@ varlist: var ("," var)*
      | "-" atom  -> neg
      | "(" arith ")"
      | call
+     | ANNOTATION "[" pred "]" -> annotation
 
 args: (arg ("," arg)*)?
 ?arg: expr
@@ -158,7 +166,8 @@ string: ESCAPED_STRING -> escaped_str
 
 PROP_VAL: "sometimes"i | "true"i | "false"i // case insensitive
 
-_ne: COMP "=" | "/" EQ | "≠"
+ne: COMP EQ -> elim_ne
+   | "/" EQ | "≠"
 COMP: "!" | "~" | "¬" | "not"
 ge: GT EQ -> elim_ge
    | "≥" -> elim_ge
@@ -174,7 +183,9 @@ DISJ: "|" | "\\/" | "∨" | "or"
 ?forall_sym: "forall" | "∀"
 ?exists_sym: "exists" | "∃"
 
-VAR: /(?!(match|with|do|if|then|else|otherwise|iff|is|are|forall|exists|not|or|and|sometimes|true|false)\b)[a-z_][a-zA-Z_0-9]*/i
+VAR: /(?!(case|end|match|with|do|if|then|else|otherwise|iff|is|are|forall|exists|not|or|and|sometimes|true|false)\b)[a-z_$][\$a-zA-Z_0-9]*/
+
+ANNOTATION: /@[A-Za-z0-9_]+/
 
 %import common.INT
 %import common.WS

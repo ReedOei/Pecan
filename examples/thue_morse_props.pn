@@ -1,10 +1,9 @@
-// The nth digit of the thue_morse word is 1 iff n in binary has an odd number of ones
-thue_morse(x) := odd_ones(x)
-T(x) := thue_morse(x)
-
 Restrict i, j, n are binary.
 
-square(i, n) := n > 0 & T[i..i+n] = T[i+n..i+2*n]
+// The nth digit of the Thue-Morse Word, T, is 1 iff n in binary has an odd number of ones
+thue_morse(n) := odd_ones(n)
+
+square(i, n) := n > 0 & thue_morse[i..i+n] = thue_morse[i+n..i+2*n]
 squares_exist() := exists i. exists n. square(i, n)
 #assert_prop(true, squares_exist)
 
@@ -12,11 +11,7 @@ cube(i, n) := square(i, n) & square(i + n, n)
 cubes_exist() := exists i. exists n. cube(i, n)
 #assert_prop(false, cubes_exist)
 
-fourth_power(i, n) := cube(i, n) & square(i + 2*n, n)
-fourth_power_exist() := exists i. exists n. fourth_power(i, n)
-#assert_prop(false, fourth_power_exist)
-
-overlapping_square(i, n) := n > 0 and T[i+1 ... i+n+1] = T[2+i+n ... 2+i+2*n] and T[i] = T[i+n+1] and T[i] = T[2+i+2*n]
+overlapping_square(i, n) := n > 0 & square(i,n) & thue_morse[i] = thue_morse[i+2*n]
 overlapping_squares_exist() := exists i. exists n. overlapping_square(i, n)
 #assert_prop(false, overlapping_squares_exist)
 

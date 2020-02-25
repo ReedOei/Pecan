@@ -10,6 +10,7 @@ import time
 from lark import Lark, Transformer, v_args
 import spot
 
+from pecan.automata.automaton import FalseAutomaton
 from pecan.tools.hoa_loader import from_spot_aut
 from pecan.lang.ir.base import *
 from pecan.settings import settings
@@ -202,7 +203,7 @@ class Call(IRPredicate):
 
             final_pred = AutLiteral(prog.call(self.name, final_args), display_node=Call(self.name, final_args))
             for pred, var in arg_preds:
-                final_pred = Exists(var, None, Conjunction(pred, final_pred))
+                final_pred = Exists([var], [None], Conjunction(pred, final_pred))
 
             return final_pred.evaluate(prog)
         else:
@@ -245,6 +246,12 @@ class NamedPred(IRNode):
                 arg_restriction.evaluate(prog)
 
             self.restriction_env = prog.get_restriction_env()
+
+            from pecan.lang.optimizer.tools import FreeVars
+            free_vars = FreeVars().analyze(self.body)
+            diff = free_vars - set(arg.var_name for arg in self.args)
+            if len(diff) > 0:
+                settings.log(lambda: "[WARN] Free variables found in {}: {}".format(self.name, diff))
         finally:
             prog.exit_scope()
 
@@ -300,6 +307,7 @@ class Program(IRNode):
 
         self.praline_envs = kwargs.get('praline_envs', [])
         self.praline_defs = kwargs.get('praline_defs', {})
+        self.praline_aliases = kwargs.get('praline_aliases', {})
 
         # The current to-process index in self.defs
         # This is used for emitting new definitions via Praline (see Program.emit_definition and pecan.lib.praline.builtins.Emit)
@@ -339,6 +347,15 @@ class Program(IRNode):
     def praline_env_clone(self):
         return dict(self.praline_envs[-1])
 
+    def define_alias(self, name, alias):
+        self.praline_aliases[name] = alias
+
+    def lookup_alias(self, name):
+        if name in self.praline_aliases:
+            return self.praline_aliases[name]
+        else:
+            raise Exception('Unknown alias name: {}'.format(name))
+
     def praline_define(self, name, val):
         self.praline_defs[name] = val
 
@@ -366,6 +383,7 @@ class Program(IRNode):
         self.types.update(other_prog.types)
 
         self.praline_defs.update(other_prog.praline_defs)
+        self.praline_aliases.update(other_prog.praline_aliases)
 
     def declare_type(self, pred_ref, val_dict):
         self.types[pred_ref] = val_dict
@@ -379,36 +397,53 @@ class Program(IRNode):
         self.run_definition(self.idx + self.emit_offset, d)
 
     def run_definition(self, i, d):
-        from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle
-        from pecan.lang.ir.praline import PralineDef, PralineExecute, PralineDisplay
+        from pecan.lang.typed_ir_lowering import TypedIRLowering
+        from pecan.lang.optimizer.optimizer import UntypedOptimizer, Optimizer
 
-        to_run = [DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle, Restriction, PralineDef, PralineExecute, PralineDisplay, NamedPred]
+        if isinstance(d, NamedPred):
+            settings.log(1, lambda: '[DEBUG] Type inference and IR lowering for: {}'.format(d.name))
+            transformed_def = TypedIRLowering(self).transform(self.type_infer(d))
 
-        if type(d) in to_run:
-            settings.log(0, lambda: '[DEBUG] Processing: {}'.format(d))
-            if type(d) is NamedPred:
-                self.defs[i] = self.type_infer(d)
-                self.preds[d.name] = self.defs[i]
-                self.preds[d.name].evaluate(self)
-                settings.log(0, lambda: self.preds[d.name])
-            else:
-                d.evaluate(self)
+            settings.log(1, lambda: 'Lowered IR:')
+            settings.log(1, lambda: prog)
 
-    def run_type_inference(self):
+            if settings.opt_enabled():
+                settings.log(1, lambda: '[DEBUG] Performing typed optimization on: {}'.format(d.name))
+                transformed_def = Optimizer(self).optimize(transformed_def)
+
+            self.defs[i] = transformed_def
+            self.preds[d.name] = self.defs[i]
+            self.preds[d.name].evaluate(self)
+            settings.log(0, lambda: self.preds[d.name])
+        else:
+            return d.evaluate(self)
+
+    def evaluate(self, old_env=None):
         from pecan.lib.praline.builtins import builtins
 
         for builtin in builtins:
             builtin.evaluate(self)
 
+        if old_env is not None:
+            self.include(old_env)
+
+        succeeded = True
+        msgs = []
         self.idx = 0
 
+        # Don't use a for, because Praline code can insert new definitions dynamically
         while self.idx < len(self.defs):
             self.enter_var_map_scope()
 
             self.emit_offset = 0
             d = self.defs[self.idx]
 
-            self.run_definition(self.idx, d)
+            settings.log(0, lambda: '[DEBUG] Processing: {}'.format(d))
+            result = self.run_definition(self.idx, d)
+            if result is not None and type(result) is Result:
+                if result.failed():
+                    succeeded = False
+                    msgs.append(result.message())
 
             self.idx += 1
 
@@ -417,44 +452,7 @@ class Program(IRNode):
         # Clear all restrictions. All relevant restrictions will be held inside the restriction_env of the relevant predicates.
         # Having them also in our restrictions list just leads to double restricting, which is a waste of computation time
         self.restrictions.clear()
-
         self.idx = None
-
-        return self
-
-    def evaluate(self, old_env=None):
-        from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle
-        from pecan.lang.ir.praline import PralineDef, PralineExecute, PralineDisplay
-
-        to_ignore = [DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle, Restriction, PralineDef, PralineExecute, PralineDisplay]
-
-        if old_env is not None:
-            self.include(old_env)
-
-        succeeded = True
-        msgs = []
-
-        for d in self.defs:
-            self.enter_var_map_scope()
-
-            # Ignore these constructs because we should have run them earlier in run_type_inference
-            if type(d) in to_ignore:
-                continue
-
-            settings.log(0, lambda: '[DEBUG] Processing: {}'.format(d))
-            if type(d) is NamedPred:
-                # If we already computed it, it doesn't matter if we replace it with a more efficient version
-                if self.preds[d.name].body_evaluated is None:
-                    self.preds[d.name] = d
-
-            else:
-                result = d.evaluate(self)
-                if result is not None and type(result) is Result:
-                    if result.failed():
-                        succeeded = False
-                        msgs.append(result.message())
-
-            self.exit_var_map_scope()
 
         self.result = Result('\n'.join(msgs), succeeded)
 

@@ -54,17 +54,5 @@ def from_source(source_code, *args, **kwargs):
         settings.log(1, lambda: '(Untyped) Optimized program:')
         settings.log(1, lambda: prog)
 
-    prog = prog.run_type_inference()
-    prog = TypedIRLowering().transform(prog)
-
-    settings.log(1, lambda: 'Program IR:')
-    settings.log(1, lambda: prog)
-
-    if settings.opt_enabled():
-        prog = Optimizer(prog).optimize()
-
-        settings.log(1, lambda: '(Typed) Optimized program:')
-        settings.log(1, lambda: prog)
-
     return prog
 

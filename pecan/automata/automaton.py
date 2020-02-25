@@ -54,16 +54,13 @@ class Automaton:
     def save(self, filename):
         raise NotImplementedError
 
-    # -------------------------------------------------------
-    # Optional simplification methods:
-    # -------------------------------------------------------
+    # -------------------------------------------------------------------
+    # Optional methods (e.g., for simplification, minimization, etc):
+    # -------------------------------------------------------------------
     def merge_edges(self):
         return self
 
     def merge_states(self):
-        return self
-
-    def postprocess(self):
         return self
 
     # Allows conversion between types of automata, if desired
@@ -74,6 +71,9 @@ class Automaton:
         raise NotImplementedError
 
     def relabel(self):
+        return self
+
+    def simplify(self):
         return self
 
     # -------------------------------------------------------

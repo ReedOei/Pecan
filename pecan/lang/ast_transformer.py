@@ -116,16 +116,10 @@ class AstTransformer:
         return EqualsCompareRange(node.is_equals, self.transform(node.index_a), self.transform(node.index_b))
 
     def transform_Forall(self, node: Forall):
-        if node.cond is not None:
-            return Forall(node.cond, self.transform(node.pred))
-        else:
-            return Forall(node.var, self.transform(node.pred))
+        return Forall([self.transform(var_pred) for var_pred in node.var_preds], self.transform(node.pred))
 
     def transform_Exists(self, node: Exists):
-        if node.cond is not None:
-            return Exists(node.cond, self.transform(node.pred))
-        else:
-            return Exists(node.var, self.transform(node.pred))
+        return Exists([self.transform(var_pred) for var_pred in node.var_preds], self.transform(node.pred))
 
     def transform_VarRef(self, node: VarRef):
         return node
@@ -160,11 +154,11 @@ class AstTransformer:
     def transform_FunctionExpression(self, node):
         return FunctionExpression(node.pred_name, list(map(self.transform, node.args)), node.val_idx)
 
-    def transform_PralineDisplay(self, node):
-        return PralineDisplay(self.transform(node.term))
+    def transform_PralineAlias(self, node):
+        return PralineAlias(self.transform(node.name), self.transform(node.directive_name), self.transform(node.term))
 
-    def transform_PralineExecute(self, node):
-        return PralineExecute(self.transform(node.term))
+    def transform_PralineDirective(self, node):
+        return PralineDirective(self.transform(node.name), self.transform(node.term))
 
     def transform_PralineDef(self, node):
         return PralineDef(reduce(PralineApp, [self.transform(node.name)] + list(map(self.transform, node.args))), self.transform(node.body))
@@ -246,4 +240,7 @@ class AstTransformer:
 
     def transform_PralineDo(self, node):
         return PralineDo([self.transform(t) for t in node.terms])
+
+    def transform_Annotation(self, node):
+        return Annotation(node.annotation_name, self.transform(node.body))
 

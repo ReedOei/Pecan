@@ -1,7 +1,10 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
+from functools import reduce
+
 from pecan.lang.ast.bool import *
+from pecan.utility import unzip
 
 def to_ref(var_ref):
     if type(var_ref) is VarRef:
@@ -16,32 +19,34 @@ def extract_var_cond(var_pred):
         return to_ref(var_pred), None
 
 class Forall(Predicate):
-    def __init__(self, var_pred, pred):
+    def __init__(self, var_preds, pred):
         super().__init__()
-        self.var, self.cond = extract_var_cond(var_pred)
+        self.var_preds = var_preds
+        self.vars, self.conds = unzip(map(extract_var_cond, var_preds))
         self.pred = pred
 
     def transform(self, transformer):
         return transformer.transform_Forall(self)
 
+    def build_cond(self):
+        return reduce(Conjunction, [c for c in self.conds if c is not None], BoolConst(True))
+
     def __repr__(self):
-        if self.cond is None:
-            return '(∀{} ({}))'.format(self.var, self.pred)
-        else:
-            return '(∀{} {})'.format(self.var, Implies(self.cond, self.pred))
+        return '(∀{} {})'.format(self.vars, Implies(self.build_cond(), self.pred))
 
 class Exists(Predicate):
-    def __init__(self, var_pred, pred):
+    def __init__(self, var_preds, pred):
         super().__init__()
-        self.var, self.cond = extract_var_cond(var_pred)
+        self.var_preds = var_preds
+        self.vars, self.conds = unzip(map(extract_var_cond, var_preds))
         self.pred = pred
 
     def transform(self, transformer):
         return transformer.transform_Exists(self)
 
+    def build_cond(self):
+        return reduce(Conjunction, [c for c in self.conds if c is not None], BoolConst(True))
+
     def __repr__(self):
-        if self.cond is None:
-            return '(∃{} ({}))'.format(self.var, self.pred)
-        else:
-            return '(∃{} {})'.format(self.var, Conjunction(self.cond, self.pred))
+        return '(∃{} {})'.format(self.vars, Conjunction(self.build_cond(), self.pred))
 

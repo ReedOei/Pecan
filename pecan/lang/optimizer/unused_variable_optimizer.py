@@ -10,9 +10,18 @@ class UnusedVariableOptimizer(BasicOptimizer):
     def transform_Exists(self, node: Exists):
         used_vars = VariableUsage().analyze(node.pred)
 
-        if node.var.var_name in used_vars:
-            return super().transform_Exists(node)
-        else:
-            self.changed = True
+        new_var_refs = []
+        new_conds = []
+
+        for v, cond in zip(node.var_refs, node.conds):
+            if v.var_name in used_vars:
+                new_var_refs.append(v)
+                new_conds.append(cond)
+            else:
+                self.changed = True
+
+        if len(new_var_refs) == 0:
             return self.transform(node.pred)
+        else:
+            return Exists(new_var_refs, new_conds, self.transform(node.pred))
 

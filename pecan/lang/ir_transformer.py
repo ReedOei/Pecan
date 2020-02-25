@@ -96,7 +96,7 @@ class IRTransformer:
         return EqualsCompareRange(node.is_equals, self.transform(node.index_a), self.transform(node.index_b))
 
     def transform_Exists(self, node: Exists):
-        return Exists(self.transform(node.var), self.transform(node.cond), self.transform(node.pred))
+        return Exists([self.transform(var) for var in node.var_refs], [self.transform(cond) for cond in node.conds], self.transform(node.pred))
 
     def transform_VarRef(self, node: VarRef):
         return node
@@ -123,6 +123,7 @@ class IRTransformer:
         self.current_program.preds = {k: self.transform(d) for k, d in node.preds.items()}
         self.current_program.praline_defs = {k: self.transform(d) for k, d in node.praline_defs.items()}
         self.current_program.praline_envs = [{k: self.transform(d) for k, d in env} for env in node.praline_envs]
+        self.current_program.praline_aliases = {k: self.transform(d) for k, d in node.praline_aliases.items()}
         new_program = self.current_program
         self.current_program = None
         return new_program
@@ -136,11 +137,11 @@ class IRTransformer:
     def transform_FunctionExpression(self, node):
         return FunctionExpression(self.transform(node.pred_name), [self.transform(arg) for arg in node.args], node.val_idx).with_type(node.get_type())
 
-    def transform_PralineDisplay(self, node):
-        return PralineDisplay(self.transform(node.term))
+    def transform_PralineAlias(self, node):
+        return PralineAlias(self.transform(node.name), self.transform(node.directive_name), self.transform(node.term))
 
-    def transform_PralineExecute(self, node):
-        return PralineExecute(self.transform(node.term))
+    def transform_PralineDirective(self, node):
+        return PralineDirective(self.transform(node.name), self.transform(node.term))
 
     def transform_PralineDef(self, node):
         return PralineDef(self.transform(node.name), list(map(self.transform, node.args)), self.transform(node.body))
@@ -234,4 +235,7 @@ class IRTransformer:
 
     def transform_PralineAutomaton(self, node):
         return node
+
+    def transform_Annotation(self, node):
+        return Annotation(node.annotation_name, self.transform(node.body))
 

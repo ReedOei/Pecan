@@ -1,0 +1,8 @@
+Define addPair (a,b) (c,d) := (a + c, b + d).
+Define addPairLet x y :=
+    let (a,b) := x in
+    let (c,d) := y in (a + c, b + d).
+
+Display addPair (3,4) (5,6).
+Display addPairLet (-10,083109) (98,0).
+

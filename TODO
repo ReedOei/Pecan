@@ -1,13 +1,15 @@
 Long:
-- Decouple variables and APs in BuchiAutomaton (see substiution-overhaul branch, which works, but is much slower because of all the new variable generation)
-- Try changing the encoding to multiple variables per character instead of multiple transitions per character
 - Convert all operators to predicate calls after the last stage of optimizations
-    - Long because this may introduce new issues
+    - Long because this may introduce new issues (including performance issues)
 
 Medium:
-- Maybe merge type inference and execution phases in pecan/lang/ir/prog.py
-    - Somewhat more complicated than I originally thought because we have to move TypedIRLowering and Typed optimization into the evaluate loop
-    - Add an evaluate_type or something method so that we don't have to manually check the type of the nodes when running type inference
+- Add performance annotations---e.g., so I can write:
+
+#no_simplify(forall x. P(x))
+or #simplify(P(x) & Q(x))
+
+e.g., so we can turn on sipmlifcations in places where they wouldn't normally occur
+
 - Improve optimization so that we don't need to do what we do in test_bounded_ostrowski_2
 - Improve CSE optimization so that we use `forall` or `exists` to reduce the number of complements, when valid.
     For example, we should optimize
@@ -30,21 +32,9 @@ Medium:
 
 - When we cache variable representations (in class Program's var_map), we need to make sure that we don't accidentally cahce two different represenations of the same constnat, because it may be encoded differently. To be safe, probably just don't cache constants aps at all?
 
-- Combine quantifiers if possible (e.g., make exists x. exists y. into a single projection run, combining conditions if necessary?)
-
-- Add a "Alias" system so we can define things like:
-
-Example stdFormat term.
-
-which expands to:
-
-Display example stdFormat term.
-
-or even just
-
-Example term.
-
 Short:
-- Move SpotFormula out of prog to keep the main program automata/library independent
+- Move SpotFormula out of prog to keep the main program automata/library independent (replace this with a more general "Formula") operation.
 - Make all parsing functions in pecan.lang.parser into proper functions (b/c it gives better debug info)
+- Make converter warn when you try to use states that don't exist, but just map them to new, empty states
+- Allow matching on booleans in Praline. Practically, this is useless (it's just an if statemnet), but it'd be nice to have for consistency's sake.
 

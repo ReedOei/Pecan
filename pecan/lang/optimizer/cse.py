@@ -67,9 +67,9 @@ class ExpressionExtractor(IRTransformer):
                 new_pred = NodeSubstitution({v: to_compute}).transform(new_pred)
             else:
                 if v.get_type() is not None and v.get_type().get_restriction() is not None:
-                    new_pred = Exists(v, v.get_type().restrict(v), Conjunction(Equals(to_compute, v), new_pred))
+                    new_pred = Exists([v], [v.get_type().restrict(v)], Conjunction(Equals(to_compute, v), new_pred))
                 else:
-                    new_pred = Exists(v, None, Conjunction(Equals(to_compute, v), new_pred))
+                    new_pred = Exists([v], [None], Conjunction(Equals(to_compute, v), new_pred))
 
         return new_pred
 
@@ -217,8 +217,13 @@ class CSEOptimizer(BasicOptimizer):
             return node
 
     def transform_Exists(self, node: Exists):
-        self.current_scope.add(node.var.var_name)
+        for v in node.var_refs:
+            self.current_scope.add(v.var_name)
+
         res = super().transform_Exists(node)
-        self.current_scope.remove(node.var.var_name)
+
+        for v in node.var_refs:
+            self.current_scope.remove(v.var_name)
+
         return res
 

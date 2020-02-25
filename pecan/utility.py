@@ -12,6 +12,16 @@ def touch(fname):
         with open(fname, 'a'):
             pass
 
+def unzip(xs):
+    lefts = []
+    rights = []
+
+    for l, r in xs:
+        lefts.append(l)
+        rights.append(r)
+
+    return lefts, rights
+
 class VarMap:
     def __init__(self, var_reps=None):
         self.var_reps = var_reps or {}

@@ -6,4 +6,5 @@ from pecan.lang.ast.quant import *
 from pecan.lang.ast.arith import *
 from pecan.lang.ast.words import *
 from pecan.lang.ast.praline import *
+from pecan.lang.ast.annotation import *
 

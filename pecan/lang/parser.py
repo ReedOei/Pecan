@@ -29,8 +29,14 @@ class PecanTransformer(Transformer):
     def praline_def(self, t, body):
         return PralineDef(t, body)
 
-    praline_display = PralineDisplay
-    praline_execute = PralineExecute
+    def directive_name(self, name_tok):
+        return str(name_tok)
+
+    def praline_alias(self, name, _sym1, _sym2, _sym3, directive_name, term):
+        return PralineAlias(name, directive_name, term)
+
+    def praline_directive(self, name, term):
+        return PralineDirective(name, term)
 
     def operator_sym(self, *syms):
         return PralineVar(''.join(str(sym) for sym in syms))
@@ -46,7 +52,12 @@ class PecanTransformer(Transformer):
 
     praline_if = PralineIf
     praline_let_pecan = PralineLetPecan
-    praline_let = PralineLet
+
+    def praline_let(self, match_pat, expr, body):
+        if isinstance(match_pat, PralineMatchVar):
+            return PralineLet(match_pat.var, expr, body)
+        else:
+            return PralineMatch(expr, [PralineMatchArm(match_pat, body)])
 
     def praline_tuple(self, *args):
         return PralineTuple(list(args))
@@ -139,6 +150,15 @@ class PecanTransformer(Transformer):
 
     def formal_var(self, var_name):
         return VarRef(var_name)
+
+    def quant_formal_is(self, var_refs, call_name):
+        return [Call(call_name, [v]) for v in var_refs]
+
+    def quant_formal_is_call(self, var_refs, call_name, call_args):
+        return [Call(call_name, [v] + call_args) for v in var_refs]
+
+    def quant_formal_list(self, var_list):
+        return var_list
 
     def call_args(self, name, args):
         return Call(name, args)
@@ -269,6 +289,9 @@ class PecanTransformer(Transformer):
     def elim_le(self, *args):
         return '<='
 
+    def elim_ne(self, *args):
+        return '!='
+
     iff = Iff
     implies = Implies
 
@@ -281,11 +304,11 @@ class PecanTransformer(Transformer):
     def comp(self, sym, a):
         return Complement(a)
 
-    def forall(self, quant, var_name, pred):
-        return Forall(var_name, pred)
+    def forall(self, quant, var_preds, pred):
+        return Forall(var_preds, pred)
 
-    def exists(self, quant, var_name, pred):
-        return Exists(var_name, pred)
+    def exists(self, quant, var_preds, pred):
+        return Exists(var_preds, pred)
 
     def var_ref(self, name):
         return VarRef(str(name))
@@ -298,6 +321,9 @@ class PecanTransformer(Transformer):
 
     def spot_formula(self, formula_str):
         return SpotFormula(formula_str)
+
+    def annotation(self, annotation_tok, pred):
+        return Annotation(str(annotation_tok), pred)
 
 from pecan.lang.lark.parser import Lark_StandAlone
 

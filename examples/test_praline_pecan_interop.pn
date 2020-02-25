@@ -7,7 +7,6 @@ Display checkEven 478.
 Display checkEven 27.
 
 thue_morse(x) := odd_ones(x)
-T(x) := thue_morse(x)
 
-Display showWord T [0..100].
+Display showWord thue_morse [0..100].
 

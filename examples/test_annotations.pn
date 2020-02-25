@@ -1,0 +1,6 @@
+// This doesn't test that the annotation works, only that it parses and doesn't fail
+// Actually testing that the annotations work is quite difficult...TODO
+
+test() := @no_simplify[forall x. forall y. x = y | x != y]
+#assert_prop(true, test)
+

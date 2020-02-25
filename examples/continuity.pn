@@ -1,0 +1,24 @@
+#import("reals.pn")
+
+Define isContinuous f :=
+    let EPS := freshVar in
+    let DELT := freshVar in
+    let X := freshVar in
+    let X0 := freshVar in
+    let THM := f ^ "_continuous" in do
+        emit { Restrict X, X0, EPS, DELT are real. };
+
+        emit { THM() := forall X. forall EPS. EPS > 0 => exists DELT. forall X0. abs(X - X0) < DELT => abs(f(X) - f(X0)) < EPS };
+        emit { #assert_prop(true, THM) };
+
+        emit { #forget(EPS) };
+        emit { #forget(DELT) };
+        emit { #forget(X) };
+        emit { #forget(X0) }
+    .
+
+Restrict x, y are real.
+f(x, y) := x = y
+
+Execute isContinuous f.
+
