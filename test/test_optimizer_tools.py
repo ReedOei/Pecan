@@ -48,6 +48,18 @@ def test_frequency_with_indexing():
     }
     assert ExpressionFrequency().count(expr_str('f[i + k] = f[i + k + n]')) == res
 
+def test_free_vars():
+    assert FreeVars().analyze(expr_str('x + y')) == set(['x', 'y'])
+
+def test_free_vars_with_exists():
+    assert FreeVars().analyze(expr_str('exists x. x + y')) == set(['y'])
+
+def test_free_vars_with_forall():
+    assert FreeVars().analyze(expr_str('forall y. p(x, y) & q(y)')) == set(['x'])
+
+def test_free_vars_complex():
+    assert FreeVars().analyze(expr_str('p(x) & (forall x. x > 0 | (exists z. x = z & x + y = z) | x + z = 0)')) == set(['x', 'y', 'z'])
+
 # TODO: Move this out, test other optimizers, add integration tests for optimizers
 def test_redundant_variable_optimizer():
     changed, new_node = RedundantVariableOptimizer(DummyOptimizer()).optimize(expr_str('exists a. exists b. a = b & a + b = c'), None)

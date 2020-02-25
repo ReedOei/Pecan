@@ -5,6 +5,39 @@ from pecan.lang.ir_transformer import IRTransformer
 
 from pecan.lang.ir import *
 
+class FreeVars(IRTransformer):
+    def __init__(self):
+        super().__init__()
+        self.free_vars = set()
+
+    def transform_VarRef(self, node: VarRef):
+        self.free_vars.add(node.var_name)
+        return super().transform_VarRef(node)
+
+    def transform_Exists(self, node: Exists):
+        res = super().transform_Exists(node)
+        self.free_vars -= set(v.var_name for v in node.var_refs)
+        return res
+
+    def transform_Conjunction(self, node):
+        newA = super().transform(node.a)
+        save = set(self.free_vars)
+        newB = super().transform(node.b)
+        self.free_vars = self.free_vars.union(save)
+        return node
+
+    def transform_Disjunction(self, node):
+        newA = super().transform(node.a)
+        save = set(self.free_vars)
+        newB = super().transform(node.b)
+        self.free_vars = self.free_vars.union(save)
+        return node
+
+    def analyze(self, node):
+        self.free_vars = set()
+        self.transform(node)
+        return self.free_vars
+
 class ExpressionFrequency(IRTransformer):
     def __init__(self):
         super().__init__()

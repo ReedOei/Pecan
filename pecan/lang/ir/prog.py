@@ -246,6 +246,12 @@ class NamedPred(IRNode):
                 arg_restriction.evaluate(prog)
 
             self.restriction_env = prog.get_restriction_env()
+
+            from pecan.lang.optimizer.tools import FreeVars
+            free_vars = FreeVars().analyze(self.body)
+            diff = free_vars - set(arg.var_name for arg in self.args)
+            if len(diff) > 0:
+                settings.log(lambda: "[WARN] Free variables found in {}: {}".format(self.name, diff))
         finally:
             prog.exit_scope()
 
