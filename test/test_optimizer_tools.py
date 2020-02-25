@@ -46,7 +46,7 @@ def test_frequency_with_indexing():
         expr_str('k'): 4,
         expr_str('n'): 2
     }
-    assert ExpressionFrequency().count(expr_str('F[i + k] = F[i + k + n]')) == res
+    assert ExpressionFrequency().count(expr_str('f[i + k] = f[i + k + n]')) == res
 
 # TODO: Move this out, test other optimizers, add integration tests for optimizers
 def test_redundant_variable_optimizer():

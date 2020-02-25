@@ -438,7 +438,7 @@ class Program(IRNode):
         from pecan.lang.ir.directives import DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle
         from pecan.lang.ir.praline import PralineDef, PralineDirective, PralineAlias
 
-        to_ignore = [DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle, Restriction, PralineDef, PralineAlias, PralineDirective, NamedPred]
+        to_ignore = [DirectiveType, DirectiveForget, DirectiveLoadAut, DirectiveImport, DirectiveShuffle, Restriction, PralineDef, PralineAlias, PralineDirective]
 
         if old_env is not None:
             self.include(old_env)

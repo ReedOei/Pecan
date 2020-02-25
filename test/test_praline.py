@@ -97,8 +97,3 @@ def test_praline_match_syntax():
 (88,83109)
 ''')
 
-def test_praline_match_syntax():
-    run_file('examples/test_praline_alias.pn', '''
-6
-''')
-
