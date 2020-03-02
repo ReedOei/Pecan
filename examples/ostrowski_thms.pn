@@ -1,0 +1,34 @@
+#import("ostrowski_defs.pn")
+
+#load("ostrowski/sturmian_word.txt", "pecan", $C(n))
+
+Alias "Theorem" ==> Execute uncurry theoremCheck .
+
+eventually_periodic(a, p) := @no_simplify[
+    bco_valid(a,p) &
+    exists z. bco_zero(z) & bco_lt(z, p) &
+    exists n. bco_valid(a, n) &
+    forall i, ip.
+        (bco_adder(a,i,p,ip) & bco_valid(a,n) & bco_leq(n,i))
+        =>
+        $C[i] = $C[ip]
+    ]
+not_ultimately_periodic() := forall a, p. bco_valid(a, p) => !eventually_periodic(a, p)
+#assert_prop(true, not_ultimately_periodic)
+
+// TODO: The theorem thing seems not to work for some reason (e.g., arguments aren't always passed right), not sure what's going on there.
+//       It would be nice to have it though because it makes things look good.
+// Theorem ("'All Sturmian words contain squares'",
+// {
+contain_squares() :=
+    @no_simplify[
+        forall a. bco_standard(a) =>
+        exists i, n are ostrowski(a). n > 0 &
+        forall j. bco_lt(j,n) =>
+            forall ij. bco_adder(a,i,j,ij) =>
+            @simplify[forall ijn.
+                bco_adder(a,ij,n,ijn) => $C[ij] = $C[ijn]]
+    ]
+#assert_prop(true, contain_squares)
+// }).
+

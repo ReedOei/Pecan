@@ -123,6 +123,8 @@ class BuchiAutomaton(Automaton):
         # self.aut.merge_states()
         # print('ap_sub postprocess (post merge):', self.aut.num_states(), self.aut.num_edges(), list(map(str, self.aut.ap())), self.aut.acc())
 
+        settings.log(3, lambda: 'ap_subs: {}'.format(ap_subs))
+
         if settings.get_simplication_level() > 0:
             self.postprocess()
 
@@ -175,7 +177,7 @@ class BuchiAutomaton(Automaton):
         if not aps:
             return self
 
-        # print('ap_project()', aps)
+        settings.log(3, lambda: 'ap_project: {}'.format(aps))
 
         # Do a quick check here to simplify if we're empty; the emptiness checking algorithm is very fast (can be done in linear time)
         # Compared to the cost of postprocessing (depends on the underlying automaton, but generally atrocious)
@@ -185,11 +187,7 @@ class BuchiAutomaton(Automaton):
 
         res_aut = self.aut
         for ap in aps:
-            # print('projecting:', ap)
-
             res_aut = buchi_transform(res_aut, BuchiProjection(res_aut, ap))
-
-            # print('is_empty', res_aut.is_empty())
 
         return BuchiAutomaton(res_aut, self.get_var_map())
 
