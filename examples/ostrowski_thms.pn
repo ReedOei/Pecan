@@ -14,16 +14,16 @@ eventually_periodic(a, p) := @no_simplify[
         $C[i] = $C[ip]
     ]
 not_ultimately_periodic() := forall a, p. bco_valid(a, p) => !eventually_periodic(a, p)
-#assert_prop(true, not_ultimately_periodic)
+// #assert_prop(true, not_ultimately_periodic)
 
-starts_with_squares() :=
+Theorem ("'Sturmian words start with arbitrarily long squares'", {
     @no_simplify[
         forall a. bco_standard(a) =>
         forall n is ostrowski(a).
         exists m is ostrowski(a). m > n &
         forall j, jm. (bco_lt(j,m) & bco_adder(a,j,m,jm)) => $C[j] = $C[jm]
     ]
-#assert_prop(true, starts_with_squares)
+}) .
 
 // TODO: The theorem thing seems not to work for some reason (e.g., arguments aren't always passed right), not sure what's going on there.
 //       It would be nice to have it though because it makes things look good.
