@@ -13,8 +13,9 @@ eventually_periodic(a, p) := @no_simplify[
         =>
         $C[i] = $C[ip]
     ]
-not_ultimately_periodic() := forall a, p. bco_valid(a, p) => !eventually_periodic(a, p)
-// #assert_prop(true, not_ultimately_periodic)
+Theorem ("'Sturmian words are not eventually periodic'", {
+    forall a, p. bco_valid(a, p) => !eventually_periodic(a, p)
+}) .
 
 Theorem ("'Sturmian words start with arbitrarily long squares'", {
     @no_simplify[
@@ -25,11 +26,7 @@ Theorem ("'Sturmian words start with arbitrarily long squares'", {
     ]
 }) .
 
-// TODO: The theorem thing seems not to work for some reason (e.g., arguments aren't always passed right), not sure what's going on there.
-//       It would be nice to have it though because it makes things look good.
-// Theorem ("'All Sturmian words contain squares'",
-// {
-contain_squares() :=
+Theorem ("'All Sturmian words contain squares'", {
     @no_simplify[
         forall a. bco_standard(a) =>
         exists i, n are ostrowski(a). n > 0 &
@@ -38,6 +35,5 @@ contain_squares() :=
             @simplify[forall ijn.
                 bco_adder(a,ij,n,ijn) => $C[ij] = $C[ijn]]
     ]
-#assert_prop(true, contain_squares)
-// }).
+}) .
 
