@@ -13,27 +13,27 @@ eventually_periodic(a, p) := @no_simplify[
         =>
         $C[i] = $C[ip]
     ]
-Theorem ("'Sturmian words are not eventually periodic'", {
-    forall a, p. bco_valid(a, p) => !eventually_periodic(a, p)
-}) .
+// Theorem ("'Sturmian words are not eventually periodic'", {
+//     forall a, p. bco_valid(a, p) => !eventually_periodic(a, p)
+// }) .
 
-Theorem ("'Sturmian words start with arbitrarily long squares'", {
-    @no_simplify[
-        forall a. bco_standard(a) =>
-        forall n is ostrowski(a).
-        exists m is ostrowski(a). m > n &
-        forall j, jm. (bco_lt(j,m) & bco_adder(a,j,m,jm)) => $C[j] = $C[jm]
-    ]
-}) .
+// Theorem ("'Sturmian words start with arbitrarily long squares'", {
+//     @no_simplify[
+//         forall a. bco_standard(a) =>
+//         forall n is ostrowski(a).
+//         exists m is ostrowski(a). m > n &
+//         forall j, jm. (bco_lt(j,m) & bco_adder(a,j,m,jm)) => $C[j] = $C[jm]
+//     ]
+// }) .
+
+bco_positive(x) := @simplify[exists z. bco_zero(z) & bco_lt(z, x)]
 
 Theorem ("'All Sturmian words contain squares'", {
     @no_simplify[
-        forall a. bco_standard(a) =>
-        exists i, n are ostrowski(a). n > 0 &
-        forall j. bco_lt(j,n) =>
-            forall ij. bco_adder(a,i,j,ij) =>
-            @simplify[forall ijn.
-                bco_adder(a,ij,n,ijn) => $C[ij] = $C[ijn]]
+        forall a.
+        exists i, n.
+        forall j, ij, ijn.
+            bco_standard(a) => (bco_valid2(a,i,n) & bco_positive(n) & bco_lt(j,n) & bco_adder(a,i,j,ij) & bco_adder(a,ij,n,ijn)) => $C[ij] = $C[ijn]
     ]
 }) .
 

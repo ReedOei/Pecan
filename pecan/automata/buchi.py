@@ -375,9 +375,10 @@ class BuchiProjection(Builder):
         super().__init__()
         self.aut = aut
         self.var_name = var_name
-        self.bdd_var = self.aut.register_ap(var_name)
+        self.bdd_var = None
 
     def pre_build(self, new_aut):
+        self.bdd_var = new_aut.register_ap(self.var_name)
         for ap in self.aut.ap():
             if ap.ap_name() != self.var_name:
                 new_aut.register_ap(ap)

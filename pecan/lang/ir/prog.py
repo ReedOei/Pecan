@@ -394,6 +394,7 @@ class Program(IRNode):
     def emit_definition(self, d):
         self.emit_offset += 1
         self.defs.insert(self.idx + self.emit_offset, d)
+        self.run_definition(self.idx + self.emit_offset, d)
 
     def run_definition(self, i, d):
         from pecan.lang.typed_ir_lowering import TypedIRLowering
@@ -444,7 +445,7 @@ class Program(IRNode):
                     succeeded = False
                     msgs.append(result.message())
 
-            self.idx += 1
+            self.idx += 1 + self.emit_offset
 
             self.exit_var_map_scope()
 
