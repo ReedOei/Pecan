@@ -202,7 +202,7 @@ class AutToStr(Builtin):
 
     def evaluate(self, prog):
         aut = prog.praline_lookup('aut').evaluate(prog)
-        if type(aut) is PralinePecanTerm:
+        if type(aut) is PralinePecanLiteral:
             term = aut.get_term()
             if type(term) is AutLiteral:
                 return PralineString(term.aut.to_str())

@@ -197,6 +197,9 @@ class IRTransformer:
     def transform_PralinePecanTerm(self, node):
         return PralinePecanTerm(self.transform(node.pecan_term))
 
+    def transform_PralinePecanLiteral(self, node):
+        return PralinePecanLiteral(self.transform(node.get_term()))
+
     def transform_PralineLambda(self, node):
         return PralineLambda(list(map(self.transform, node.params)), self.transform(node.body))
 
