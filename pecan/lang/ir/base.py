@@ -46,12 +46,15 @@ class IRNode:
         self.show_aut_stats(prog, aut, desc='before simplify')
 
         # if aut.num_edges() < 1000000:
-        aut.merge_edges()
-        self.show_aut_stats(prog, aut, desc='after merge_edges')
+        aut.simplify_edges()
+        self.show_aut_stats(prog, aut, desc='after simplify_edges')
 
-        if aut.num_states() < 100000:
-            aut.merge_states()
-            self.show_aut_stats(prog, aut, desc='after merge_states')
+        # if aut.num_states() < 100000:
+        aut.simplify_states()
+        self.show_aut_stats(prog, aut, desc='after simplify_states')
+
+        aut.simplify_edges()
+        self.show_aut_stats(prog, aut, desc='after simplify_edges')
 
         return aut
 

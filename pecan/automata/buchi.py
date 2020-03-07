@@ -80,12 +80,17 @@ class BuchiAutomaton(Automaton):
         return BuchiAutomaton(spot.complement(self.get_aut()), self.var_map)
 
     def relabel(self):
+        level_before = settings.get_simplication_level()
+        settings.set_simplification_level(0)
+
         new_aps = {}
         for ap in self.aut.ap():
             new_aps[ap.ap_name()] = self.fresh_ap()
 
-        #.print('relabel()', new_aps)
-        return self.ap_substitute(new_aps)
+        res = self.ap_substitute(new_aps)
+
+        settings.set_simplification_level(level_before)
+        return res
 
     def substitute(self, arg_map, env_var_map):
         new_var_map = VarMap()
@@ -118,11 +123,6 @@ class BuchiAutomaton(Automaton):
 
         bdd_subs = {self.aut.register_ap(k): v for k, v in ap_subs.items()}
 
-        # print('ap_sub postprocess:', self.aut.num_states(), self.aut.num_edges(), list(map(str, self.aut.ap())), self.aut.acc())
-        # self.aut.merge_edges()
-        # self.aut.merge_states()
-        # print('ap_sub postprocess (post merge):', self.aut.num_states(), self.aut.num_edges(), list(map(str, self.aut.ap())), self.aut.acc())
-
         settings.log(3, lambda: 'ap_subs: {}'.format(ap_subs))
 
         if settings.get_simplication_level() > 0:
@@ -139,7 +139,7 @@ class BuchiAutomaton(Automaton):
                 new_var_map[v].append(new_ap)
                 to_register.append(new_ap)
 
-        # print('ap_subs()', ap_subs, self.var_map, new_var_map)
+        settings.log(3, lambda: 'ap_subs: {}, {}, {}'.format(ap_subs, self.var_map, new_var_map))
 
         new_aut = buchi_transform(self.aut, Substitution(bdd_subs))
 
@@ -215,12 +215,20 @@ class BuchiAutomaton(Automaton):
     def get_aut(self):
         return self.aut
 
-    def merge_edges(self):
+    def simplify_edges(self):
         self.get_aut().merge_edges()
         return self
 
-    def merge_states(self):
-        self.get_aut().merge_states()
+    def simplify_states(self):
+        self.get_aut().purge_dead_states()
+        print('after purge_dead_states:', self.num_states())
+        self.get_aut().purge_unreachable_states()
+        print('after purge_unreachable_states:', self.num_states())
+
+        if self.num_states() < 500000:
+            self.get_aut().merge_states()
+            print('after merge_states:', self.num_states())
+
         return self
 
     def accepting_word(self):
@@ -375,10 +383,9 @@ class BuchiProjection(Builder):
         super().__init__()
         self.aut = aut
         self.var_name = var_name
-        self.bdd_var = None
+        self.bdd_var = self.aut.register_ap(var_name)
 
     def pre_build(self, new_aut):
-        self.bdd_var = new_aut.register_ap(self.var_name)
         for ap in self.aut.ap():
             if ap.ap_name() != self.var_name:
                 new_aut.register_ap(ap)

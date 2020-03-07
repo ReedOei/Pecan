@@ -3,12 +3,8 @@ Long:
     - Long because this may introduce new issues (including performance issues)
 
 Medium:
-- Add performance annotations---e.g., so I can write:
-
-#no_simplify(forall x. P(x))
-or #simplify(P(x) & Q(x))
-
-e.g., so we can turn on sipmlifcations in places where they wouldn't normally occur
+- Try doing some of the fundamental automata operations (e.g., project, substitute) in C++ to speed things up a little bit
+    - Lots of repeated calls into buddy/spot from python probably slow us down a lot on big automata
 
 - Improve optimization so that we don't need to do what we do in test_bounded_ostrowski_2
 - Improve CSE optimization so that we use `forall` or `exists` to reduce the number of complements, when valid.

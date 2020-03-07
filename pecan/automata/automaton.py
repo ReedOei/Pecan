@@ -57,10 +57,10 @@ class Automaton:
     # -------------------------------------------------------------------
     # Optional methods (e.g., for simplification, minimization, etc):
     # -------------------------------------------------------------------
-    def merge_edges(self):
+    def simplify_edges(self):
         return self
 
-    def merge_states(self):
+    def simplify_states(self):
         return self
 
     # Allows conversion between types of automata, if desired
