@@ -221,13 +221,13 @@ class BuchiAutomaton(Automaton):
 
     def simplify_states(self):
         self.get_aut().purge_dead_states()
-        print('after purge_dead_states:', self.num_states())
+        settings.log(3, lambda: 'after purge_dead_states: {}'.format(self.num_states()))
         self.get_aut().purge_unreachable_states()
-        print('after purge_unreachable_states:', self.num_states())
+        settings.log(3, lambda: 'after purge_unreachable_states: {}'.format(self.num_states()))
 
         if self.num_states() < 500000:
             self.get_aut().merge_states()
-            print('after merge_states:', self.num_states())
+            settings.log(3, lambda: 'after merge_states: {}'.format(self.num_states()))
 
         return self
 

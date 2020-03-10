@@ -6,6 +6,12 @@ bco_succ_unique() := forall a. forall x. forall y. forall z. (bco_succ(a,x,y) & 
 bco_adder_total() := forall a. forall x. forall y. bco_valid2(a,x,y) => exists z. bco_valid(a,z) & bco_adder(a,x,y,z)
 #assert_prop(true, bco_adder_total)
 
+bco_succ_total() := forall a, x. bco_valid(a, x) => exists u. bco_succ(a,x,u)
+#assert_prop(true, bco_succ_total)
+
+bco_valid_zero() := forall z. bco_zero(z) => exists a. bco_valid(a, z)
+#assert_prop(true, bco_valid_zero)
+
 test_bco_adder_base_case() := forall a. forall x. forall y. forall z. (bco_zero(x) & bco_valid3(a, x, y, z)) => (bco_adder(a,x,y,z) <=> bco_eq(y,z))
 #assert_prop(true, test_bco_adder_base_case)
 test_bco_adder_inductive_case() := forall a. forall x,y,z. bco_valid3(a,x,y,z) => forall u,v. (bco_succ(a,u,x) & bco_succ(a,v,z)) => (bco_adder(a,x,y,z) <=> bco_adder(a,u,y,v))

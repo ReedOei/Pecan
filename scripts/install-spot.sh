@@ -21,7 +21,7 @@ if ! python3 -c "import spot"; then
     cd "spot-$SPOT_VERSION"
 
     ./configure --prefix ~/.local
-    make
+    make -j 4
     sudo make install
 else
     echo "Skipped installing spot---already found."
