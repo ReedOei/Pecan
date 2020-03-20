@@ -2,7 +2,10 @@
 
 set -ex
 
-git rev-parse HEAD
+if ! git rev-parse HEAD; then
+    echo "[INFO] Not in git repository"
+fi
+
 date
 
 SPOT_VERSION="2.8.6"
