@@ -4,14 +4,16 @@
 
 Alias "Theorem" ==> Execute uncurry theoremCheck .
 
+bco_positive(x) := @simplify[exists z. bco_zero(z) & bco_lt(z, x)]
+
 eventually_periodic(a, p) := @no_simplify[
     bco_valid(a,p) &
-    exists z. bco_zero(z) & bco_lt(z, p) &
+    bco_positive(p) &
     exists n. bco_valid(a, n) &
     forall i, ip.
-        (bco_adder(a,i,p,ip) & bco_valid(a,n) & bco_leq(n,i))
+        (bco_adder(a,i,p,ip) & @postprocess[bco_valid(a,n) & bco_leq(n,i)])
         =>
-        $C[i] = $C[ip]
+        @postprocess[$C[i] = $C[ip]]
     ]
 Theorem ("Sturmian words are not eventually periodic", {
     forall a, p. bco_valid(a, p) => !eventually_periodic(a, p)
@@ -26,16 +28,14 @@ Theorem ("Sturmian words start with arbitrarily long squares", {
     ]
 }) .
 
-bco_positive(x) := @simplify[exists z. bco_zero(z) & bco_lt(z, x)]
-
 square(a, n) :=
     @no_simplify[
         exists i.
-        @postprocess[bco_valid2(a, i, n) &
-        @postprocess[forall bound.
+        bco_valid2(a, i, n) &
+        forall bound.
         @postprocess[(@postprocess[bco_valid(a, bound) & bco_adder(a, i, n, bound)] =>
         @postprocess[forall j. @postprocess[@postprocess[bco_lt(j, bound) & bco_leq(i, j) & bco_valid(a, j)] =>
-            @postprocess[forall jn. bco_adder(a, j, n, jn) => $C[j] = $C[jn]]]])]]]
+            @postprocess[forall jn. bco_adder(a, j, n, jn) => $C[j] = $C[jn]]]])]
     ]
 
 Theorem ("All Sturmian words contain squares", {
