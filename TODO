@@ -30,6 +30,9 @@ Medium:
 
 - Expand the function expressions in typed ir lowering or something?
 
+- Implement some heuristics for smarter postprocessing?
+    - For example, only do High/Deterministic or Small if the automaton is very small
+
 Short:
 - Move SpotFormula out of prog to keep the main program automata/library independent (replace this with a more general "Formula") operation.
 - Make all parsing functions in pecan.lang.parser into proper functions (b/c it gives better debug info)

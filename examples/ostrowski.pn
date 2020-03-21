@@ -1,5 +1,8 @@
 #import("ostrowski_defs.pn")
 
+bco_has_one() := forall a, z. if bco_standard(a) & bco_zero(z) & bco_valid(a,z) then (exists i. bco_valid(a,i) & bco_succ(a,z,i))
+#assert_prop(true, bco_has_one)
+
 bco_succ_unique() := forall a. forall x. forall y. forall z. (bco_succ(a,x,y) & bco_succ(a,x,z)) => bco_eq(y,z)
 #assert_prop(true, bco_succ_unique)
 
@@ -17,7 +20,7 @@ test_bco_adder_base_case() := forall a. forall x. forall y. forall z. (bco_zero(
 test_bco_adder_inductive_case() := forall a. forall x,y,z. bco_valid3(a,x,y,z) => forall u,v. (bco_succ(a,u,x) & bco_succ(a,v,z)) => (bco_adder(a,x,y,z) <=> bco_adder(a,u,y,v))
 #assert_prop(true, test_bco_adder_inductive_case)
 
-test_bco_pred() := forall a, x. bco_valid(a,x) => (bco_zero(x) | (exists u. bco_succ(a,u,x)))
+test_bco_pred() := forall a, x. if bco_valid(a,x) then (bco_zero(x) | (exists u. bco_succ(a,u,x)))
 #assert_prop(true, test_bco_pred)
 
 test_bco_adder_not_zero() := forall a,x,y,z. (bco_adder(a,x,y,z) & bco_zero(z)) => bco_zero(x)

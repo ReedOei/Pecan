@@ -28,19 +28,22 @@ eventually_periodic(a, p) := @no_simplify[
 
 bco_positive(x) := @simplify[exists z. bco_zero(z) & bco_lt(z, x)]
 
-not_square(a,i,n) := @no_simplify[
-    bco_standard(a) &
-    @postprocess[bco_valid2(a,i,n) & bco_positive(n)] &
-        exists j, ij, ijn.
-                (bco_lt(j,n) & bco_adder(a,i,j,ij) & bco_adder(a,ij,n,ijn)) & @postprocess[$C[ij] != $C[ijn]]
+square(a, n) :=
+    @no_simplify[
+        exists i.
+        @postprocess[bco_valid2(a, i, n) &
+        @postprocess[forall bound.
+        @postprocess[(@postprocess[bco_valid(a, bound) & bco_adder(a, i, n, bound)] =>
+        @postprocess[forall j. @postprocess[@postprocess[bco_lt(j, bound) & bco_leq(i, j) & bco_valid(a, j)] =>
+            @postprocess[forall jn. bco_adder(a, j, n, jn) => $C[j] = $C[jn]]]])]]]
     ]
-#save_aut("blah.aut", not_square)
+#save_aut("square.aut", square)
 
-// #load("not_square.aut", "hoa", not_square(a,i,n))
+// #load("square.aut", "hoa", square(a,n))
 
-// Theorem ("'All Sturmian words contain squares'", {
-//     @no_simplify[
-//         forall a. exists i, n. !not_square(a,i,n)
-//     ]
-// }) .
+Theorem ("'All Sturmian words contain squares'", {
+    @no_simplify[
+        forall a. bco_standard(a) => exists n. bco_positive(n) & bco_valid(a,n) & square(a,n)
+    ]
+}) .
 

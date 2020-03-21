@@ -54,6 +54,8 @@ bco_valid3(a, x, y, z) := bco_valid2(a, x, y) & bco_valid(a, z)
 bco_eq(x, y) := bco_leq(x, y) & bco_leq(y, x)
 bco_lt(x, y) := bco_leq(x, y) & !bco_eq(x,y)
 
+// bco_adder(a,x,y,z) := bco_adder_no_check(a,x,y,z) & bco_valid3(a,x,y,z)
+
 bco_zero(z) := exists a. bco_valid(a,z) & forall y. bco_valid(a,y) => bco_leq(z,y)
 bco_succ(a, x, y) := bco_valid2(a, x, y) & bco_leq(x, y) & (!bco_eq(x, y)) & forall z. bco_valid(a,z) => (bco_leq(z,x) | bco_leq(y,z))
 
