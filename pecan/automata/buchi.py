@@ -291,8 +291,13 @@ class BuchiAutomaton(Automaton):
 
     def postprocess(self):
         if not self.aut.is_sba():
-            # self.aut = spot.simulation(self.aut.scc_filter()).postprocess('BA', 'Deterministic', 'Low') # Ensure that the automata we have is a Buchi (possible nondeterministic) automata
-            self.aut = self.aut.postprocess('BA', 'Deterministic', 'Low') # Ensure that the automata we have is a Buchi (possible nondeterministic) automata
+            # Ensure that the automata we have is a Buchi (possible nondeterministic) automata
+            if self.aut.num_states() > 1000:
+                self.aut = self.aut.postprocess('BA', 'Deterministic', 'Low')
+            elif self.aut.num_states() > 100:
+                self.aut = self.aut.postprocess('BA', 'Deterministic', 'Medium')
+            else:
+                self.aut = self.aut.postprocess('BA', 'Deterministic', 'High')
         return self
 
     def simplify(self):
