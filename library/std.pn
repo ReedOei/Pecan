@@ -5,6 +5,8 @@
 finite_num(x) := "F(G(!x))"
 zero(x) := "G(!x)"
 
+Alias "Theorem" ==> Execute uncurry theoremCheck .
+
 x is any := true
 x is nat := finite_num(x)
 // binary is, for the moment, a synonym for nat; eventually we may decouple the two
