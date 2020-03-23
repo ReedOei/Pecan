@@ -2,8 +2,6 @@
 
 #load("ostrowski/sturmian_word.txt", "pecan", $C(n))
 
-Alias "Theorem" ==> Execute uncurry theoremCheck .
-
 bco_positive(x) := @simplify[exists z. bco_zero(z) & bco_lt(z, x)]
 
 eventually_periodic(a, p) := @no_simplify[
@@ -15,18 +13,19 @@ eventually_periodic(a, p) := @no_simplify[
         =>
         @postprocess[$C[i] = $C[ip]]
     ]
-Theorem ("Sturmian words are not eventually periodic", {
-    forall a, p. bco_valid(a, p) => !eventually_periodic(a, p)
-}) .
 
-Theorem ("Sturmian words start with arbitrarily long squares", {
-    @no_simplify[
-        forall a. bco_standard(a) =>
-        forall n is ostrowski(a).
-        exists m is ostrowski(a). m > n &
-        forall j, jm. (bco_lt(j,m) & bco_adder(a,j,m,jm)) => $C[j] = $C[jm]
-    ]
-}) .
+// Theorem ("Sturmian words are not eventually periodic", {
+//     forall a, p. bco_valid(a, p) => !eventually_periodic(a, p)
+// }) .
+
+// Theorem ("Sturmian words start with arbitrarily long squares", {
+//     @no_simplify[
+//         forall a. bco_standard(a) =>
+//         forall n is ostrowski(a).
+//         exists m is ostrowski(a). m > n &
+//         forall j, jm. (bco_lt(j,m) & bco_adder(a,j,m,jm)) => $C[j] = $C[jm]
+//     ]
+// }) .
 
 square(a, n) :=
     @no_simplify[
@@ -38,9 +37,44 @@ square(a, n) :=
             @postprocess[forall jn. bco_adder(a, j, n, jn) => $C[j] = $C[jn]]]])]
     ]
 
-Theorem ("All Sturmian words contain squares", {
+antisquare(a, n) :=
     @no_simplify[
-        forall a. bco_standard(a) => exists n. bco_positive(n) & bco_valid(a,n) & square(a,n)
+        exists i.
+        bco_valid2(a, i, n) &
+        forall bound.
+        @postprocess[(@postprocess[bco_valid(a, bound) & bco_adder(a, i, n, bound)] =>
+        @postprocess[forall j. @postprocess[@postprocess[bco_lt(j, bound) & bco_leq(i, j) & bco_valid(a, j)] =>
+            @postprocess[forall jn. bco_adder(a, j, n, jn) => $C[j] != $C[jn]]]])]
+    ]
+
+Theorem ("All Sturmian words contain finitely many antisquares", {
+    forall a. bco_standard(a) =>
+    exists m. bco_valid(a, m) &
+    forall n. antisquare(a, n) => bco_leq(n, m)
+}).
+
+// Theorem ("All Sturmian words contain squares", {
+//     @no_simplify[
+//         forall a. bco_standard(a) => exists n. bco_positive(n) & bco_valid(a,n) & square(a,n)
+//     ]
+// }) .
+
+cube(a, n) :=
+    @no_simplify[
+        exists i.
+        forall bound, temp.
+        @postprocess[bco_valid2(a, i, n) &
+        (@postprocess[bco_adder(a,i,n,temp) & bco_adder(a, temp, temp, bound) & bco_valid2(a,bound,temp)] =>
+        @postprocess[forall j. @postprocess[@postprocess[bco_lt(j, bound) & bco_leq(i, j) & bco_valid(a, j)] =>
+            @postprocess[forall jn. bco_adder(a, j, n, jn) => $C[j] = $C[jn]]]])]
+        // @postprocess[(@postprocess[bco_valid2(a, bound, temp) & bco_adder(a,i,n,temp) & bco_adder(a, temp, temp, bound)] =>
+        // @postprocess[forall j. @postprocess[@postprocess[bco_lt(j, bound) & bco_leq(i, j) & bco_valid(a, j)] =>
+        //     @postprocess[forall jn. bco_adder(a, j, n, jn) => $C[j] = $C[jn]]]])]
+    ]
+
+Theorem ("All Sturmian words contain cubes", {
+    @no_simplify[
+        forall a. bco_standard(a) => exists n. bco_positive(n) & bco_valid(a,n) & cube(a,n)
     ]
 }) .
 
