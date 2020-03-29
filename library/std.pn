@@ -6,6 +6,8 @@ finite_num(x) := "F(G(!x))"
 zero(x) := "G(!x)"
 
 Alias "Theorem" ==> Execute uncurry theoremCheck .
+Alias "Display" ==> Execute print .
+Alias "Example" ==> Display uncurry example .
 
 x is any := true
 x is nat := finite_num(x)
@@ -45,8 +47,6 @@ default_equal(x, y) := "G((x -> y) & (y -> x))"
     "even": bin_even(any),
     "odd": bin_odd(any)
 })
-
-Alias "Display" ==> Execute print .
 
 Define enumFromTo low high :=
     if low > high then
@@ -285,8 +285,8 @@ Define monoidCheck $ADD $T :=
     let $CLOSED_ID := $ADD ^ "_closed" in
     let $ASSOC_ID := $ADD ^ "_assoc" in
     let $ZERO_ID_ID := $ADD ^ "_zero_id" in do // Not a typo
-        theoremCheck $CLOSED_ID { forall $VAR1 is $T. forall $VAR2 is $T. exists $VAR3 is $T. $TYPED_ADDER($VAR1, $VAR2, $VAR3) };
-        theoremCheck $ASSOC_ID { forall $VAR1 is $T. forall $VAR2 is $T. forall $VAR3 is $T. $TYPED_ADDER($VAR1, $TYPED_ADDER($VAR2, $VAR3)) = $TYPED_ADDER($TYPED_ADDER($VAR1, $VAR2), $VAR3) };
+        theoremCheck $CLOSED_ID { forall $VAR1, $VAR2 are $T. exists $VAR3 is $T. $TYPED_ADDER($VAR1, $VAR2, $VAR3) };
+        theoremCheck $ASSOC_ID { forall $VAR1, $VAR2, $VAR3 are $T. $TYPED_ADDER($VAR1, $TYPED_ADDER($VAR2, $VAR3)) = $TYPED_ADDER($TYPED_ADDER($VAR1, $VAR2), $VAR3) };
         theoremCheck $ZERO_ID_ID { forall $VAR1 is $T. $TYPED_ADDER($VAR1, 0, $VAR1) & $TYPED_ADDER(0, $VAR1, $VAR1) }
     .
 

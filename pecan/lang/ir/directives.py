@@ -158,6 +158,7 @@ class DirectiveLoadAut(IRNode):
     def evaluate(self, prog):
         # TODO: Support argument restrictions on loaded automata
         realpath = prog.locate_file(self.filename)
+        settings.log(lambda: f'[INFO] Loading {self.pred} from {realpath} in format {self.aut_format}')
 
         if self.aut_format == 'hoa':
             # TODO: Rename the APs of the loaded automaton to be the same as the args specified
