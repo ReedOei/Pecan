@@ -33,6 +33,8 @@ Medium:
 - Implement some heuristics for smarter postprocessing?
     - For example, only do High/Deterministic or Small if the automaton is very small
 
+- Add a cache mode to predicates (or maybe an annotation?) so that we can save to disk and reload automatically instead of recomputing without having to save/load manually
+
 Short:
 - Move SpotFormula out of prog to keep the main program automata/library independent (replace this with a more general "Formula") operation.
 - Make all parsing functions in pecan.lang.parser into proper functions (b/c it gives better debug info)
