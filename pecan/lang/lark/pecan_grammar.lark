@@ -9,7 +9,7 @@
     | "#" "assert_prop" "(" prop_val "," var ")" -> directive_assert_prop
     | "#" "import" "(" string ")" -> directive_import
     | "#" "forget" "(" var ")" -> directive_forget
-    | "#" "type" "(" formal "," val_dict ")" -> directive_type
+    | "Structure" formal "defining" val_dict ["."] -> directive_structure
     | "#" "shuffle" "(" formal "," formal "," formal ")" -> directive_shuffle
     | "#" "shuffle_or" "(" formal "," formal "," formal ")" -> directive_shuffle_or
     | "Restrict" restriction "."

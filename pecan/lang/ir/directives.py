@@ -158,7 +158,7 @@ class DirectiveLoadAut(IRNode):
     def evaluate(self, prog):
         # TODO: Support argument restrictions on loaded automata
         realpath = prog.locate_file(self.filename)
-        settings.log(lambda: f'[INFO] Loading {self.pred} from {realpath} in format {self.aut_format}')
+        settings.log(lambda: f'[INFO] Loading {self.pred} from {realpath} in "{self.aut_format}" format.')
 
         if self.aut_format == 'hoa':
             # TODO: Rename the APs of the loaded automaton to be the same as the args specified
@@ -237,7 +237,7 @@ class DirectiveForget(IRNode):
     def __hash__(self):
         return hash(self.var_name)
 
-class DirectiveType(IRNode):
+class DirectiveStructure(IRNode):
     def __init__(self, pred_ref, val_dict):
         super().__init__()
         self.pred_ref = pred_ref
@@ -248,10 +248,10 @@ class DirectiveType(IRNode):
         return None
 
     def transform(self, transformer):
-        return transformer.transform_DirectiveType(self)
+        return transformer.transform_DirectiveStructure(self)
 
     def __repr__(self):
-        return '#type({}, {})'.format(self.pred_ref, self.val_dict)
+        return 'Structure {} defining {}.'.format(self.pred_ref, self.val_dict)
 
     def __eq__(self, other):
         return other is not None and type(other) is self.__class__ and \

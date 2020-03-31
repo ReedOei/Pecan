@@ -2,11 +2,11 @@ x is nat_gt(n) := x is nat & x > n
 
 gt(n, a, b) := a > n & b > n
 
-#type(nat_gt(n), {
+Structure nat_gt(n) defining {
     "adder": bin_add(any, any, any),
     "less": bin_less(any, any),
     "valid": gt(n, any, any)
-})
+}
 
 Restrict k is nat.
 Restrict x, y are nat_gt(k).

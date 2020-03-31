@@ -273,6 +273,8 @@ class NamedPred(IRNode):
         if not arg_names:
             result = self.body_evaluated
         else:
+            if len(arg_names) < len(self.args):
+                raise Exception('Not enough arugments for {}. Expected {}, got {}'.format(self.name, len(self.args), len(arg_names)))
             subs_dict = {arg.var_name: name.var_name for arg, name in zip(self.args, arg_names)}
             result = self.body_evaluated.substitute(subs_dict, prog.get_var_map())
 

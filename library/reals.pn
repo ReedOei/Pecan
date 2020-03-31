@@ -34,12 +34,12 @@ real_add_dif_sign(a, b, c) := negative(a) & positive(b) & ((real_less(b, negate(
 
 real_add(a, b, c) := (real_add_same_sign(a, b, c) | real_add_dif_sign(a, b, c) | real_add_dif_sign(b, a, c))
 
-#type(real, {
+Structure real defining {
     "adder": real_add(any, any, any),
     "less": real_less(any, any),
     "one": real_one(any),
     "abs": default_abs(any, any)
-})
+}
 
 Define splitEvenOdd l :=
     match l with

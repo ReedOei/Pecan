@@ -81,8 +81,8 @@ class ASTToIR(AstTransformer):
     def transform_DirectiveForget(self, node):
         return ir.DirectiveForget(self.transform(node.var_name))
 
-    def transform_DirectiveType(self, node):
-        return ir.DirectiveType(self.transform_decl_type(node.pred_ref),
+    def transform_DirectiveStructure(self, node):
+        return ir.DirectiveStructure(self.transform_decl_type(node.pred_ref),
                 {self.transform(k): self.transform(v) for k, v in node.val_dict.items()})
 
     def transform_DirectiveShuffle(self, node):

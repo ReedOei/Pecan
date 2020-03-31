@@ -225,9 +225,12 @@ class BuchiAutomaton(Automaton):
         self.get_aut().purge_unreachable_states()
         settings.log(3, lambda: 'after purge_unreachable_states: {}'.format(self.num_states()))
 
-        if self.num_states() < 500000:
+        if self.num_states() < 50000:
             self.get_aut().merge_states()
             settings.log(3, lambda: 'after merge_states: {}'.format(self.num_states()))
+
+        self.aut = self.get_aut().scc_filter()
+        settings.log(3, lambda: 'after scc_filter: {}'.format(self.num_states()))
 
         return self
 
@@ -291,14 +294,16 @@ class BuchiAutomaton(Automaton):
 
     def postprocess(self):
         if not self.aut.is_sba():
+            settings.log(3, lambda: 'Postprocessing (before): {} states and {} edges'.format(self.num_states(), self.num_edges()))
             # Ensure that the automata we have is a Buchi (possible nondeterministic) automata
             self.aut = self.aut.postprocess('BA')
-            # if self.aut.num_states() > 1000:
-            #     self.aut = self.aut.postprocess('BA', 'Low')
+            # if self.aut.num_states() > 500:
+            #     self.aut = self.aut.postprocess('BA', 'Deterministic', 'Low')
             # elif self.aut.num_states() > 100:
-            #     self.aut = self.aut.postprocess('BA', 'Medium')
+            #     self.aut = self.aut.postprocess('BA', 'Deterministic', 'Medium')
             # else:
-            #     self.aut = self.aut.postprocess('BA', 'High')
+            #     self.aut = self.aut.postprocess('BA', 'Deterministic', 'High')
+            settings.log(3, lambda: 'Postprocessing (after): {} states and {} edges'.format(self.num_states(), self.num_edges()))
         return self
 
     def simplify(self):

@@ -19,11 +19,11 @@ x is int := x is finite_num & !negative_zero(x)
 
 int_add(a, b, c) := a is int & b is int & c is int & (pos_int_add(a, b, c) | neg_int_add(a, b, c) | neg_pos_add(a, b, c) | pos_neg_add(a, b, c))
 
-#type(int, {
+Structure int defining {
     "adder": int_add(any, any, any),
     "less": int_less(any, any),
     "abs": default_abs(any, any)
-})
+}
 
 Define intFormat var reps :=
     match reps with

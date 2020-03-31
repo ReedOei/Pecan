@@ -30,23 +30,23 @@ default_equal(x, y) := "G((x -> y) & (y -> x))"
 #context("zero", "zero")
 #context("equal", "default_equal")
 
-#type(nat, {
+Structure nat defining {
     "adder": bin_add(any, any, any),
     "less": bin_less(any, any),
     "one": bin_one(any),
     "even": bin_even(any),
     "equal": default_equal(any, any),
     "odd": bin_odd(any)
-})
+}
 
-#type(binary, {
+Structure binary defining {
     "adder": bin_add(any, any, any),
     "less": bin_less(any, any),
     "one": bin_one(any),
     "equal": default_equal(any, any),
     "even": bin_even(any),
     "odd": bin_odd(any)
-})
+}
 
 Define enumFromTo low high :=
     if low > high then

@@ -182,7 +182,10 @@ class PecanTransformer(Transformer):
             return Restriction(args, pred)
 
     directive_assert_prop = DirectiveAssertProp
-    directive_type = DirectiveType
+
+    def directive_structure(self, pred_ref, val_dict):
+        return DirectiveStructure(pred_ref, val_dict)
+
     directive_save_aut = DirectiveSaveAut
     directive_save_aut_img = DirectiveSaveAutImage
     directive_context = DirectiveContext

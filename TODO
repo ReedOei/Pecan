@@ -39,5 +39,6 @@ Short:
 - Move SpotFormula out of prog to keep the main program automata/library independent (replace this with a more general "Formula") operation.
 - Make all parsing functions in pecan.lang.parser into proper functions (b/c it gives better debug info)
 - Make converter warn when you try to use states that don't exist, but just map them to new, empty states
-- Allow matching on booleans in Praline. Practically, this is useless (it's just an if statemnet), but it'd be nice to have for consistency's sake.
+- Allow matching on booleans in Praline. Practically, this is useless (it's just an if expression), but it'd be nice to have for consistency's sake. Although this would let us compile if expressions into match-case expressions, which would simplify other stuff a tad.
+- Improve error messages when there is no accepting word.
 
