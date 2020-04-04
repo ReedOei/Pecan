@@ -244,7 +244,7 @@ class BuchiAutomaton(Automaton):
         self.get_aut().purge_unreachable_states()
         settings.log(3, lambda: 'after purge_unreachable_states: {}'.format(self.num_states()))
 
-        if self.num_states() < 500000:
+        if self.num_states() < 50000:
             self.get_aut().merge_states()
             settings.log(3, lambda: 'after merge_states: {}'.format(self.num_states()))
 
