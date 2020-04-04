@@ -201,6 +201,8 @@ Define wordToBinary inputWord :=
 Define fromBase base := foldr (\a b => a + base*b) 0.
 Define fromBinary := fromBase 2.
 
+Define reverse := foldl (\xs x => x :: xs) [] .
+
 Define stdFormat var reps :=
     (var, map (\rep => match rep with
                         case (prefix, cycle) => concatenate prefix ^ "(" ^ concatenate cycle ^ ")^ω"

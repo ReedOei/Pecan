@@ -1,6 +1,8 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
+import time
+
 from pecan.tools.shuffle_automata import ShuffleAutomata
 from pecan.tools.walnut_converter import convert_aut
 from pecan.tools.hoa_loader import load_hoa
@@ -157,6 +159,7 @@ class DirectiveLoadAut(IRNode):
 
     def evaluate(self, prog):
         # TODO: Support argument restrictions on loaded automata
+        start_time = time.time()
         realpath = prog.locate_file(self.filename)
         settings.log(lambda: f'[INFO] Loading {self.pred} from {realpath} in "{self.aut_format}" format.')
 
@@ -170,7 +173,9 @@ class DirectiveLoadAut(IRNode):
         else:
             raise Exception('Unknown format: {}'.format(self.aut_format))
 
-        # print('loaded ap: ', aut.aut.ap())
+        end_time = time.time()
+
+        settings.log(0, lambda: '[INFO] Loaded {} in {:.2f} seconds ({} states, {} edges).'.format(self.pred, end_time - start_time, aut.num_states(), aut.num_edges()))
 
         prog.preds[self.pred.name] = NamedPred(self.pred.name, self.pred.args, {}, AutLiteral(aut))
 

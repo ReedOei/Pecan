@@ -26,6 +26,10 @@ def load_hoa(path):
             var_map_str = lines[0][idx + 1:].strip()
             var_map = ast.literal_eval(var_map_str)
 
+            for k, vs in var_map.items():
+                for v in vs:
+                    BuchiAutomaton.update_counter(v)
+
             return BuchiAutomaton(spot.automaton('\n'.join(lines[1:])), var_map)
     except ValueError:
         pass

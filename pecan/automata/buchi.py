@@ -35,6 +35,15 @@ class BuchiAutomaton(Automaton):
         BuchiAutomaton.id += 1
         return label
 
+    # This exists so that we ensure all names generated are fresh.
+    # It gets called by the various methods that may create an automaton which already uses of the reserved __ap#N names
+    # such as loading an automaton from a file.
+    @staticmethod
+    def update_counter(ap_name):
+        if ap_name.startswith('__ap'):
+            ap_num = int(ap_name.split('__ap')[1])
+            BuchiAutomaton.id = max(BuchiAutomaton.id, ap_num) + 1
+
     @classmethod
     def as_buchi(cls, aut):
         if aut.get_aut_type() == 'buchi':
@@ -83,9 +92,19 @@ class BuchiAutomaton(Automaton):
         level_before = settings.get_simplication_level()
         settings.set_simplification_level(0)
 
+        ap_set = set(map(str, self.aut.ap()))
+
         new_aps = {}
         for ap in self.aut.ap():
-            new_aps[ap.ap_name()] = self.fresh_ap()
+            # Make sure that we don't try to relabel with an AP that's already in the automaton.
+            # This can happen when we load an automaton from a file.
+            new_ap = self.fresh_ap()
+            while new_ap in ap_set:
+                new_ap = self.fresh_ap()
+
+            new_aps[ap.ap_name()] = new_ap
+
+        settings.log(3, lambda: 'Relabeling: {}'.format(new_aps))
 
         res = self.ap_substitute(new_aps)
 
@@ -225,7 +244,7 @@ class BuchiAutomaton(Automaton):
         self.get_aut().purge_unreachable_states()
         settings.log(3, lambda: 'after purge_unreachable_states: {}'.format(self.num_states()))
 
-        if self.num_states() < 50000:
+        if self.num_states() < 500000:
             self.get_aut().merge_states()
             settings.log(3, lambda: 'after merge_states: {}'.format(self.num_states()))
 
@@ -296,13 +315,13 @@ class BuchiAutomaton(Automaton):
         if not self.aut.is_sba():
             settings.log(3, lambda: 'Postprocessing (before): {} states and {} edges'.format(self.num_states(), self.num_edges()))
             # Ensure that the automata we have is a Buchi (possible nondeterministic) automata
-            self.aut = self.aut.postprocess('BA')
-            # if self.aut.num_states() > 500:
-            #     self.aut = self.aut.postprocess('BA', 'Deterministic', 'Low')
-            # elif self.aut.num_states() > 100:
-            #     self.aut = self.aut.postprocess('BA', 'Deterministic', 'Medium')
-            # else:
-            #     self.aut = self.aut.postprocess('BA', 'Deterministic', 'High')
+            # self.aut = self.aut.postprocess('BA')
+            if self.aut.num_states() > 500:
+                self.aut = self.aut.postprocess('BA', 'Deterministic', 'Low')
+            elif self.aut.num_states() > 100:
+                self.aut = self.aut.postprocess('BA', 'Deterministic', 'Medium')
+            else:
+                self.aut = self.aut.postprocess('BA', 'Deterministic', 'High')
             settings.log(3, lambda: 'Postprocessing (after): {} states and {} edges'.format(self.num_states(), self.num_edges()))
         return self
 
