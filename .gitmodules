@@ -1,0 +1,3 @@
+[submodule "libvata"]
+	path = libvata
+	url = https://github.com/ondrik/libvata
