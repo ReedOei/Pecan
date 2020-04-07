@@ -1,7 +1,7 @@
 ?start: def* -> prog
 
 ?def: pred_definition
-    | "#" "save_aut" "(" string "," var ")" -> directive_save_aut
+    | "#" "save_aut" "(" ( string | var ) "," var ")" -> directive_save_aut
     | "#" "save_aut_img" "(" string "," var ")" -> directive_save_aut_img
     | "#" "context" "(" string "," string ")" -> directive_context
     | "#" "end_context" "(" string ")" -> directive_end_context

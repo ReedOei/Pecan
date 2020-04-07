@@ -86,6 +86,11 @@ class BuchiAutomaton(Automaton):
         return merge(spot.product_or, self, other)
 
     def complement(self):
+        # if input('Do it now: ') == 'y':
+        #     self.postprocess()
+        #     self.save('postprocessed-{}.aut'.format(BuchiAutomaton.fresh_ap()))
+        # R = spot.complement(self.get_aut())
+        # R.save('it-worked-{}.aut'.format(BuchiAutomaton.fresh_ap()))
         return BuchiAutomaton(spot.complement(self.get_aut()), self.var_map)
 
     def relabel(self):
@@ -204,9 +209,15 @@ class BuchiAutomaton(Automaton):
         if self.aut.is_empty():
             return self.make_empty_aut()
 
-        res_aut = self.aut
+        remover = spot.remove_ap()
         for ap in aps:
-            res_aut = buchi_transform(res_aut, BuchiProjection(res_aut, ap))
+            remover.add_ap(ap)
+
+        res_aut = remover.strip(self.get_aut())
+
+        # res_aut = self.aut
+        # for ap in aps:
+        #     res_aut = buchi_transform(res_aut, BuchiProjection(res_aut, ap))
 
         return BuchiAutomaton(res_aut, self.get_var_map())
 
@@ -244,12 +255,12 @@ class BuchiAutomaton(Automaton):
         self.get_aut().purge_unreachable_states()
         settings.log(3, lambda: 'after purge_unreachable_states: {}'.format(self.num_states()))
 
+        self.aut = self.get_aut().scc_filter()
+        settings.log(3, lambda: 'after scc_filter: {}'.format(self.num_states()))
+
         if self.num_states() < 50000:
             self.get_aut().merge_states()
             settings.log(3, lambda: 'after merge_states: {}'.format(self.num_states()))
-
-        self.aut = self.get_aut().scc_filter()
-        settings.log(3, lambda: 'after scc_filter: {}'.format(self.num_states()))
 
         return self
 
@@ -316,7 +327,7 @@ class BuchiAutomaton(Automaton):
             settings.log(3, lambda: 'Postprocessing (before): {} states and {} edges'.format(self.num_states(), self.num_edges()))
             # Ensure that the automata we have is a Buchi (possible nondeterministic) automata
             self.aut = self.aut.postprocess('BA')
-            # if self.aut.num_states() > 500:
+            # if self.aut.num_states() > 300:
             #     self.aut = self.aut.postprocess('BA', 'Deterministic', 'Low')
             # elif self.aut.num_states() > 100:
             #     self.aut = self.aut.postprocess('BA', 'Deterministic', 'Medium')
@@ -408,25 +419,4 @@ class Substitution(Builder):
             # print('after ({} |-> {}), is now {}, was {}'.format(spot.bdd_to_formula(buddy.bdd_ithvar(var)), spot.bdd_to_formula(new_formula), spot.bdd_to_formula(cond), spot.bdd_to_formula(old)))
 
         return cond
-
-class BuchiProjection(Builder):
-    def __init__(self, aut, var_name):
-        super().__init__()
-        self.aut = aut
-        self.var_name = var_name
-        self.bdd_var = self.aut.register_ap(var_name)
-
-    def pre_build(self, new_aut):
-        for ap in self.aut.ap():
-            if ap.ap_name() != self.var_name:
-                new_aut.register_ap(ap)
-
-    def build_cond(self, cond):
-        if_0 = Substitution({self.bdd_var: buddy.bddfalse}).build_cond(cond)
-        if_1 = Substitution({self.bdd_var: buddy.bddtrue}).build_cond(cond)
-
-        # The new edge condition should be:
-        # [F/y]cond | [T/y]cond
-        # where cond is the original condition. That is, the edge is taken if it holds with y being false or y being true.
-        return if_0 | if_1
 
