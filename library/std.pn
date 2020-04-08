@@ -62,7 +62,7 @@ Define id x := x.
 Define a & b := if a then b else false.
 Define a | b := if a then true else b.
 
-Define a = b := equal a b.
+Define a = b := compare a b = 0.
 Define a < b := compare a b = -1.
 Define a > b := compare a b = 1.
 Define a <= b := (a < b) | (a = b).
