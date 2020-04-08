@@ -141,6 +141,16 @@ class Compare(Builtin):
         else:
             return PralineInt(0)
 
+class Equal(Builtin):
+    def __init__(self):
+        super().__init__(PralineVar('equal'), [PralineVar('a'), PralineVar('b')])
+
+    def evaluate(self, prog):
+        a_val = prog.praline_lookup('a').evaluate(prog)
+        b_val = prog.praline_lookup('b').evaluate(prog)
+        return PralineBool(a_val == b_val)
+
+
 class MkAutomaton(Builtin):
     def __init__(self):
         super().__init__(PralineVar('mkAut'), [PralineVar('inputNames'), PralineVar('inputBases')])
@@ -253,6 +263,7 @@ builtins = [
     ToChars().definition(),
     Cons().definition(),
     Compare().definition(),
+    Equal().definition(),
     MkAutomaton().definition(),
     AddState().definition(),
     AddTransition().definition(),
