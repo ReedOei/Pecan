@@ -96,8 +96,11 @@ Define isEmpty l :=
 Define concat := flip (foldr cons).
 Define a @ b := concat a b.
 
+Define flatten := foldr (\a b => a @ b) [].
+
 Define length := foldl (\cur _ => cur + 1) 0.
 Define map f := foldr (\x rest => f x :: rest) [].
+Define flatMap f := flatten ∘ map f.
 Define filter f := foldr (\x rest => if f x then x :: rest else rest) [].
 
 Define all f := foldl (\a b => a & f b) true.
@@ -313,6 +316,12 @@ Define withStates :=
         case (name, acc) => addState aut name acc
         end).
 
+Define withTransitions :=
+    foldl (\aut trans_info =>
+        match trans_info with
+        case (src, dst, sym) => addTransition aut src dst sym
+        end).
+
 Define genZero base :=
     let baseAut := withStates (mkAut ["n"] [base]) [("0", true)] in
     let finalAut := buildAut (addTransition baseAut "0" "0" "0") in
@@ -335,4 +344,13 @@ Define genEqual base :=
     let $EQUAL := "equal_" ^ toString base in
 
     emit { $EQUAL(n, m) := finalAut } .
+
+Define isFunction $FUNC $DOMAIN $CODOMAIN :=
+    let $EXIST_NAME := "exist_" ^ freshVar in
+    let $UNIQUE_NAME := "unique_" ^ freshVar in
+    let $X := freshVar in
+    let $Y := freshVar in
+    let $Z := freshVar in do
+        theoremCheck $EXIST_NAME { forall $X is $DOMAIN. exists $Y is $CODOMAIN. $FUNC($X, $Y) };
+        theoremCheck $UNIQUE_NAME { forall $X is $DOMAIN. forall $Y, $Z is $CODOMAIN. if $FUNC($X, $Y) & $FUNC($X, $Z) then $Y = $Z } .
 

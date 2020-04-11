@@ -143,7 +143,7 @@ class PecanTransformer(Transformer):
         return Call(call_name, [VarRef(var_name)])
 
     def formal_is_call(self, var_name, call_name, call_args):
-        return Call(call_name, [VarRef(var_name)] + call_args)
+        return Call(call_name, call_args + [VarRef(var_name)])
 
     def formal_call(self, call_name, call_args):
         return Call(call_name, call_args)
@@ -155,7 +155,7 @@ class PecanTransformer(Transformer):
         return [Call(call_name, [v]) for v in var_refs]
 
     def quant_formal_is_call(self, var_refs, call_name, call_args):
-        return [Call(call_name, [v] + call_args) for v in var_refs]
+        return [Call(call_name, call_args + [v]) for v in var_refs]
 
     def quant_formal_list(self, var_list):
         return var_list
@@ -167,7 +167,7 @@ class PecanTransformer(Transformer):
         return Call(call_name, [var_name])
 
     def call_is_args(self, var_name, call_name, args):
-        return Call(call_name, [var_name] + args)
+        return Call(call_name, args + [var_name])
 
     def val_dict(self, *pairs):
         return dict(pairs)
@@ -222,7 +222,7 @@ class PecanTransformer(Transformer):
         return NamedPred(pred_name, [VarRef(var_name)], body)
 
     def def_pred_is_call(self, var_name, pred_name, pred_args, body=None):
-        return NamedPred(pred_name, [VarRef(var_name)] + pred_args, body)
+        return NamedPred(pred_name, pred_args + [VarRef(var_name)], body)
 
     def var(self, letter, *args):
         return letter + ''.join(args)

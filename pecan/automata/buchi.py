@@ -86,12 +86,12 @@ class BuchiAutomaton(Automaton):
         return merge(spot.product_or, self, other)
 
     def complement(self):
-        # if input('Do it now: ') == 'y':
+        # if settings.get_simplication_level() > 0:
         #     self.postprocess()
         #     self.save('postprocessed-{}.aut'.format(BuchiAutomaton.fresh_ap()))
-        # R = spot.complement(self.get_aut())
-        # R.save('it-worked-{}.aut'.format(BuchiAutomaton.fresh_ap()))
-        return BuchiAutomaton(spot.complement(self.get_aut()), self.var_map)
+        res = BuchiAutomaton(spot.complement(self.get_aut()), self.var_map)
+        # res.save('it-worked-{}.aut'.format(BuchiAutomaton.fresh_ap()))
+        return res
 
     def relabel(self):
         level_before = settings.get_simplication_level()
@@ -277,6 +277,11 @@ class BuchiAutomaton(Automaton):
             for f in spot.atomic_prop_collect(spot.bdd_to_formula(formula)):
                 var_names.append(f.ap_name())
 
+        for var, aps in self.var_map.items():
+            for ap in aps:
+                if not ap in var_names:
+                    var_names.append(ap)
+
         var_names = sorted(list(set(var_names)))
         prefixes = self.to_binary(var_names, acc_word.prefix)
         cycles = self.to_binary(var_names, acc_word.cycle)
@@ -288,6 +293,7 @@ class BuchiAutomaton(Automaton):
         result = {}
         for var, aps in self.var_map.items():
             result[var] = [ap_result[ap] for ap in aps]
+
         return result
 
     def to_binary(self, var_names, bdd_list):
