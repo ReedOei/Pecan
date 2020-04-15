@@ -19,7 +19,7 @@ def to_ref(var_ref):
 
 def extract_var_cond(var_pred):
     if type(var_pred) is ir.Call:
-        return to_ref(var_pred.args[0]), var_pred
+        return to_ref(var_pred.args[-1]), var_pred
     else:
         return to_ref(var_pred), None
 
@@ -81,8 +81,8 @@ class ASTToIR(AstTransformer):
     def transform_DirectiveForget(self, node):
         return ir.DirectiveForget(self.transform(node.var_name))
 
-    def transform_DirectiveType(self, node):
-        return ir.DirectiveType(self.transform_decl_type(node.pred_ref),
+    def transform_DirectiveStructure(self, node):
+        return ir.DirectiveStructure(self.transform_decl_type(node.pred_ref),
                 {self.transform(k): self.transform(v) for k, v in node.val_dict.items()})
 
     def transform_DirectiveShuffle(self, node):

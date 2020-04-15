@@ -11,7 +11,7 @@ class Annotation(IRPredicate):
         self.annotation_name = annotation_name
         self.body = body
 
-    def evaluate(self, prog):
+    def evaluate_node(self, prog):
         if self.annotation_name == '@no_simplify':
             orig_level = settings.get_simplication_level()
             settings.set_simplification_level(0)
@@ -24,6 +24,14 @@ class Annotation(IRPredicate):
             res = self.body.evaluate(prog)
             settings.set_simplification_level(orig_level)
             return res
+        elif self.annotation_name == '@postprocess':
+            return self.body.evaluate(prog).postprocess()
+        elif self.annotation_name == '@simplify_states':
+            return self.body.evaluate(prog).simplify_states()
+        elif self.annotation_name == '@simplify_edges':
+            return self.body.evaluate(prog).simplify_edges()
+        # elif self.annotation_name == '@minimize':
+        #     return self.body.evaluate(prog).minimize()
         else:
             raise Exception('Unknown annotation: {}'.format(self.annotation_name))
 

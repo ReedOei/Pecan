@@ -12,12 +12,12 @@ x is ostrowski(a) := x is finite_3 & recog2(a, x)
 x is zeckendorf := exists o. all_ones2(o) & x is ostrowski(o)
 zeck_add(a, b, c) := exists o. all_ones2(o) & add2(o, a, b, c)
 
-#type(zeckendorf, {
+Structure zeckendorf defining {
     "adder": zeck_add(any, any, any),
     "less": lt2(any, any),
     "equal": equal_3(any, any),
     "zero": zero_3(any)
-})
+}
 
 Restrict i, j, k, n are zeckendorf.
 

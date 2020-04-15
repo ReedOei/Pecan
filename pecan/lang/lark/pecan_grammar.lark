@@ -1,7 +1,7 @@
 ?start: def* -> prog
 
 ?def: pred_definition
-    | "#" "save_aut" "(" string "," var ")" -> directive_save_aut
+    | "#" "save_aut" "(" ( string | var ) "," var ")" -> directive_save_aut
     | "#" "save_aut_img" "(" string "," var ")" -> directive_save_aut_img
     | "#" "context" "(" string "," string ")" -> directive_context
     | "#" "end_context" "(" string ")" -> directive_end_context
@@ -9,7 +9,7 @@
     | "#" "assert_prop" "(" prop_val "," var ")" -> directive_assert_prop
     | "#" "import" "(" string ")" -> directive_import
     | "#" "forget" "(" var ")" -> directive_forget
-    | "#" "type" "(" formal "," val_dict ")" -> directive_type
+    | "Structure" formal "defining" val_dict ["."] -> directive_structure
     | "#" "shuffle" "(" formal "," formal "," formal ")" -> directive_shuffle
     | "#" "shuffle_or" "(" formal "," formal "," formal ")" -> directive_shuffle_or
     | "Restrict" restriction "."

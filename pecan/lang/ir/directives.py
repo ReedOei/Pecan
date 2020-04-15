@@ -1,6 +1,8 @@
 #!/usr/bin/env python3.6
 # -*- coding=utf-8 -*-
 
+import time
+
 from pecan.tools.shuffle_automata import ShuffleAutomata
 from pecan.tools.walnut_converter import convert_aut
 from pecan.tools.hoa_loader import load_hoa
@@ -157,7 +159,9 @@ class DirectiveLoadAut(IRNode):
 
     def evaluate(self, prog):
         # TODO: Support argument restrictions on loaded automata
+        start_time = time.time()
         realpath = prog.locate_file(self.filename)
+        settings.log(lambda: f'[INFO] Loading {self.pred} from {realpath} in "{self.aut_format}" format.')
 
         if self.aut_format == 'hoa':
             # TODO: Rename the APs of the loaded automaton to be the same as the args specified
@@ -169,7 +173,9 @@ class DirectiveLoadAut(IRNode):
         else:
             raise Exception('Unknown format: {}'.format(self.aut_format))
 
-        # print('loaded ap: ', aut.aut.ap())
+        end_time = time.time()
+
+        settings.log(0, lambda: '[INFO] Loaded {} in {:.2f} seconds ({} states, {} edges).'.format(self.pred, end_time - start_time, aut.num_states(), aut.num_edges()))
 
         prog.preds[self.pred.name] = NamedPred(self.pred.name, self.pred.args, {}, AutLiteral(aut))
 
@@ -220,7 +226,7 @@ class DirectiveForget(IRNode):
         self.var_name = var_name
 
     def evaluate(self, prog):
-        prog.forget(self.var_name)
+        prog.forget_global(self.var_name)
         return None
 
     def transform(self, transformer):
@@ -236,7 +242,7 @@ class DirectiveForget(IRNode):
     def __hash__(self):
         return hash(self.var_name)
 
-class DirectiveType(IRNode):
+class DirectiveStructure(IRNode):
     def __init__(self, pred_ref, val_dict):
         super().__init__()
         self.pred_ref = pred_ref
@@ -247,10 +253,10 @@ class DirectiveType(IRNode):
         return None
 
     def transform(self, transformer):
-        return transformer.transform_DirectiveType(self)
+        return transformer.transform_DirectiveStructure(self)
 
     def __repr__(self):
-        return '#type({}, {})'.format(self.pred_ref, self.val_dict)
+        return 'Structure {} defining {}.'.format(self.pred_ref, self.val_dict)
 
     def __eq__(self, other):
         return other is not None and type(other) is self.__class__ and \

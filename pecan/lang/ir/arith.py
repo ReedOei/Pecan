@@ -3,6 +3,10 @@
 
 from pecan.lang.ir import *
 
+# From: https://stackoverflow.com/a/57027610/1498618
+def is_power_of_two(n):
+    return (n != 0) and (n & (n-1) == 0)
+
 # TODO: memoize same expressions
 class Add(BinaryIRExpression):
     def __init__(self, a, b):
@@ -113,7 +117,7 @@ class IntConst(IRExpression):
 
             # This means we didn't find a user-defined "one", so just use the default expression
             if res.name == 'one':
-                b_const = VarRef('b').with_type(self.get_type())
+                b_const = VarRef(prog.fresh_name()).with_type(self.get_type())
                 zero_const = IntConst(0).with_type(self.get_type())
 
                 leq = Disjunction(Less(self.label_var(), b_const), Equals(self.label_var(), b_const))
@@ -140,6 +144,12 @@ class IntConst(IRExpression):
             result.change_label(self.label)
             result.is_int = False
             (result_aut, val) = result.evaluate(prog)
+
+            # because the powers of two get used so much, it is advantageous to make sure they are as small
+            # as possible by postprocessing them
+            if is_power_of_two(self.val):
+                result_aut.postprocess()
+
             constants_map[(self.val, self.get_type())] = (result_aut, val)
 
         return constants_map[(self.val, self.get_type())]

@@ -35,6 +35,15 @@ class BuchiAutomaton(Automaton):
         BuchiAutomaton.id += 1
         return label
 
+    # This exists so that we ensure all names generated are fresh.
+    # It gets called by the various methods that may create an automaton which already uses of the reserved __ap#N names
+    # such as loading an automaton from a file.
+    @staticmethod
+    def update_counter(ap_name):
+        if ap_name.startswith('__ap'):
+            ap_num = int(ap_name.split('__ap')[1])
+            BuchiAutomaton.id = max(BuchiAutomaton.id, ap_num) + 1
+
     @classmethod
     def as_buchi(cls, aut):
         if aut.get_aut_type() == 'buchi':
@@ -77,15 +86,35 @@ class BuchiAutomaton(Automaton):
         return merge(spot.product_or, self, other)
 
     def complement(self):
-        return BuchiAutomaton(spot.complement(self.get_aut()), self.var_map)
+        # if settings.get_simplication_level() > 0:
+        #     self.postprocess()
+        #     self.save('postprocessed-{}.aut'.format(BuchiAutomaton.fresh_ap()))
+        res = BuchiAutomaton(spot.complement(self.get_aut()), self.var_map)
+        # res.save('it-worked-{}.aut'.format(BuchiAutomaton.fresh_ap()))
+        return res
 
     def relabel(self):
+        level_before = settings.get_simplication_level()
+        settings.set_simplification_level(0)
+
+        ap_set = set(map(str, self.aut.ap()))
+
         new_aps = {}
         for ap in self.aut.ap():
-            new_aps[ap.ap_name()] = self.fresh_ap()
+            # Make sure that we don't try to relabel with an AP that's already in the automaton.
+            # This can happen when we load an automaton from a file.
+            new_ap = self.fresh_ap()
+            while new_ap in ap_set:
+                new_ap = self.fresh_ap()
 
-        #.print('relabel()', new_aps)
-        return self.ap_substitute(new_aps)
+            new_aps[ap.ap_name()] = new_ap
+
+        settings.log(3, lambda: 'Relabeling: {}'.format(new_aps))
+
+        res = self.ap_substitute(new_aps)
+
+        settings.set_simplification_level(level_before)
+        return res
 
     def substitute(self, arg_map, env_var_map):
         new_var_map = VarMap()
@@ -118,10 +147,7 @@ class BuchiAutomaton(Automaton):
 
         bdd_subs = {self.aut.register_ap(k): v for k, v in ap_subs.items()}
 
-        # print('ap_sub postprocess:', self.aut.num_states(), self.aut.num_edges(), list(map(str, self.aut.ap())), self.aut.acc())
-        # self.aut.merge_edges()
-        # self.aut.merge_states()
-        # print('ap_sub postprocess (post merge):', self.aut.num_states(), self.aut.num_edges(), list(map(str, self.aut.ap())), self.aut.acc())
+        settings.log(3, lambda: 'ap_subs: {}'.format(ap_subs))
 
         if settings.get_simplication_level() > 0:
             self.postprocess()
@@ -137,7 +163,7 @@ class BuchiAutomaton(Automaton):
                 new_var_map[v].append(new_ap)
                 to_register.append(new_ap)
 
-        # print('ap_subs()', ap_subs, self.var_map, new_var_map)
+        settings.log(3, lambda: 'ap_subs: {}, {}, {}'.format(ap_subs, self.var_map, new_var_map))
 
         new_aut = buchi_transform(self.aut, Substitution(bdd_subs))
 
@@ -175,7 +201,7 @@ class BuchiAutomaton(Automaton):
         if not aps:
             return self
 
-        # print('ap_project()', aps)
+        settings.log(3, lambda: 'ap_project: {}'.format(aps))
 
         # Do a quick check here to simplify if we're empty; the emptiness checking algorithm is very fast (can be done in linear time)
         # Compared to the cost of postprocessing (depends on the underlying automaton, but generally atrocious)
@@ -183,13 +209,15 @@ class BuchiAutomaton(Automaton):
         if self.aut.is_empty():
             return self.make_empty_aut()
 
-        res_aut = self.aut
+        remover = spot.remove_ap()
         for ap in aps:
-            # print('projecting:', ap)
+            remover.add_ap(ap)
 
-            res_aut = buchi_transform(res_aut, BuchiProjection(res_aut, ap))
+        res_aut = remover.strip(self.get_aut())
 
-            # print('is_empty', res_aut.is_empty())
+        # res_aut = self.aut
+        # for ap in aps:
+        #     res_aut = buchi_transform(res_aut, BuchiProjection(res_aut, ap))
 
         return BuchiAutomaton(res_aut, self.get_var_map())
 
@@ -217,12 +245,23 @@ class BuchiAutomaton(Automaton):
     def get_aut(self):
         return self.aut
 
-    def merge_edges(self):
+    def simplify_edges(self):
         self.get_aut().merge_edges()
         return self
 
-    def merge_states(self):
-        self.get_aut().merge_states()
+    def simplify_states(self):
+        self.get_aut().purge_dead_states()
+        settings.log(3, lambda: 'after purge_dead_states: {}'.format(self.num_states()))
+        self.get_aut().purge_unreachable_states()
+        settings.log(3, lambda: 'after purge_unreachable_states: {}'.format(self.num_states()))
+
+        self.aut = self.get_aut().scc_filter()
+        settings.log(3, lambda: 'after scc_filter: {}'.format(self.num_states()))
+
+        if self.num_states() < 50000:
+            self.get_aut().merge_states()
+            settings.log(3, lambda: 'after merge_states: {}'.format(self.num_states()))
+
         return self
 
     def accepting_word(self):
@@ -238,6 +277,11 @@ class BuchiAutomaton(Automaton):
             for f in spot.atomic_prop_collect(spot.bdd_to_formula(formula)):
                 var_names.append(f.ap_name())
 
+        for var, aps in self.var_map.items():
+            for ap in aps:
+                if not ap in var_names:
+                    var_names.append(ap)
+
         var_names = sorted(list(set(var_names)))
         prefixes = self.to_binary(var_names, acc_word.prefix)
         cycles = self.to_binary(var_names, acc_word.cycle)
@@ -249,6 +293,7 @@ class BuchiAutomaton(Automaton):
         result = {}
         for var, aps in self.var_map.items():
             result[var] = [ap_result[ap] for ap in aps]
+
         return result
 
     def to_binary(self, var_names, bdd_list):
@@ -285,7 +330,16 @@ class BuchiAutomaton(Automaton):
 
     def postprocess(self):
         if not self.aut.is_sba():
-            self.aut = self.aut.postprocess('BA') # Ensure that the automata we have is a Buchi (possible nondeterministic) automata
+            settings.log(3, lambda: 'Postprocessing (before): {} states and {} edges'.format(self.num_states(), self.num_edges()))
+            # Ensure that the automata we have is a Buchi (possible nondeterministic) automata
+            self.aut = self.aut.postprocess('BA')
+            # if self.aut.num_states() > 300:
+            #     self.aut = self.aut.postprocess('BA', 'Deterministic', 'Low')
+            # elif self.aut.num_states() > 100:
+            #     self.aut = self.aut.postprocess('BA', 'Deterministic', 'Medium')
+            # else:
+            #     self.aut = self.aut.postprocess('BA', 'Deterministic', 'High')
+            settings.log(3, lambda: 'Postprocessing (after): {} states and {} edges'.format(self.num_states(), self.num_edges()))
         return self
 
     def simplify(self):
@@ -371,25 +425,4 @@ class Substitution(Builder):
             # print('after ({} |-> {}), is now {}, was {}'.format(spot.bdd_to_formula(buddy.bdd_ithvar(var)), spot.bdd_to_formula(new_formula), spot.bdd_to_formula(cond), spot.bdd_to_formula(old)))
 
         return cond
-
-class BuchiProjection(Builder):
-    def __init__(self, aut, var_name):
-        super().__init__()
-        self.aut = aut
-        self.var_name = var_name
-        self.bdd_var = self.aut.register_ap(var_name)
-
-    def pre_build(self, new_aut):
-        for ap in self.aut.ap():
-            if ap.ap_name() != self.var_name:
-                new_aut.register_ap(ap)
-
-    def build_cond(self, cond):
-        if_0 = Substitution({self.bdd_var: buddy.bddfalse}).build_cond(cond)
-        if_1 = Substitution({self.bdd_var: buddy.bddtrue}).build_cond(cond)
-
-        # The new edge condition should be:
-        # [F/y]cond | [T/y]cond
-        # where cond is the original condition. That is, the edge is taken if it holds with y being false or y being true.
-        return if_0 | if_1
 

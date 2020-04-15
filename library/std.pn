@@ -5,6 +5,10 @@
 finite_num(x) := "F(G(!x))"
 zero(x) := "G(!x)"
 
+Alias "Theorem" ==> Execute uncurry theoremCheck .
+Alias "Display" ==> Execute print .
+Alias "Example" ==> Display uncurry example .
+
 x is any := true
 x is nat := finite_num(x)
 // binary is, for the moment, a synonym for nat; eventually we may decouple the two
@@ -26,25 +30,23 @@ default_equal(x, y) := "G((x -> y) & (y -> x))"
 #context("zero", "zero")
 #context("equal", "default_equal")
 
-#type(nat, {
+Structure nat defining {
     "adder": bin_add(any, any, any),
     "less": bin_less(any, any),
     "one": bin_one(any),
     "even": bin_even(any),
     "equal": default_equal(any, any),
     "odd": bin_odd(any)
-})
+}
 
-#type(binary, {
+Structure binary defining {
     "adder": bin_add(any, any, any),
     "less": bin_less(any, any),
     "one": bin_one(any),
     "equal": default_equal(any, any),
     "even": bin_even(any),
     "odd": bin_odd(any)
-})
-
-Alias "Display" ==> Execute print .
+}
 
 Define enumFromTo low high :=
     if low > high then
@@ -94,8 +96,11 @@ Define isEmpty l :=
 Define concat := flip (foldr cons).
 Define a @ b := concat a b.
 
+Define flatten := foldr (\a b => a @ b) [].
+
 Define length := foldl (\cur _ => cur + 1) 0.
 Define map f := foldr (\x rest => f x :: rest) [].
+Define flatMap f := flatten ∘ map f.
 Define filter f := foldr (\x rest => if f x then x :: rest else rest) [].
 
 Define all f := foldl (\a b => a & f b) true.
@@ -199,6 +204,8 @@ Define wordToBinary inputWord :=
 Define fromBase base := foldr (\a b => a + base*b) 0.
 Define fromBinary := fromBase 2.
 
+Define reverse := foldl (\xs x => x :: xs) [] .
+
 Define stdFormat var reps :=
     (var, map (\rep => match rep with
                         case (prefix, cycle) => concatenate prefix ^ "(" ^ concatenate cycle ^ ")^ω"
@@ -283,8 +290,8 @@ Define monoidCheck $ADD $T :=
     let $CLOSED_ID := $ADD ^ "_closed" in
     let $ASSOC_ID := $ADD ^ "_assoc" in
     let $ZERO_ID_ID := $ADD ^ "_zero_id" in do // Not a typo
-        theoremCheck $CLOSED_ID { forall $VAR1 is $T. forall $VAR2 is $T. exists $VAR3 is $T. $TYPED_ADDER($VAR1, $VAR2, $VAR3) };
-        theoremCheck $ASSOC_ID { forall $VAR1 is $T. forall $VAR2 is $T. forall $VAR3 is $T. $TYPED_ADDER($VAR1, $TYPED_ADDER($VAR2, $VAR3)) = $TYPED_ADDER($TYPED_ADDER($VAR1, $VAR2), $VAR3) };
+        theoremCheck $CLOSED_ID { forall $VAR1, $VAR2 are $T. exists $VAR3 is $T. $TYPED_ADDER($VAR1, $VAR2, $VAR3) };
+        theoremCheck $ASSOC_ID { forall $VAR1, $VAR2, $VAR3 are $T. $TYPED_ADDER($VAR1, $TYPED_ADDER($VAR2, $VAR3)) = $TYPED_ADDER($TYPED_ADDER($VAR1, $VAR2), $VAR3) };
         theoremCheck $ZERO_ID_ID { forall $VAR1 is $T. $TYPED_ADDER($VAR1, 0, $VAR1) & $TYPED_ADDER(0, $VAR1, $VAR1) }
     .
 
@@ -309,6 +316,12 @@ Define withStates :=
         case (name, acc) => addState aut name acc
         end).
 
+Define withTransitions :=
+    foldl (\aut trans_info =>
+        match trans_info with
+        case (src, dst, sym) => addTransition aut src dst sym
+        end).
+
 Define genZero base :=
     let baseAut := withStates (mkAut ["n"] [base]) [("0", true)] in
     let finalAut := buildAut (addTransition baseAut "0" "0" "0") in
@@ -331,4 +344,13 @@ Define genEqual base :=
     let $EQUAL := "equal_" ^ toString base in
 
     emit { $EQUAL(n, m) := finalAut } .
+
+Define isFunction $FUNC $DOMAIN $CODOMAIN :=
+    let $EXIST_NAME := "exist_" ^ freshVar in
+    let $UNIQUE_NAME := "unique_" ^ freshVar in
+    let $X := freshVar in
+    let $Y := freshVar in
+    let $Z := freshVar in do
+        theoremCheck $EXIST_NAME { forall $X is $DOMAIN. exists $Y is $CODOMAIN. $FUNC($X, $Y) };
+        theoremCheck $UNIQUE_NAME { forall $X is $DOMAIN. forall $Y, $Z is $CODOMAIN. if $FUNC($X, $Y) & $FUNC($X, $Z) then $Y = $Z } .
 

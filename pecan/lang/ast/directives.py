@@ -100,24 +100,24 @@ class DirectiveForget(ASTNode):
     def __repr__(self):
         return '#forget({})'.format(repr(self.var_name))
 
-class DirectiveType(ASTNode):
+class DirectiveStructure(ASTNode):
     def __init__(self, pred_ref, val_dict):
         super().__init__()
 
         if type(pred_ref) is VarRef:
             self.pred_ref = Call(pred_ref.var_name, [VarRef('*')])
         elif type(pred_ref) is Call:
-            self.pred_ref = Call(pred_ref.name, [VarRef('*')] + pred_ref.args)
+            self.pred_ref = pred_ref.add_arg(VarRef('*'))
         else:
             raise Exception('Pred ref {} is not a VarRef or Call'.format(pred_ref))
 
         self.val_dict = val_dict
 
     def transform(self, transformer):
-        return transformer.transform_DirectiveType(self)
+        return transformer.transform_DirectiveStructure(self)
 
     def __repr__(self):
-        return '#type({}, {})'.format(self.pred_ref, self.val_dict)
+        return 'Structure {} defining {} .'.format(self.pred_ref, self.val_dict)
 
 class DirectiveShuffle(ASTNode):
     def __init__(self, disjunction, pred_a, pred_b, output_pred):

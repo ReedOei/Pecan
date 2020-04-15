@@ -21,7 +21,7 @@ RUN apt-get update
 RUN apt-get install -y sudo vim wget curl
 
 # Install spot. Run this here so that if we make changes to the stuff below, we don't have to rebuild spot
-RUN curl -sSL https://raw.githubusercontent.com/ReedOei/Pecan/master/install-spot.sh | bash
+RUN curl -sSL https://raw.githubusercontent.com/ReedOei/Pecan/master/scripts/install-spot.sh | bash
 
 WORKDIR /home/pecan
 

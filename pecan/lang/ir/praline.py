@@ -56,7 +56,7 @@ class PralineAlias(IRNode):
         return other is not None and type(other) is self.__class__ and self.name == other.name and self.directive_name == other.directive_name and self.term == other.term
 
     def __hash__(self):
-        return hash(self.name, self.directive_name, self.term)
+        return hash((self.name, self.directive_name, self.term))
 
 class PralineDirective(IRNode):
     def __init__(self, name, term):
@@ -82,7 +82,7 @@ class PralineDirective(IRNode):
         return other is not None and type(other) is self.__class__ and self.name == other.name and self.term == other.term
 
     def __hash__(self):
-        return hash(self.name, self.term)
+        return hash((self.name, self.term))
 
 class PralineDef(IRNode):
     def __init__(self, name, args, body):
@@ -125,7 +125,7 @@ class PralineVar(PralineTerm):
         return other is not None and type(other) is self.__class__ and self.var_name == other.var_name
 
     def __hash__(self):
-        return hash((self.var_name))
+        return hash(self.var_name)
 
 class PralineApp(PralineTerm):
     def __init__(self, receiver, arg):
@@ -550,6 +550,29 @@ class PralineIf(PralineTerm):
     def __hash__(self):
         return hash((self.cond, self.e1, self.e2))
 
+class PralinePecanLiteral(PralineTerm):
+    def __init__(self, pecan_term):
+        super().__init__()
+        self.pecan_term = pecan_term
+
+    def get_term(self):
+        return self.pecan_term
+
+    def transform(self, transformer):
+        return transformer.transform_PralinePecanLiteral(self)
+
+    def evaluate(self, prog):
+        return self
+
+    def __repr__(self):
+        return '{{ {} }}'.format(self.pecan_term)
+
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.pecan_term == other.pecan_term
+
+    def __hash__(self):
+        return hash((self.pecan_term))
+
 class PralinePecanTerm(PralineTerm):
     def __init__(self, pecan_term):
         super().__init__()
@@ -565,9 +588,9 @@ class PralinePecanTerm(PralineTerm):
         from pecan.lang.ir_substitution import IRSubstitution
         from pecan.lang.praline_to_pecan import PralineToPecan
 
-        temp_node = PralinePecanTerm(PralineToPecan().transform(IRSubstitution(prog.praline_env_clone()).transform(self.pecan_term)))
+        temp_node = PralineToPecan().transform(IRSubstitution(prog.praline_env_clone()).transform(self.pecan_term))
 
-        return prog.type_infer(temp_node)
+        return PralinePecanLiteral(prog.type_infer(temp_node))
 
     def __eq__(self, other):
         return other is not None and type(other) is self.__class__ and self.pecan_term == other.pecan_term
@@ -610,7 +633,7 @@ class PralineLetPecan(PralineTerm):
         return '(let {} be {} in {})'.format(self.var_name, self.pecan_term, self.body)
 
     def evaluate(self, prog):
-        result_node = self.pecan_term.evaluate(prog).pecan_term
+        result_node = self.pecan_term.evaluate(prog).evaluate(prog).pecan_term
 
         from pecan.lang.ir.prog import AutLiteral
         prog.praline_local_define(self.var_name, PralinePecanTerm(AutLiteral(result_node.evaluate(prog))))

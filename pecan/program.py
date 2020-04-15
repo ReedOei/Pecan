@@ -35,8 +35,8 @@ def load(pecan_file, *args, **kwargs):
 def from_source(source_code, *args, **kwargs):
     prog = pecan_parser.parse(source_code)
 
-    settings.log(0, lambda: 'Parsed program:')
-    settings.log(0, lambda: prog)
+    settings.log(4, lambda: 'Parsed program:')
+    settings.log(4, lambda: prog)
 
     prog.search_paths = make_search_paths(kwargs.get('filename', None))
     prog.loader = load

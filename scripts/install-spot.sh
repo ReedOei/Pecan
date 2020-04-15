@@ -2,11 +2,13 @@
 
 set -ex
 
-echo "$(git rev-parse HEAD)"
+if ! git rev-parse HEAD; then
+    echo "[INFO] Not in git repository"
+fi
+
 date
 
-SPOT_VERSION="2.8.5"
-PYTHON_VERSION="3.6"
+SPOT_VERSION="2.8.7"
 
 # download/uncompress spot
 
@@ -22,7 +24,7 @@ if ! python3 -c "import spot"; then
     cd "spot-$SPOT_VERSION"
 
     ./configure --prefix ~/.local
-    make
+    make -j 4
     sudo make install
 else
     echo "Skipped installing spot---already found."

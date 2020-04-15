@@ -53,7 +53,7 @@ class Check(Builtin):
         super().__init__(PralineVar('check'), [PralineVar('t')])
 
     def evaluate(self, prog):
-        pecan_node = prog.praline_lookup('t').evaluate(prog).pecan_term
+        pecan_node = prog.praline_lookup('t').evaluate(prog).get_term()
         result = pecan_node.evaluate(prog).truth_value()
 
         return PralineBool(result == 'true')
@@ -80,8 +80,7 @@ class Emit(Builtin):
         super().__init__(PralineVar('emit'), [PralineVar('pecanTerm')])
 
     def evaluate(self, prog):
-        # TODO: Finish this
-        term = prog.praline_lookup('pecanTerm').evaluate(prog).pecan_term
+        term = prog.praline_lookup('pecanTerm').evaluate(prog).get_term()
         settings.log(0, lambda: '[DEBUG] Emitted: "{}"'.format(term))
         prog.emit_definition(term)
         return PralineBool(True)
@@ -119,7 +118,7 @@ class AcceptingWord(Builtin):
         super().__init__(PralineVar('acceptingWord'), [PralineVar('pecanTerm')])
 
     def evaluate(self, prog):
-        acc_word = prog.praline_lookup('pecanTerm').evaluate(prog).pecan_term.evaluate(prog).accepting_word()
+        acc_word = prog.praline_lookup('pecanTerm').evaluate(prog).get_term().evaluate(prog).accepting_word()
 
         result = PralineList(None, None)
         for var_name, vs in acc_word.items():
@@ -203,11 +202,12 @@ class AutToStr(Builtin):
 
     def evaluate(self, prog):
         aut = prog.praline_lookup('aut').evaluate(prog)
-        if type(aut) is PralinePecanTerm:
-            if type(aut.pecan_term) is AutLiteral:
-                return PralineString(aut.pecan_term.aut.to_str())
+        if type(aut) is PralinePecanLiteral:
+            term = aut.get_term()
+            if type(term) is AutLiteral:
+                return PralineString(term.aut.to_str())
             else:
-                raise Exception('Expected an AutLiteral but got {}'.format(aut.pecan_term))
+                raise Exception('Expected an AutLiteral but got {}'.format(term))
         else:
             raise Exception('Expected a PralinePecanTerm, but got: {}'.format(aut))
 

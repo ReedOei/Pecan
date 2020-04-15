@@ -82,7 +82,7 @@ def test_bounded_ostrowski_2():
     run_file('examples/test_bounded_ostrowski_2.pn')
 
 def test_parse_not_precedence():
-    run_file('examples/test_bounded_ostrowski_2.pn')
+    run_file('examples/test_parse_not_precedence.pn')
 
 def test_quant_multiple_vars():
     run_file('examples/test_quant_multiple_vars.pn')

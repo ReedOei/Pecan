@@ -19,6 +19,18 @@ class FreeVars(IRTransformer):
         self.free_vars -= set(v.var_name for v in node.var_refs)
         return res
 
+    def transform_FunctionExpression(self, node: FunctionExpression):
+        new_name = self.transform(node.pred_name)
+        new_args = []
+        for i, arg in enumerate(node.args):
+            # Don't look at the output result, it'll get quantified away
+            if i == node.val_idx:
+                new_args.append(arg)
+            else:
+                new_args.append(self.transform(arg))
+
+        return FunctionExpression(new_name, new_args, node.val_idx).with_type(node.get_type())
+
     def transform_Conjunction(self, node):
         newA = super().transform(node.a)
         save = set(self.free_vars)

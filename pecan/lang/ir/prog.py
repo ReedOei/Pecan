@@ -172,11 +172,11 @@ class Call(IRPredicate):
     def with_args(self, new_args):
         return Call(self.name, new_args)
 
-    def insert_first(self, new_arg):
-        return Call(self.name, [new_arg] + self.args)
+    def add_arg(self, new_arg):
+        return Call(self.name, self.args + [new_arg]).with_type(self.get_type())
 
-    def subs_first(self, new_arg):
-        return self.with_args([new_arg] + self.args[1:])
+    def subs_last(self, new_arg):
+        return self.with_args(self.args[:-1] + [new_arg]).with_type(self.get_type())
 
     def evaluate_node(self, prog):
         # We may need to compute some values for the args
@@ -267,18 +267,19 @@ class NamedPred(IRNode):
     def call(self, prog, arg_names=None):
         prog.enter_scope(dict(self.restriction_env))
 
-        if self.body_evaluated is None:
-            self.body_evaluated = self.body.evaluate(prog).relabel()
+        try:
+            if self.body_evaluated is None:
+                self.body_evaluated = self.body.evaluate(prog).relabel()
 
-        if not arg_names:
-            result = self.body_evaluated
-        else:
-            subs_dict = {arg.var_name: name.var_name for arg, name in zip(self.args, arg_names)}
-            result = self.body_evaluated.substitute(subs_dict, prog.get_var_map())
-
-        prog.exit_scope()
-
-        return result
+            if not arg_names:
+                return self.body_evaluated
+            else:
+                if len(arg_names) < len(self.args):
+                    raise Exception('Not enough arugments for {}. Expected {}, got {}'.format(self.name, len(self.args), len(arg_names)))
+                subs_dict = {arg.var_name: name.var_name for arg, name in zip(self.args, arg_names)}
+                return self.body_evaluated.substitute(subs_dict, prog.get_var_map())
+        finally:
+            prog.exit_scope()
 
     def __repr__(self):
         if self.body_evaluated is None:
@@ -300,6 +301,7 @@ class Program(IRNode):
         self.preds = kwargs.get('preds', {})
         self.context = kwargs.get('context', {})
         self.restrictions = kwargs.get('restrictions', [{}])
+        self.global_restrictions = kwargs.get('global_restrictions', {})
         self.types = kwargs.get('types', {})
         self.eval_level = kwargs.get('eval_level', 0)
         self.result = kwargs.get('result', None)
@@ -386,6 +388,8 @@ class Program(IRNode):
         self.praline_aliases.update(other_prog.praline_aliases)
 
     def declare_type(self, pred_ref, val_dict):
+        # print('declare_type', type(pred_ref))
+        # input()
         self.types[pred_ref] = val_dict
 
     def type_infer(self, node):
@@ -405,7 +409,7 @@ class Program(IRNode):
             transformed_def = TypedIRLowering(self).transform(self.type_infer(d))
 
             settings.log(1, lambda: 'Lowered IR:')
-            settings.log(1, lambda: prog)
+            settings.log(1, lambda: transformed_def)
 
             if settings.opt_enabled():
                 settings.log(1, lambda: '[DEBUG] Performing typed optimization on: {}'.format(d.name))
@@ -445,7 +449,7 @@ class Program(IRNode):
                     succeeded = False
                     msgs.append(result.message())
 
-            self.idx += 1
+            self.idx += 1 + self.emit_offset
 
             self.exit_var_map_scope()
 
@@ -464,6 +468,19 @@ class Program(IRNode):
     def forget(self, var_name):
         self.restrictions[-1].pop(var_name)
 
+    def forget_global(self, var_name):
+        self.global_restrictions.pop(var_name)
+
+    def global_restrict(self, var_name, pred):
+        if pred is not None and pred not in self.get_restrictions(var_name):
+            if type(pred) is not Call or not pred.args:
+                raise Exception('Unexpected predicate used as restriction (must be Call with the first argument as the variable to restrict): {}'.format(pred))
+
+            if var_name in self.global_restrictions:
+                self.global_restrictions[var_name].append(pred)
+            else:
+                self.global_restrictions[var_name] = [pred]
+
     def restrict(self, var_name, pred):
         if pred is not None and pred not in self.get_restrictions(var_name):
             if type(pred) is not Call or not pred.args:
@@ -476,9 +493,8 @@ class Program(IRNode):
 
     def get_restriction_env(self):
         result = {}
-
-        for restriction_set in self.restrictions:
-            result.update(restriction_set)
+        result.update(self.global_restrictions)
+        result.update(self.restrictions[-1])
 
         return result
 
@@ -501,10 +517,10 @@ class Program(IRNode):
 
     def get_restrictions(self, var_name: str):
         result = []
-        for scope in self.restrictions:
-            for r in scope.get(var_name, []):
-                if not r in result:
-                    result.append(r)
+        # for scope in self.restrictions:
+        for r in self.restrictions[-1].get(var_name, []) + self.global_restrictions.get(var_name, []):
+            if not r in result:
+                result.append(r)
         return result
 
     def call(self, pred_name, args=None):
@@ -568,6 +584,7 @@ class Program(IRNode):
         for t in self.types:
             restriction = arg.get_type().restrict(arg)
             if self.try_unify_type(restriction, t.restrict(arg), unification):
+                # print(type(t), restriction, t.restrict(arg), unification)
                 if pred_name in self.types[t]:
                     return self.types[t][pred_name].match()
                 else:
@@ -587,6 +604,10 @@ class Program(IRNode):
         # There will always be at least one match because there should always be
         # at least one argument, so no need for an initial value
         final_match = reduce(lambda a, b: a.unify(b), matches, Match(match_any=True))
+
+        # print(unification)
+        # print(final_match)
+        # input()
 
         # Match any means that we didn't find any type-specific matches
         if final_match.match_any:
@@ -638,7 +659,7 @@ class Restriction(IRNode):
 
     def evaluate(self, prog):
         for var in self.restrict_vars:
-            prog.restrict(var.var_name, self.pred.insert_first(var))
+            prog.global_restrict(var.var_name, self.pred.add_arg(var))
 
     def transform(self, transformer):
         return transformer.transform_Restriction(self)

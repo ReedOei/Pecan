@@ -29,6 +29,10 @@ class BooleanOptimizer(BasicOptimizer):
             self.changed = True
             return BoolConst(not node.a.bool_val)
 
+        elif type(node.a) is Annotation:
+            self.changed = True
+            return Annotation(node.a.annotation_name, self.transform(Complement(node.a.body)))
+
         else:
             return super().transform_Complement(node)
 
