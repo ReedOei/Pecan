@@ -1,6 +1,0 @@
-[submodule "foma"]
-	path = foma
-	url = https://github.com/mhulden/foma
-[submodule "PySimpleAutomata"]
-	path = PySimpleAutomata
-	url = https://github.com/Oneiroe/PySimpleAutomata
