@@ -8,6 +8,17 @@ zero(x) := "G(!x)"
 Alias "Theorem" ==> Execute uncurry theoremCheck .
 Alias "Display" ==> Execute print .
 Alias "Example" ==> Display uncurry example .
+Alias "Prove" ==> Execute proveStatement .
+
+// This just exists so we can write Prove that
+Define that x := x.
+
+Define proveStatement t :=
+    if check t then
+        print "Success!"
+    else
+        print "Failure!"
+    .
 
 x is any := true
 x is nat := finite_num(x)
@@ -217,7 +228,8 @@ Define natFormat var reps :=
         if cycle = [0] then
             (var, if isEmpty prefix then "0" else toString (fromBinary prefix))
         else
-            stdFormat var prefix cycle ^ " (NOT A VALID NATURAL NUMBER)"
+            let (v, [str]) := stdFormat var [(prefix, cycle)] in
+                (v, str ^ " (NOT A VALID NATURAL NUMBER)")
     end.
 
 Define uncurry f p := match p with case (a, b) => f a b end .

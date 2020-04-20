@@ -30,6 +30,10 @@ class Annotation(IRPredicate):
             return self.body.evaluate(prog).simplify_states()
         elif self.annotation_name == '@simplify_edges':
             return self.body.evaluate(prog).simplify_edges()
+        elif self.annotation_name == '@merge_states':
+            return self.body.evaluate(prog).merge_states()
+        elif self.annotation_name == '@merge_edges':
+            return self.body.evaluate(prog).merge_edges()
         # elif self.annotation_name == '@minimize':
         #     return self.body.evaluate(prog).minimize()
         else:
