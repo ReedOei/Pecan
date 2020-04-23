@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+set -ex
+
+fname="$1"
+
+autfilt --stats="states: %S, edges: %E" "$fname"
+
+for level in "low" "medium" "high"; do
+    for typ in "small" "det"; do
+        for acc in "any" "ba"; do
+            new_name="${fname}_${acc}_${typ}_${level}.aut"
+            time autfilt "--$acc" "--$level" "--$typ" "$fname" > "$new_name"
+            autfilt --stats="states: %S, edges: %E" "$new_name"
+        done
+    done
+done
+

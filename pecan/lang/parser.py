@@ -92,6 +92,9 @@ class PecanTransformer(Transformer):
     def praline_match_tuple(self, *args):
         return PralineMatchTuple(list(args))
 
+    def praline_match_pecan(self, pecan_term):
+        return PralineMatchPecan(pecan_term)
+
     praline_match_string = PralineMatchString
     praline_match_var = PralineMatchVar
     praline_pecan_term = PralinePecanTerm

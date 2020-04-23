@@ -63,6 +63,12 @@ class Automaton:
     def simplify_states(self):
         return self
 
+    def merge_edges(self):
+        return self
+
+    def merge_states(self):
+        return self
+
     # Allows conversion between types of automata, if desired
     def custom_convert(self, other):
         raise NotImplementedError

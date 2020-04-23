@@ -86,7 +86,8 @@ class Settings:
             before = self.should_load_stdlib()
             before_quiet = self.is_quiet()
             try:
-                self.set_load_stdlib(False) # Don't want to load stdlib while loading stdlib
+                # Don't want to load stdlib while loading stdlib
+                self.set_load_stdlib(False)
                 self.set_quiet(True)
 
                 if self.stdlib_prog is None:
