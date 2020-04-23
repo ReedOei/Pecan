@@ -5,21 +5,6 @@
 finite_num(x) := "F(G(!x))"
 zero(x) := "G(!x)"
 
-Alias "Theorem" ==> Execute uncurry theoremCheck .
-Alias "Display" ==> Execute print .
-Alias "Example" ==> Display uncurry example .
-Alias "Prove" ==> Execute proveStatement .
-
-// This just exists so we can write Prove that
-Define that x := x.
-
-Define proveStatement t :=
-    if check t then
-        print "Success!"
-    else
-        print "Failure!"
-    .
-
 x is any := true
 x is nat := finite_num(x)
 // binary is, for the moment, a synonym for nat; eventually we may decouple the two
@@ -364,5 +349,32 @@ Define isFunction $FUNC $DOMAIN $CODOMAIN :=
     let $Y := freshVar in
     let $Z := freshVar in do
         theoremCheck $EXIST_NAME { forall $X is $DOMAIN. exists $Y is $CODOMAIN. $FUNC($X, $Y) };
-        theoremCheck $UNIQUE_NAME { forall $X is $DOMAIN. forall $Y, $Z is $CODOMAIN. if $FUNC($X, $Y) & $FUNC($X, $Z) then $Y = $Z } .
+        theoremCheck $UNIQUE_NAME { forall $X is $DOMAIN. forall $Y, $Z are $CODOMAIN. if $FUNC($X, $Y) & $FUNC($X, $Z) then $Y = $Z } .
+
+Alias "Theorem" ==> Execute uncurry theoremCheck .
+Alias "Display" ==> Execute print .
+
+Alias "Example" ==> Display uncurry example .
+// This just exists so you can write "Example using ostrowskiFormat of { term }."
+Define using format of term := (format, term) .
+
+Alias "Prove" ==> Execute proveStatement .
+// This just exists so we can write "Prove that { term } ."
+Define that x := x.
+
+Define proveStatement t :=
+    if check t then
+        print "Success!"
+    else
+        print "Failure!"
+    .
+
+Alias "Forget" ==> Execute forgetAll .
+Define forgetAll vars :=
+    match vars with
+    case [] => true
+    case x :: xs => do
+        emit { #forget(x) };
+        forgetAll xs
+    end.
 

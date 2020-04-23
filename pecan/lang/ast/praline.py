@@ -270,7 +270,18 @@ class PralineMatchVar(PralineMatchPat):
         return transformer.transform_PralineMatchVar(self)
 
     def show(self):
-        return '{}'.format(self.var)
+        return 'PralineMatchVar({})'.format(self.var)
+
+class PralineMatchPecan(PralineMatchPat):
+    def __init__(self, pecan_term):
+        super().__init__()
+        self.pecan_term = pecan_term
+
+    def transform(self, transformer):
+        return transformer.transform_PralineMatchPecan(self)
+
+    def show(self):
+        return 'PralineMatchPecan({})'.format(self.pecan_term)
 
 class PralineIf(PralineTerm):
     def __init__(self, cond, e1, e2):
@@ -292,6 +303,9 @@ class PralinePecanTerm(PralineTerm):
 
     def transform(self, transformer):
         return transformer.transform_PralinePecanTerm(self)
+
+    def build_match(self):
+        return PralineMatchPecan(self)
 
     def show(self):
         return '{{ {} }}'.format(self.pecan_term)

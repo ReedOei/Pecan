@@ -15,7 +15,8 @@ let b:current_syntax = "pecan"
 syntax keyword keywords is are forall exists not or and if then match end case else only with let in be do iff
 syntax match keyword_op '∀\|∃'
 syntax keyword bool true false sometimes
-syntax keyword directive that save_aut save_aut_img save_pred context end_context load assert_prop import forget accepting_word shuffle defining
+syntax keyword directive save_aut save_aut_img save_pred context end_context load assert_prop import forget accepting_word shuffle defining
+syntax keyword directive that using of
 syntax match directiveOp '#'
 
 " syntax keyword praline_directive Alias Example Display Execute Define

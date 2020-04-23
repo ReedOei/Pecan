@@ -86,12 +86,9 @@ class BuchiAutomaton(Automaton):
         return merge(spot.product_or, self, other)
 
     def complement(self):
-        # if settings.get_simplication_level() > 0:
-        #     self.postprocess()
-        #     self.save('postprocessed-{}.aut'.format(BuchiAutomaton.fresh_ap()))
-        res = BuchiAutomaton(spot.complement(self.get_aut()), self.var_map)
-        # res.save('it-worked-{}.aut'.format(BuchiAutomaton.fresh_ap()))
-        return res
+        if settings.get_simplication_level() > 0:
+            self.postprocess()
+        return BuchiAutomaton(spot.complement(self.get_aut()), self.var_map)
 
     def relabel(self):
         level_before = settings.get_simplication_level()
@@ -185,7 +182,8 @@ class BuchiAutomaton(Automaton):
         result = self.ap_project(aps)
 
         if settings.get_simplication_level() > 0:
-            result = result.postprocess()
+            result.merge_states()
+            result.postprocess()
 
         for var_name in pecan_var_names:
             # It may not be there (e.g., it's perfectly valid to do "exists x. y = y", even if it's pointless)
@@ -215,10 +213,6 @@ class BuchiAutomaton(Automaton):
 
         res_aut = remover.strip(self.get_aut())
 
-        # res_aut = self.aut
-        # for ap in aps:
-        #     res_aut = buchi_transform(res_aut, BuchiProjection(res_aut, ap))
-
         return BuchiAutomaton(res_aut, self.get_var_map())
 
     def is_empty(self):
@@ -227,7 +221,7 @@ class BuchiAutomaton(Automaton):
     def truth_value(self):
         if self.aut.is_empty(): # If we accept nothing, we are false
             return 'false'
-        elif spot.complement(self.aut).is_empty(): # If our complement accepts nothing, we accept everything, so we are true
+        elif self.complement().is_empty(): # If our complement accepts nothing, we accept everything, so we are true
             return 'true'
         else: # Otherwise, we are neither true nor false: i.e., not all variables have been eliminated
             return 'sometimes'
@@ -246,8 +240,7 @@ class BuchiAutomaton(Automaton):
         return self.aut
 
     def simplify_edges(self):
-        self.get_aut().merge_edges()
-        return self
+        return self.merge_edges()
 
     def simplify_states(self):
         self.get_aut().purge_dead_states()
@@ -258,10 +251,23 @@ class BuchiAutomaton(Automaton):
         self.aut = self.get_aut().scc_filter()
         settings.log(3, lambda: 'after scc_filter: {}'.format(self.num_states()))
 
-        if self.num_states() < 50000:
-            self.get_aut().merge_states()
-            settings.log(3, lambda: 'after merge_states: {}'.format(self.num_states()))
+        if self.num_states() < 10 & self.get_aut().is_deterministic():
+            self.aut = spot.sat_minimize(self.get_aut())
+            settings.log(3, lambda: 'after sat_minimize: {}'.format(self.num_states()))
 
+        # TODO: Remove this check once Spot has a faster merge_states
+        if self.num_states() < 50000:
+            self.merge_states()
+
+        return self
+
+    def merge_states(self):
+        self.get_aut().merge_states()
+        settings.log(3, lambda: 'after merge_states: {}'.format(self.num_states()))
+        return self
+
+    def merge_edges(self):
+        self.get_aut().merge_edges()
         return self
 
     def accepting_word(self):

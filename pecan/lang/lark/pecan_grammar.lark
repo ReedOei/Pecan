@@ -42,6 +42,7 @@ directive_name: /(?!(Define|Alias|Restrict)\b)[A-Z][a-zA-Z_0-9]*/
     | match_expr COLON COLON match_expr -> praline_match_prepend
     | "(" (match_expr ",")+ (match_expr)? ")" -> praline_match_tuple
     | "(" match_expr ")"
+    | pecan_term -> praline_match_pecan
 
 ?praline_operator: praline_operator operator_sym praline_operator -> praline_operator
                  | praline_arith
