@@ -164,6 +164,13 @@ Define boolToInt b := if b then 1 else 0 .
 Define check t := truthValue t = "true" .
 Define checkToInt := boolToInt ∘ check.
 Define showWord word := concatenate ∘ map (\i => checkToInt { word(i) }).
+// This is generally used if you want to do something like:
+// if holds { i < j } then ... else ...
+// We want to compare to not false, rather than true, because true will
+// implicity universally quantify over all the variables, whereas we have
+// defined specific values for them, so as long as the values that satisfy these definitions
+// the formula holds.
+// Just be sure that this applies in your specific case before you call this version.
 Define holds t := truthValue t != "false" .
 
 Define zipWith f a b :=

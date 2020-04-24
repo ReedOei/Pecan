@@ -223,7 +223,8 @@ class FunctionExpression(IRExpression):
     def evaluate_node(self, prog):
         return_val = VarRef(prog.fresh_name()).with_type(self.args[self.val_idx].get_type())
         self.args[self.val_idx] = return_val
-        return Call(self.pred_name, self.args).evaluate(prog), return_val
+        from pecan.lang.typed_ir_lowering import TypedIRLowering
+        return TypedIRLowering(prog).transform(Call(self.pred_name, self.args)).evaluate(prog), return_val
 
     # Transforms the function expression into a regular call, with the result going into the variable provided.
     # For example: if we have something like P() = x, we probably want to transform this into just P(x)

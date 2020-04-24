@@ -407,12 +407,13 @@ class Program(IRNode):
             settings.log(1, lambda: '[DEBUG] Type inference and IR lowering for: {}'.format(d.name))
             transformed_def = TypedIRLowering(self).transform(self.type_infer(d))
 
-            settings.log(1, lambda: 'Lowered IR:')
-            settings.log(1, lambda: transformed_def)
-
             if settings.opt_enabled():
                 settings.log(1, lambda: '[DEBUG] Performing typed optimization on: {}'.format(d.name))
                 transformed_def = Optimizer(self).optimize(transformed_def)
+
+            transformed_def = TypedIRLowering(self).transform(transformed_def)
+            settings.log(1, lambda: 'Lowered IR:')
+            settings.log(1, lambda: transformed_def)
 
             self.defs[i] = transformed_def
             self.preds[d.name] = self.defs[i]
