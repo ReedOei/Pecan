@@ -42,6 +42,35 @@ class VarRef(IRExpression):
     def __hash__(self):
         return hash((self.var_name, self.get_type()))
 
+class ExprLiteral(IRExpression):
+    def __init__(self, aut, var_ref, display_node=None):
+        super().__init__()
+        self.aut = aut
+        self.var_ref = var_ref
+        self.is_int = False
+        self.display_node = display_node
+
+    def evaluate(self, prog):
+        return self.aut, self.var_ref
+
+    def transform(self, transformer):
+        return transformer.transform_ExprLiteral(self)
+
+    def show(self):
+        return repr(self)
+
+    def __repr__(self):
+        if self.display_node is not None:
+            return 'ExprLiteral({}, {})'.format(repr(self.display_node), self.var_ref)
+        else:
+            return 'EXPRESSION LITERAL({})'.format(self.var_ref)
+
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.aut == other.aut and self.var_ref == other.var_ref
+
+    def __hash__(self):
+        return hash((self.aut, self.var_ref))
+
 class AutLiteral(IRPredicate):
     def __init__(self, aut, display_node=None):
         super().__init__()
@@ -179,35 +208,7 @@ class Call(IRPredicate):
         return self.with_args(self.args[:-1] + [new_arg]).with_type(self.get_type())
 
     def evaluate_node(self, prog):
-        # We may need to compute some values for the args
-        arg_preds = []
-        final_args = []
-        for arg in self.args:
-            # If it's not just a variable, we need to actually do something
-            if type(arg) is not VarRef:
-                # For some reason we need to import again here?
-                from pecan.lang.ir.arith import Equals, FunctionExpression
-
-                new_var = VarRef(prog.fresh_name()).with_type(arg.get_type())
-
-                aut, res_var = new_var.evaluate(prog)
-                arg_preds.append((Equals(arg, new_var), new_var))
-
-                final_args.append(new_var)
-            else:
-                final_args.append(arg)
-
-        if arg_preds:
-            from pecan.lang.ir.bool import Conjunction
-            from pecan.lang.ir.quant import Exists
-
-            final_pred = AutLiteral(prog.call(self.name, final_args), display_node=Call(self.name, final_args))
-            for pred, var in arg_preds:
-                final_pred = Exists([var], [None], Conjunction(pred, final_pred))
-
-            return final_pred.evaluate(prog)
-        else:
-            return prog.call(self.name, final_args)
+        return prog.call(self.name, self.args)
 
     def transform(self, transformer):
         return transformer.transform_Call(self)

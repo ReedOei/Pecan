@@ -356,6 +356,7 @@ Alias "Display" ==> Execute print .
 
 Alias "Example" ==> Display uncurry example .
 // This just exists so you can write "Example using ostrowskiFormat of { term }."
+Define of x := x .
 Define using format of term := (format, term) .
 
 Alias "Prove" ==> Execute proveStatement .

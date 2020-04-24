@@ -104,6 +104,9 @@ class IRTransformer:
     def transform_AutLiteral(self, node):
         return node
 
+    def transform_ExprLiteral(self, node):
+        return ExprLiteral(node.aut, self.transform(node.var_ref)).with_type(node.get_type())
+
     def transform_SpotFormula(self, node):
         return node
 

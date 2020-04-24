@@ -16,6 +16,33 @@ class TypedIRLowering(IRTransformer):
         super().__init__()
         self.current_program = current_program
 
+    def transform_Call(self, node):
+        # We may need to compute some values for the args
+        arg_preds = []
+        final_args = []
+        for arg in node.args:
+            # If it's not just a variable, we need to actually do something
+            if type(arg) is not VarRef:
+                # For some reason we need to import again here?
+                from pecan.lang.ir.arith import Equals, FunctionExpression
+
+                new_var = VarRef(self.current_program.fresh_name()).with_type(arg.get_type())
+                arg_preds.append((Equals(arg, new_var), new_var))
+
+                final_args.append(new_var)
+            else:
+                final_args.append(arg)
+
+        # from pecan.lang.ir.bool import Conjunction
+        # from pecan.lang.ir.quant import Exists
+        # from pecan.lang.ir.prog import Call
+
+        final_pred = Call(node.name, final_args)
+        for pred, var in arg_preds:
+            final_pred = Exists([var], [None], Conjunction(pred, final_pred))
+
+        return final_pred
+
     def transform_EqualsCompareRange(self, node):
         idx_var = VarRef(self.current_program.fresh_name()).with_type(node.index_a.start.get_type())
 
