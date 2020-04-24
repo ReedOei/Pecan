@@ -389,8 +389,6 @@ class Program(IRNode):
         self.praline_aliases.update(other_prog.praline_aliases)
 
     def declare_type(self, pred_ref, val_dict):
-        # print('declare_type', type(pred_ref))
-        # input()
         self.types[pred_ref] = val_dict
 
     def type_infer(self, node):
@@ -585,7 +583,6 @@ class Program(IRNode):
         for t in self.types:
             restriction = arg.get_type().restrict(arg)
             if self.try_unify_type(restriction, t.restrict(arg), unification):
-                # print(type(t), restriction, t.restrict(arg), unification)
                 if pred_name in self.types[t]:
                     return self.types[t][pred_name].match()
                 else:
@@ -605,10 +602,6 @@ class Program(IRNode):
         # There will always be at least one match because there should always be
         # at least one argument, so no need for an initial value
         final_match = reduce(lambda a, b: a.unify(b), matches, Match(match_any=True))
-
-        # print(unification)
-        # print(final_match)
-        # input()
 
         # Match any means that we didn't find any type-specific matches
         if final_match.match_any:

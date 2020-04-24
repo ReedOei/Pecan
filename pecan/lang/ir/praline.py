@@ -683,7 +683,6 @@ class PralinePecanTerm(PralineTerm):
 
         from pecan.lang.typed_ir_lowering import TypedIRLowering
         new_node = TypedIRLowering(prog).transform(prog.type_infer(temp_node))
-        print("NEW NODE FROM PRALINE IS:", new_node, new_node.get_type())
         return PralinePecanLiteral(new_node)
 
     def __eq__(self, other):

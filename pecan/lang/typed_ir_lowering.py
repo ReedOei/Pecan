@@ -33,10 +33,6 @@ class TypedIRLowering(IRTransformer):
             else:
                 final_args.append(arg)
 
-        # from pecan.lang.ir.bool import Conjunction
-        # from pecan.lang.ir.quant import Exists
-        # from pecan.lang.ir.prog import Call
-
         final_pred = Call(node.name, final_args)
         for pred, var in arg_preds:
             final_pred = Exists([var], [None], Conjunction(pred, final_pred))

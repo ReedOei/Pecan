@@ -177,10 +177,6 @@ class Equals(BinaryIRPredicate):
         if self.a.is_int and self.b.is_int:
             return BoolConst(self.a.evaluate_int(prog) == self.b.evaluate_int(prog)).evaluate(prog)
 
-        print(self.a, self.a.get_type())
-        print(self.b, self.a.get_type())
-        input('BLAH')
-
         (aut_a, val_a) = self.a.evaluate(prog)
         (aut_b, val_b) = self.b.evaluate(prog)
 
