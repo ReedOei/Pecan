@@ -59,6 +59,8 @@ Define a & b := if a then b else false.
 Define a | b := if a then true else b.
 
 Define a = b := equal a b.
+Define complement b := if b then false else true.
+Define a != b := complement (a = b) .
 Define a < b := compare a b = -1.
 Define a > b := compare a b = 1.
 Define a <= b := (a < b) | (a = b).
@@ -158,9 +160,11 @@ Define delete key := filter (\kv => fst kv != key).
 
 Define concatenate := foldl (\a b => a ^ toString b) "".
 
-Define boolToInt b := if b then 1 else 0.
+Define boolToInt b := if b then 1 else 0 .
+Define check t := truthValue t = "true" .
 Define checkToInt := boolToInt ∘ check.
 Define showWord word := concatenate ∘ map (\i => checkToInt { word(i) }).
+Define holds t := truthValue t != "false" .
 
 Define zipWith f a b :=
     match (a, b) with
