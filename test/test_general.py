@@ -75,8 +75,8 @@ def test_integers():
 def test_real():
     run_file('examples/test_real.pn')
 
-def test_zeckendorf():
-    run_file('examples/test_zeckendorf.pn')
+# def test_zeckendorf():
+#     run_file('examples/test_zeckendorf.pn')
 
 def test_bounded_ostrowski_2():
     run_file('examples/test_bounded_ostrowski_2.pn')

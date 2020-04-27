@@ -116,7 +116,12 @@ class AcceptingWord(Builtin):
         super().__init__(PralineVar('acceptingWord'), [PralineVar('pecanTerm')])
 
     def evaluate(self, prog):
-        acc_word = prog.praline_lookup('pecanTerm').evaluate(prog).get_term().evaluate(prog).accepting_word()
+        res = prog.praline_lookup('pecanTerm').evaluate(prog).get_term().evaluate(prog)
+
+        if isinstance(res, tuple):
+            acc_word = res[0].accepting_word()
+        else:
+            acc_word = res.accepting_word()
 
         result = PralineList(None, None)
         for var_name, vs in acc_word.items():
