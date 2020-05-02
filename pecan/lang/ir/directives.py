@@ -226,7 +226,7 @@ class DirectiveForget(IRNode):
         self.var_name = var_name
 
     def evaluate(self, prog):
-        prog.forget(self.var_name)
+        prog.forget_global(self.var_name)
         return None
 
     def transform(self, transformer):

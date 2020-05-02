@@ -1,6 +1,6 @@
 #import("integers.pn")
 
-#load("real/msd_bin_less.txt", "walnut", msd_bin_less(a, b))
+#load("real/msd_bin_less.aut", "hoa", msd_bin_less(a, b))
 #load("real/real_equal.txt", "pecan", real_equal(a, b))
 
 one_int(x) := "!x & X(x) & X(X(G(!x)))"
@@ -32,7 +32,8 @@ real_leq(a, b) := real_less(a, b) | a = b
 real_add_dif_sign(a, b, c) := negative(a) & positive(b) & ((real_less(b, negate(a)) & negate(real_add_same_sign(_, b, negate(a)), c)) |
                                                           (real_leq(negate(a), b) & real_add_same_sign(c, negate(a), b)))
 
-real_add(a, b, c) := (real_add_same_sign(a, b, c) | real_add_dif_sign(a, b, c) | real_add_dif_sign(b, a, c))
+real_add(a, b, c) := real_add_same_sign(a, b, c) | real_add_dif_sign(a, b, c) | real_add_dif_sign(b, a, c)
+// #load("real/real_add.aut", "hoa", real_add(a, b, c))
 
 Structure real defining {
     "adder": real_add(any, any, any),

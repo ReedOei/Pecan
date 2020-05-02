@@ -42,6 +42,35 @@ class VarRef(IRExpression):
     def __hash__(self):
         return hash((self.var_name, self.get_type()))
 
+class ExprLiteral(IRExpression):
+    def __init__(self, aut, var_ref, display_node=None):
+        super().__init__()
+        self.aut = aut
+        self.var_ref = var_ref
+        self.is_int = False
+        self.display_node = display_node
+
+    def evaluate(self, prog):
+        return self.aut, self.var_ref
+
+    def transform(self, transformer):
+        return transformer.transform_ExprLiteral(self)
+
+    def show(self):
+        return repr(self)
+
+    def __repr__(self):
+        if self.display_node is not None:
+            return 'ExprLiteral({}, {})'.format(repr(self.display_node), self.var_ref)
+        else:
+            return 'EXPRESSION LITERAL({})'.format(self.var_ref)
+
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.aut == other.aut and self.var_ref == other.var_ref
+
+    def __hash__(self):
+        return hash((self.aut, self.var_ref))
+
 class AutLiteral(IRPredicate):
     def __init__(self, aut, display_node=None):
         super().__init__()
@@ -172,42 +201,14 @@ class Call(IRPredicate):
     def with_args(self, new_args):
         return Call(self.name, new_args)
 
-    def insert_first(self, new_arg):
-        return Call(self.name, [new_arg] + self.args)
+    def add_arg(self, new_arg):
+        return Call(self.name, self.args + [new_arg]).with_type(self.get_type())
 
-    def subs_first(self, new_arg):
-        return self.with_args([new_arg] + self.args[1:])
+    def subs_last(self, new_arg):
+        return self.with_args(self.args[:-1] + [new_arg]).with_type(self.get_type())
 
     def evaluate_node(self, prog):
-        # We may need to compute some values for the args
-        arg_preds = []
-        final_args = []
-        for arg in self.args:
-            # If it's not just a variable, we need to actually do something
-            if type(arg) is not VarRef:
-                # For some reason we need to import again here?
-                from pecan.lang.ir.arith import Equals, FunctionExpression
-
-                new_var = VarRef(prog.fresh_name()).with_type(arg.get_type())
-
-                aut, res_var = new_var.evaluate(prog)
-                arg_preds.append((Equals(arg, new_var), new_var))
-
-                final_args.append(new_var)
-            else:
-                final_args.append(arg)
-
-        if arg_preds:
-            from pecan.lang.ir.bool import Conjunction
-            from pecan.lang.ir.quant import Exists
-
-            final_pred = AutLiteral(prog.call(self.name, final_args), display_node=Call(self.name, final_args))
-            for pred, var in arg_preds:
-                final_pred = Exists([var], [None], Conjunction(pred, final_pred))
-
-            return final_pred.evaluate(prog)
-        else:
-            return prog.call(self.name, final_args)
+        return prog.call(self.name, self.args)
 
     def transform(self, transformer):
         return transformer.transform_Call(self)
@@ -267,20 +268,19 @@ class NamedPred(IRNode):
     def call(self, prog, arg_names=None):
         prog.enter_scope(dict(self.restriction_env))
 
-        if self.body_evaluated is None:
-            self.body_evaluated = self.body.evaluate(prog).relabel()
+        try:
+            if self.body_evaluated is None:
+                self.body_evaluated = self.body.evaluate(prog).relabel()
 
-        if not arg_names:
-            result = self.body_evaluated
-        else:
-            if len(arg_names) < len(self.args):
-                raise Exception('Not enough arugments for {}. Expected {}, got {}'.format(self.name, len(self.args), len(arg_names)))
-            subs_dict = {arg.var_name: name.var_name for arg, name in zip(self.args, arg_names)}
-            result = self.body_evaluated.substitute(subs_dict, prog.get_var_map())
-
-        prog.exit_scope()
-
-        return result
+            if not arg_names:
+                return self.body_evaluated
+            else:
+                if len(arg_names) < len(self.args):
+                    raise Exception('Not enough arugments for {}. Expected {}, got {}'.format(self.name, len(self.args), len(arg_names)))
+                subs_dict = {arg.var_name: name.var_name for arg, name in zip(self.args, arg_names)}
+                return self.body_evaluated.substitute(subs_dict, prog.get_var_map())
+        finally:
+            prog.exit_scope()
 
     def __repr__(self):
         if self.body_evaluated is None:
@@ -302,6 +302,7 @@ class Program(IRNode):
         self.preds = kwargs.get('preds', {})
         self.context = kwargs.get('context', {})
         self.restrictions = kwargs.get('restrictions', [{}])
+        self.global_restrictions = kwargs.get('global_restrictions', {})
         self.types = kwargs.get('types', {})
         self.eval_level = kwargs.get('eval_level', 0)
         self.result = kwargs.get('result', None)
@@ -406,12 +407,13 @@ class Program(IRNode):
             settings.log(1, lambda: '[DEBUG] Type inference and IR lowering for: {}'.format(d.name))
             transformed_def = TypedIRLowering(self).transform(self.type_infer(d))
 
-            settings.log(1, lambda: 'Lowered IR:')
-            settings.log(1, lambda: transformed_def)
-
             if settings.opt_enabled():
                 settings.log(1, lambda: '[DEBUG] Performing typed optimization on: {}'.format(d.name))
                 transformed_def = Optimizer(self).optimize(transformed_def)
+
+            transformed_def = TypedIRLowering(self).transform(transformed_def)
+            settings.log(1, lambda: 'Lowered IR:')
+            settings.log(1, lambda: transformed_def)
 
             self.defs[i] = transformed_def
             self.preds[d.name] = self.defs[i]
@@ -466,6 +468,19 @@ class Program(IRNode):
     def forget(self, var_name):
         self.restrictions[-1].pop(var_name)
 
+    def forget_global(self, var_name):
+        self.global_restrictions.pop(var_name)
+
+    def global_restrict(self, var_name, pred):
+        if pred is not None and pred not in self.get_restrictions(var_name):
+            if type(pred) is not Call or not pred.args:
+                raise Exception('Unexpected predicate used as restriction (must be Call with the first argument as the variable to restrict): {}'.format(pred))
+
+            if var_name in self.global_restrictions:
+                self.global_restrictions[var_name].append(pred)
+            else:
+                self.global_restrictions[var_name] = [pred]
+
     def restrict(self, var_name, pred):
         if pred is not None and pred not in self.get_restrictions(var_name):
             if type(pred) is not Call or not pred.args:
@@ -478,9 +493,8 @@ class Program(IRNode):
 
     def get_restriction_env(self):
         result = {}
-
-        for restriction_set in self.restrictions:
-            result.update(restriction_set)
+        result.update(self.global_restrictions)
+        result.update(self.restrictions[-1])
 
         return result
 
@@ -503,10 +517,10 @@ class Program(IRNode):
 
     def get_restrictions(self, var_name: str):
         result = []
-        for scope in self.restrictions:
-            for r in scope.get(var_name, []):
-                if not r in result:
-                    result.append(r)
+        # for scope in self.restrictions:
+        for r in self.restrictions[-1].get(var_name, []) + self.global_restrictions.get(var_name, []):
+            if not r in result:
+                result.append(r)
         return result
 
     def call(self, pred_name, args=None):
@@ -640,7 +654,7 @@ class Restriction(IRNode):
 
     def evaluate(self, prog):
         for var in self.restrict_vars:
-            prog.restrict(var.var_name, self.pred.insert_first(var))
+            prog.global_restrict(var.var_name, self.pred.add_arg(var))
 
     def transform(self, transformer):
         return transformer.transform_Restriction(self)

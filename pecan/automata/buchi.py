@@ -86,6 +86,8 @@ class BuchiAutomaton(Automaton):
         return merge(spot.product_or, self, other)
 
     def complement(self):
+        if settings.get_simplication_level() > 0:
+            self.postprocess()
         return BuchiAutomaton(spot.complement(self.get_aut()), self.var_map)
 
     def relabel(self):
@@ -180,7 +182,8 @@ class BuchiAutomaton(Automaton):
         result = self.ap_project(aps)
 
         if settings.get_simplication_level() > 0:
-            result = result.postprocess()
+            result.merge_states()
+            result.postprocess()
 
         for var_name in pecan_var_names:
             # It may not be there (e.g., it's perfectly valid to do "exists x. y = y", even if it's pointless)
@@ -204,9 +207,11 @@ class BuchiAutomaton(Automaton):
         if self.aut.is_empty():
             return self.make_empty_aut()
 
-        res_aut = self.aut
+        remover = spot.remove_ap()
         for ap in aps:
-            res_aut = buchi_transform(res_aut, BuchiProjection(res_aut, ap))
+            remover.add_ap(ap)
+
+        res_aut = remover.strip(self.get_aut())
 
         return BuchiAutomaton(res_aut, self.get_var_map())
 
@@ -216,7 +221,7 @@ class BuchiAutomaton(Automaton):
     def truth_value(self):
         if self.aut.is_empty(): # If we accept nothing, we are false
             return 'false'
-        elif spot.complement(self.aut).is_empty(): # If our complement accepts nothing, we accept everything, so we are true
+        elif self.complement().is_empty(): # If our complement accepts nothing, we accept everything, so we are true
             return 'true'
         else: # Otherwise, we are neither true nor false: i.e., not all variables have been eliminated
             return 'sometimes'
@@ -235,8 +240,7 @@ class BuchiAutomaton(Automaton):
         return self.aut
 
     def simplify_edges(self):
-        self.get_aut().merge_edges()
-        return self
+        return self.merge_edges()
 
     def simplify_states(self):
         self.get_aut().purge_dead_states()
@@ -244,13 +248,25 @@ class BuchiAutomaton(Automaton):
         self.get_aut().purge_unreachable_states()
         settings.log(3, lambda: 'after purge_unreachable_states: {}'.format(self.num_states()))
 
-        if self.num_states() < 50000:
-            self.get_aut().merge_states()
-            settings.log(3, lambda: 'after merge_states: {}'.format(self.num_states()))
-
         self.aut = self.get_aut().scc_filter()
         settings.log(3, lambda: 'after scc_filter: {}'.format(self.num_states()))
 
+        if self.num_states() < 10 & self.get_aut().is_deterministic():
+            self.aut = spot.sat_minimize(self.get_aut())
+            settings.log(3, lambda: 'after sat_minimize: {}'.format(self.num_states()))
+
+        # if self.num_states() < 50000:
+        self.merge_states()
+
+        return self
+
+    def merge_states(self):
+        self.get_aut().merge_states()
+        settings.log(3, lambda: 'after merge_states: {}'.format(self.num_states()))
+        return self
+
+    def merge_edges(self):
+        self.get_aut().merge_edges()
         return self
 
     def accepting_word(self):
@@ -266,6 +282,11 @@ class BuchiAutomaton(Automaton):
             for f in spot.atomic_prop_collect(spot.bdd_to_formula(formula)):
                 var_names.append(f.ap_name())
 
+        for var, aps in self.var_map.items():
+            for ap in aps:
+                if not ap in var_names:
+                    var_names.append(ap)
+
         var_names = sorted(list(set(var_names)))
         prefixes = self.to_binary(var_names, acc_word.prefix)
         cycles = self.to_binary(var_names, acc_word.cycle)
@@ -277,6 +298,7 @@ class BuchiAutomaton(Automaton):
         result = {}
         for var, aps in self.var_map.items():
             result[var] = [ap_result[ap] for ap in aps]
+
         return result
 
     def to_binary(self, var_names, bdd_list):
@@ -316,7 +338,7 @@ class BuchiAutomaton(Automaton):
             settings.log(3, lambda: 'Postprocessing (before): {} states and {} edges'.format(self.num_states(), self.num_edges()))
             # Ensure that the automata we have is a Buchi (possible nondeterministic) automata
             self.aut = self.aut.postprocess('BA')
-            # if self.aut.num_states() > 500:
+            # if self.aut.num_states() > 300:
             #     self.aut = self.aut.postprocess('BA', 'Deterministic', 'Low')
             # elif self.aut.num_states() > 100:
             #     self.aut = self.aut.postprocess('BA', 'Deterministic', 'Medium')
@@ -408,25 +430,4 @@ class Substitution(Builder):
             # print('after ({} |-> {}), is now {}, was {}'.format(spot.bdd_to_formula(buddy.bdd_ithvar(var)), spot.bdd_to_formula(new_formula), spot.bdd_to_formula(cond), spot.bdd_to_formula(old)))
 
         return cond
-
-class BuchiProjection(Builder):
-    def __init__(self, aut, var_name):
-        super().__init__()
-        self.aut = aut
-        self.var_name = var_name
-        self.bdd_var = self.aut.register_ap(var_name)
-
-    def pre_build(self, new_aut):
-        for ap in self.aut.ap():
-            if ap.ap_name() != self.var_name:
-                new_aut.register_ap(ap)
-
-    def build_cond(self, cond):
-        if_0 = Substitution({self.bdd_var: buddy.bddfalse}).build_cond(cond)
-        if_1 = Substitution({self.bdd_var: buddy.bddtrue}).build_cond(cond)
-
-        # The new edge condition should be:
-        # [F/y]cond | [T/y]cond
-        # where cond is the original condition. That is, the edge is taken if it holds with y being false or y being true.
-        return if_0 | if_1
 

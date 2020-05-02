@@ -5,6 +5,7 @@ import argparse
 import colorama
 import readline
 import os
+import sys
 
 from pecan.lang.lark.parser import UnexpectedToken
 
@@ -35,7 +36,7 @@ def run_repl(env):
                         settings.set_debug_level(1 if settings.get_debug_level() <= 0 else 0)
             else:
                 prog = program.from_source(prog_str)
-                settings.log(0, prog)
+                settings.log(0, lambda: str(prog))
                 env = prog.evaluate(env)
         except KeyboardInterrupt:
             print('') # newline to go "below" the prompt
@@ -65,7 +66,6 @@ def main():
     if args.debug is None:
         settings.set_debug_level(0)
     else:
-        print(args.debug)
         settings.set_debug_level(args.debug)
 
     settings.set_quiet(args.quiet)
@@ -95,6 +95,9 @@ def main():
         run_repl(env)
 
 if __name__ == '__main__':
+    # Increase a little bit (default is 1000) because Praline is very inefficient.
+    sys.setrecursionlimit(2000)
+
     colorama.init()
     spot.setup()
     main()

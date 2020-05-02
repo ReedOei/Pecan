@@ -59,11 +59,11 @@ class Call(Predicate):
     def transform(self, transformer):
         return transformer.transform_Call(self)
 
-    def insert_first(self, new_arg):
-        return Call(self.name, [new_arg] + self.args)
-
     def with_args(self, new_args):
         return Call(self.name, new_args)
+
+    def add_arg(self, new_arg):
+        return Call(self.name, self.args + [new_arg])
 
     def show(self):
         return '{}({})'.format(self.name, ', '.join(map(repr, self.args)))
@@ -79,9 +79,9 @@ class NamedPred(ASTNode):
             if type(arg) is VarRef:
                 self.args.append(arg)
             elif type(arg) is Call:
-                var = arg.args[0]
+                var = arg.args[-1]
                 self.args.append(var)
-                self.arg_restrictions[var] = Restriction([var], arg.with_args(arg.args[1:]))
+                self.arg_restrictions[var] = Restriction([var], arg.with_args(arg.args[:-1]))
             else:
                 raise Exception("Argument '{}' is not: VarRef, or Call!".format(arg))
 

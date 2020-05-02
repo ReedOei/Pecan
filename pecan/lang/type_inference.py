@@ -45,12 +45,12 @@ class RestrictionType(Type):
 
     def restrict(self, var):
         if type(self.restriction) is Call:
-            return self.restriction.with_args(self.restriction.args[1:]).insert_first(var)
+            return self.restriction.subs_last(var)
         else:
-            return self.restriction.insert_first(var)
+            return self.restriction.add_arg(var)
 
     def __repr__(self):
-        return repr(self.restriction.with_args(self.restriction.args[1:]))
+        return repr(self.restriction)
 
     def __eq__(self, other):
         return other is not None and other.__class__ == self.__class__ and self.restriction == other.restriction
@@ -114,7 +114,7 @@ class TypeEnv:
                 if len(t_a.args) != len(t_b.args):
                     return None
 
-                for arg1, arg2 in zip(t_a.args[1:], t_b.args[1:]):
+                for arg1, arg2 in zip(t_a.args[:-1], t_b.args[:-1]):
                     if arg1.var_name != arg2.var_name:
                         return None
 
@@ -123,10 +123,9 @@ class TypeEnv:
                 # Unification didn't easily succeed, so drop down to actually using some theorem proving power to check
                 # if the types are compatible (e.g., subtyping check)
                 temp_var = VarRef(self.prog.fresh_name())
-                aut_a = t_a.subs_first(temp_var).evaluate(self.prog)
-                aut_b = t_b.subs_first(temp_var).evaluate(self.prog)
+                aut_a = t_a.subs_last(temp_var).evaluate(self.prog)
+                aut_b = t_b.subs_last(temp_var).evaluate(self.prog)
 
-                # TODO: Optimize by pulling out repeated computations
                 if aut_a.contains(aut_b) and aut_b.contains(aut_a):
                     return t_a
                 elif aut_a.contains(aut_b):
@@ -182,13 +181,17 @@ class TypeInferer(IRTransformer):
     def transform_IntConst(self, node: IntConst):
         return node.with_type(InferredType())
 
+    def transform_ExprLiteral(self, node: ExprLiteral):
+        new_var_ref = self.transform(node.var_ref)
+        return ExprLiteral(node.aut, new_var_ref).with_type(new_var_ref.get_type())
+
     def transform_VarRef(self, node: VarRef):
         if node.get_type() is not None:
             return node
         else:
             restrictions = self.prog.get_restrictions(node.var_name)
             if not node.var_name in self.type_env:
-                if restrictions:
+                if len(restrictions) > 0:
                     self.type_env[node.var_name] = RestrictionType(restrictions[-1]) # For now just use the last restriction
                 else:
                     self.type_env[node.var_name] = AnyType()

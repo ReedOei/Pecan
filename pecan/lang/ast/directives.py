@@ -107,7 +107,7 @@ class DirectiveStructure(ASTNode):
         if type(pred_ref) is VarRef:
             self.pred_ref = Call(pred_ref.var_name, [VarRef('*')])
         elif type(pred_ref) is Call:
-            self.pred_ref = Call(pred_ref.name, [VarRef('*')] + pred_ref.args)
+            self.pred_ref = pred_ref.add_arg(VarRef('*'))
         else:
             raise Exception('Pred ref {} is not a VarRef or Call'.format(pred_ref))
 

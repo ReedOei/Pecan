@@ -338,7 +338,7 @@ class PralineMatch(PralineTerm):
         eval_t = self.t.evaluate(prog)
 
         for arm in self.arms:
-            match_env = arm.match(eval_t)
+            match_env = arm.match(eval_t, prog)
 
             if match_env is not None:
                 prog.praline_local_define_all(match_env)
@@ -360,8 +360,8 @@ class PralineMatchArm(IRNode):
         self.pat = pat
         self.expr = expr
 
-    def match(self, term):
-        return self.pat.match(term)
+    def match(self, term, prog):
+        return self.pat.match(term, prog)
 
     def transform(self, transformer):
         return transformer.transform_PralineMatchArm(self)
@@ -384,7 +384,7 @@ class PralineMatchInt(PralineMatchPat):
         super().__init__()
         self.val = val
 
-    def match(self, term):
+    def match(self, term, prog):
         if term.is_int() and term.get_value() == self.val:
             return {}
         else:
@@ -402,12 +402,103 @@ class PralineMatchInt(PralineMatchPat):
     def __hash__(self):
         return hash((self.val))
 
+class PralineMatchPecan(PralineMatchPat):
+    def __init__(self, pecan_term):
+        super().__init__()
+        self.pecan_term = pecan_term
+
+    def match(self, term, prog):
+        evaluated_term = self.pecan_term.evaluate(prog)
+        if not isinstance(term, PralinePecanLiteral):
+            return None
+
+        return self.unify_terms(evaluated_term.pecan_term, term.pecan_term)
+
+    def unify_terms(self, term_a, term_b):
+        if term_a == None and term_b == None:
+            return {}
+
+        from pecan.lang.ir.prog import VarRef
+        if isinstance(term_a, VarRef):
+            return {term_a.var_name: term_b}
+
+        if type(term_a) is not type(term_b):
+            return None
+
+        if isinstance(term_a, UnaryIRExpression):
+            return self.unify_terms(term_a.a, term_b.a)
+        if isinstance(term_a, BinaryIRExpression):
+            return self.combine_unification(self.unify_terms(term_a.a, term_b.a), self.unify_terms(term_a.b, term_b.b))
+        if isinstance(term_a, UnaryIRPredicate):
+            return self.unify_terms(term_a.a, term_b.a)
+        if isinstance(term_a, BinaryIRPredicate):
+            return self.combine_unification(self.unify_terms(term_a.a, term_b.a), self.unify_terms(term_a.b, term_b.b))
+
+        from pecan.lang.ir.bool import BoolConst
+        if isinstance(term_a, BoolConst):
+            if term_a.bool_val == term_b.bool_val:
+                return {}
+            else:
+                return None
+
+        from pecan.lang.ir.quant import Exists
+        if isinstance(term_a, Exists):
+            unif = {}
+            for var_a, var_b in zip(term_a.var_refs, term_b.var_refs):
+                unif = self.combine_unification(unif, self.unify_terms(var_a, var_b))
+            for cond_a, cond_b in zip(term_a.conds, term_b.conds):
+                unif = self.combine_unification(unif, self.unify_terms(cond_a, cond_b))
+            return self.combine_unification(unif, self.unify_terms(term_a.pred, term_b.pred))
+
+        from pecan.lang.ir.prog import Call
+        if isinstance(term_a, Call):
+            unif = {}
+            # if term_a.name.startswith('$'):
+            #     unif[term_a.name] = PralineString(term_b.name)
+            if term_a.name != term_b.name:
+                return None
+
+            for arg_a, arg_b in zip(term_a.args, term_b.args):
+                unif = self.combine_unification(unif, self.unify_terms(arg_a, arg_b))
+            return unif
+
+        raise Exception('Unsupported Pecan term on LHS of a match arm: {}'.format(term_a))
+
+    def combine_unification(self, unif_a, unif_b):
+        unif = {}
+
+        for k, v in unif_a.items():
+            if k not in unif_b or unif_b[k] == v:
+                unif[k] = v
+            else:
+                return None
+
+        for k, v in unif_b.items():
+            if k not in unif_a or unif_a[k] == v:
+                unif[k] = v
+            else:
+                return None
+
+        return unif
+
+    def transform(self, transformer):
+        return transformer.transform_PralineMatchString(self)
+
+    def __repr__(self):
+        return 'PralineMatchPecan({})'.format(self.pecan_term)
+
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.pecan_term == other.pecan_term
+
+    def __hash__(self):
+        return hash(self.pecan_term)
+
 class PralineMatchString(PralineMatchPat):
     def __init__(self, val):
         super().__init__()
         self.val = val
 
-    def match(self, term):
+    def match(self, term, prog):
         if term.is_string() and term.get_value() == self.val:
             return {}
         else:
@@ -431,7 +522,7 @@ class PralineMatchList(PralineMatchPat):
         self.head = head
         self.tail = tail
 
-    def match(self, term):
+    def match(self, term, prog):
         if not type(term) is PralineList:
             return None
 
@@ -441,12 +532,12 @@ class PralineMatchList(PralineMatchPat):
             else:
                 return None
 
-        head_match_env = self.head.match(term.a)
+        head_match_env = self.head.match(term.a, prog)
 
         if head_match_env is None:
             return None
 
-        tail_match_env = self.tail.match(term.b)
+        tail_match_env = self.tail.match(term.b, prog)
 
         if tail_match_env is None:
             return None
@@ -484,7 +575,7 @@ class PralineMatchTuple(PralineMatchPat):
     def __hash__(self):
         return hash((self.vals))
 
-    def match(self, term):
+    def match(self, term, prog):
         if not type(term) is PralineTuple:
             return None
 
@@ -494,7 +585,7 @@ class PralineMatchTuple(PralineMatchPat):
         match_env = {}
 
         for pat, t in zip(self.vals, term.vals):
-            m = pat.match(t)
+            m = pat.match(t, prog)
             if m is None:
                 return None
             match_env.update(m)
@@ -506,7 +597,7 @@ class PralineMatchVar(PralineMatchPat):
         super().__init__()
         self.var = var
 
-    def match(self, term):
+    def match(self, term, prog):
         return {self.var: term}
 
     def transform(self, transformer):
@@ -590,7 +681,9 @@ class PralinePecanTerm(PralineTerm):
 
         temp_node = PralineToPecan().transform(IRSubstitution(prog.praline_env_clone()).transform(self.pecan_term))
 
-        return PralinePecanLiteral(prog.type_infer(temp_node))
+        from pecan.lang.typed_ir_lowering import TypedIRLowering
+        new_node = TypedIRLowering(prog).transform(prog.type_infer(temp_node))
+        return PralinePecanLiteral(new_node)
 
     def __eq__(self, other):
         return other is not None and type(other) is self.__class__ and self.pecan_term == other.pecan_term
@@ -635,8 +728,9 @@ class PralineLetPecan(PralineTerm):
     def evaluate(self, prog):
         result_node = self.pecan_term.evaluate(prog).evaluate(prog).pecan_term
 
-        from pecan.lang.ir.prog import AutLiteral
-        prog.praline_local_define(self.var_name, PralinePecanTerm(AutLiteral(result_node.evaluate(prog))))
+        from pecan.lang.ir.prog import ExprLiteral, VarRef
+        expr = ExprLiteral(result_node.evaluate(prog), VarRef(self.var_name))
+        prog.praline_local_define(self.var_name, PralinePecanTerm(expr).evaluate(prog))
         result = self.body.evaluate(prog)
         prog.praline_local_cleanup([self.var_name])
 

@@ -19,7 +19,7 @@ def to_ref(var_ref):
 
 def extract_var_cond(var_pred):
     if type(var_pred) is ir.Call:
-        return to_ref(var_pred.args[0]), var_pred
+        return to_ref(var_pred.args[-1]), var_pred
     else:
         return to_ref(var_pred), None
 
@@ -304,6 +304,9 @@ class ASTToIR(AstTransformer):
 
     def transform_PralineMatchVar(self, node):
         return ir.PralineMatchVar(self.transform(node.var))
+
+    def transform_PralineMatchPecan(self, node):
+        return ir.PralineMatchPecan(self.transform(node.pecan_term))
 
     def transform_PralineIf(self, node):
         return ir.PralineIf(self.transform(node.cond), self.transform(node.e1), self.transform(node.e2))

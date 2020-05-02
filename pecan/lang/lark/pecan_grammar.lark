@@ -1,7 +1,7 @@
 ?start: def* -> prog
 
 ?def: pred_definition
-    | "#" "save_aut" "(" string "," var ")" -> directive_save_aut
+    | "#" "save_aut" "(" ( string | var ) "," var ")" -> directive_save_aut
     | "#" "save_aut_img" "(" string "," var ")" -> directive_save_aut_img
     | "#" "context" "(" string "," string ")" -> directive_context
     | "#" "end_context" "(" string ")" -> directive_end_context
@@ -25,7 +25,7 @@ directive_name: /(?!(Define|Alias|Restrict)\b)[A-Z][a-zA-Z_0-9]*/
 
 ?term: "if" term "then" term "else" term -> praline_if
      | "\\" app _IMPLIES term -> praline_lambda
-     | "let" var "be" pecan_term "in" term -> praline_let_pecan
+     | "let" var "be" term "in" term -> praline_let_pecan
      | "let" match_expr _DEFEQ term "in" term -> praline_let
      | "match" term "with" (match_arm)+ "end" -> praline_match
      | "do" term (";" term)* [";"] -> praline_do
@@ -42,6 +42,7 @@ directive_name: /(?!(Define|Alias|Restrict)\b)[A-Z][a-zA-Z_0-9]*/
     | match_expr COLON COLON match_expr -> praline_match_prepend
     | "(" (match_expr ",")+ (match_expr)? ")" -> praline_match_tuple
     | "(" match_expr ")"
+    | pecan_term -> praline_match_pecan
 
 ?praline_operator: praline_operator operator_sym praline_operator -> praline_operator
                  | praline_arith
@@ -86,7 +87,7 @@ COLON: ":"
 
 ?praline_tuple: "(" (term ",")+ (term)? ")"
 
-?val_dict: "{" (kv_pair ("," kv_pair )*)? "}"
+val_dict: "{" (kv_pair ("," kv_pair )*)? "}"
 ?kv_pair: string COLON var "(" args ")" -> kv_pair
 
 ?restriction: varlist _IS var -> restrict_is

@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+set -x
+
+input_name="$1"
+
+var_map="$(grep "VAR_MAP" "$input_name")"
+
+if [[ -z "$var_map" ]]; then
+    fname="$input_name"
+else
+    fname="${input_name}_hoa.aut"
+    tail -n+2 "$input_name" > "$fname"
+fi
+
+autfilt --stats="states: %S, edges: %E" "$fname"
+
+for level in "low" "medium" "high"; do
+    for typ in "small" "det"; do
+        for acc in "any" "ba"; do
+            new_name="${fname}_${acc}_${typ}_${level}.aut"
+            time autfilt "--$acc" "--$level" "--$typ" "$fname" > "$new_name"
+            autfilt --stats="states: %S, edges: %E" "$new_name"
+
+            if [[ -n "$var_map" ]]; then
+                (
+                    echo "$var_map"
+                    cat "$new_name"
+                ) > temp
+                mv temp "$new_name"
+            fi
+        done
+    done
+done
+

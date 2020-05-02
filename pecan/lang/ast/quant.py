@@ -14,7 +14,7 @@ def to_ref(var_ref):
 
 def extract_var_cond(var_pred):
     if type(var_pred) is Call:
-        return to_ref(var_pred.args[0]), var_pred
+        return to_ref(var_pred.args[-1]), var_pred
     else:
         return to_ref(var_pred), None
 

@@ -5,10 +5,6 @@
 finite_num(x) := "F(G(!x))"
 zero(x) := "G(!x)"
 
-Alias "Theorem" ==> Execute uncurry theoremCheck .
-Alias "Display" ==> Execute print .
-Alias "Example" ==> Display uncurry example .
-
 x is any := true
 x is nat := finite_num(x)
 // binary is, for the moment, a synonym for nat; eventually we may decouple the two
@@ -63,6 +59,8 @@ Define a & b := if a then b else false.
 Define a | b := if a then true else b.
 
 Define a = b := equal a b.
+Define complement b := if b then false else true.
+Define a != b := complement (a = b) .
 Define a < b := compare a b = -1.
 Define a > b := compare a b = 1.
 Define a <= b := (a < b) | (a = b).
@@ -96,8 +94,11 @@ Define isEmpty l :=
 Define concat := flip (foldr cons).
 Define a @ b := concat a b.
 
+Define flatten := foldr (\a b => a @ b) [].
+
 Define length := foldl (\cur _ => cur + 1) 0.
 Define map f := foldr (\x rest => f x :: rest) [].
+Define flatMap f := flatten ∘ map f.
 Define filter f := foldr (\x rest => if f x then x :: rest else rest) [].
 
 Define all f := foldl (\a b => a & f b) true.
@@ -159,9 +160,18 @@ Define delete key := filter (\kv => fst kv != key).
 
 Define concatenate := foldl (\a b => a ^ toString b) "".
 
-Define boolToInt b := if b then 1 else 0.
+Define boolToInt b := if b then 1 else 0 .
+Define check t := truthValue t = "true" .
 Define checkToInt := boolToInt ∘ check.
 Define showWord word := concatenate ∘ map (\i => checkToInt { word(i) }).
+// This is generally used if you want to do something like:
+// if holds { i < j } then ... else ...
+// We want to compare to not false, rather than true, because true will
+// implicity universally quantify over all the variables, whereas we have
+// defined specific values for them, so as long as the values that satisfy these definitions
+// the formula holds.
+// Just be sure that this applies in your specific case before you call this version.
+Define holds t := truthValue t != "false" .
 
 Define zipWith f a b :=
     match (a, b) with
@@ -214,7 +224,8 @@ Define natFormat var reps :=
         if cycle = [0] then
             (var, if isEmpty prefix then "0" else toString (fromBinary prefix))
         else
-            stdFormat var prefix cycle ^ " (NOT A VALID NATURAL NUMBER)"
+            let (v, [str]) := stdFormat var [(prefix, cycle)] in
+                (v, str ^ " (NOT A VALID NATURAL NUMBER)")
     end.
 
 Define uncurry f p := match p with case (a, b) => f a b end .
@@ -313,6 +324,12 @@ Define withStates :=
         case (name, acc) => addState aut name acc
         end).
 
+Define withTransitions :=
+    foldl (\aut trans_info =>
+        match trans_info with
+        case (src, dst, sym) => addTransition aut src dst sym
+        end).
+
 Define genZero base :=
     let baseAut := withStates (mkAut ["n"] [base]) [("0", true)] in
     let finalAut := buildAut (addTransition baseAut "0" "0" "0") in
@@ -335,4 +352,41 @@ Define genEqual base :=
     let $EQUAL := "equal_" ^ toString base in
 
     emit { $EQUAL(n, m) := finalAut } .
+
+Define isFunction $FUNC $DOMAIN $CODOMAIN :=
+    let $EXIST_NAME := "exist_" ^ freshVar in
+    let $UNIQUE_NAME := "unique_" ^ freshVar in
+    let $X := freshVar in
+    let $Y := freshVar in
+    let $Z := freshVar in do
+        theoremCheck $EXIST_NAME { forall $X is $DOMAIN. exists $Y is $CODOMAIN. $FUNC($X, $Y) };
+        theoremCheck $UNIQUE_NAME { forall $X is $DOMAIN. forall $Y, $Z are $CODOMAIN. if $FUNC($X, $Y) & $FUNC($X, $Z) then $Y = $Z } .
+
+Alias "Theorem" ==> Execute uncurry theoremCheck .
+Alias "Display" ==> Execute print .
+
+Alias "Example" ==> Display uncurry example .
+// This just exists so you can write "Example using ostrowskiFormat of { term }."
+Define of x := x .
+Define using format of term := (format, term) .
+
+Alias "Prove" ==> Execute proveStatement .
+// This just exists so we can write "Prove that { term } ."
+Define that x := x.
+
+Define proveStatement t :=
+    if check t then
+        print "Success!"
+    else
+        print "Failure!"
+    .
+
+Alias "Forget" ==> Execute forgetAll .
+Define forgetAll vars :=
+    match vars with
+    case [] => true
+    case x :: xs => do
+        emit { #forget(x) };
+        forgetAll xs
+    end.
 

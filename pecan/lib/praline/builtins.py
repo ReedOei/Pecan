@@ -48,15 +48,13 @@ def as_python(val):
     else:
         raise Exception("Can't convert {} ({}) to a Python value".format(type(val), val))
 
-class Check(Builtin):
+class TruthValue(Builtin):
     def __init__(self):
-        super().__init__(PralineVar('check'), [PralineVar('t')])
+        super().__init__(PralineVar('truthValue'), [PralineVar('t')])
 
     def evaluate(self, prog):
         pecan_node = prog.praline_lookup('t').evaluate(prog).get_term()
-        result = pecan_node.evaluate(prog).truth_value()
-
-        return PralineBool(result == 'true')
+        return PralineString(pecan_node.evaluate(prog).truth_value())
 
 class ToString(Builtin):
     def __init__(self):
@@ -118,7 +116,12 @@ class AcceptingWord(Builtin):
         super().__init__(PralineVar('acceptingWord'), [PralineVar('pecanTerm')])
 
     def evaluate(self, prog):
-        acc_word = prog.praline_lookup('pecanTerm').evaluate(prog).get_term().evaluate(prog).accepting_word()
+        res = prog.praline_lookup('pecanTerm').evaluate(prog).get_term().evaluate(prog)
+
+        if isinstance(res, tuple):
+            acc_word = res[0].accepting_word()
+        else:
+            acc_word = res.accepting_word()
 
         result = PralineList(None, None)
         for var_name, vs in acc_word.items():
@@ -253,7 +256,7 @@ class Split(Builtin):
         return as_praline(s.split(sep))
 
 builtins = [
-    Check().definition(),
+    TruthValue().definition(),
     ToString().definition(),
     Split().definition(),
     PralinePrint().definition(),

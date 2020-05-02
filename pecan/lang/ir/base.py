@@ -142,10 +142,10 @@ class BinaryIRExpression(IRExpression):
 
         proj_vars = set()
 
-        if type(self.a) is not VarRef:
+        if not isinstance(self.a, VarRef):
             proj_vars.add(val_a)
 
-        if type(self.b) is not VarRef:
+        if not isinstance(self.b, VarRef):
             proj_vars.add(val_b)
 
         return aut.project(proj_vars, prog.get_var_map())
@@ -174,10 +174,10 @@ class BinaryIRPredicate(IRPredicate):
 
         proj_vars = set()
 
-        if type(self.a) is not VarRef:
+        if not isinstance(self.a, VarRef):
             proj_vars.add(val_a)
 
-        if type(self.b) is not VarRef:
+        if not isinstance(self.b, VarRef):
             proj_vars.add(val_b)
 
         return aut.project(proj_vars, prog.get_var_map())
