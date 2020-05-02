@@ -181,6 +181,10 @@ class TypeInferer(IRTransformer):
     def transform_IntConst(self, node: IntConst):
         return node.with_type(InferredType())
 
+    def transform_ExprLiteral(self, node: ExprLiteral):
+        new_var_ref = self.transform(node.var_ref)
+        return ExprLiteral(node.aut, new_var_ref).with_type(new_var_ref.get_type())
+
     def transform_VarRef(self, node: VarRef):
         if node.get_type() is not None:
             return node

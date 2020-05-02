@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-# Use z3 instead of PicoSAT
-export SPOT_SATSOLVER="z3 %I >%O"
-export SPOT_SATLOG="satlog.txt"
-autfilt --sat-minimize "$1"
-

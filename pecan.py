@@ -36,7 +36,7 @@ def run_repl(env):
                         settings.set_debug_level(1 if settings.get_debug_level() <= 0 else 0)
             else:
                 prog = program.from_source(prog_str)
-                settings.log(0, prog)
+                settings.log(0, lambda: str(prog))
                 env = prog.evaluate(env)
         except KeyboardInterrupt:
             print('') # newline to go "below" the prompt

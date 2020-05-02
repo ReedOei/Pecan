@@ -208,6 +208,9 @@ class AstTransformer:
     def transform_PralineMatchVar(self, node):
         return PralineMatchVar(self.transform(node.var))
 
+    def transform_PralineMatchPecan(self, node):
+        return PralineMatchPecan(self.transform(node.pecan_term))
+
     def transform_PralineIf(self, node):
         return PralineIf(self.transform(node.cond), self.transform(node.e1), self.transform(node.e2))
 

@@ -104,6 +104,9 @@ class IRTransformer:
     def transform_AutLiteral(self, node):
         return node
 
+    def transform_ExprLiteral(self, node):
+        return ExprLiteral(node.aut, self.transform(node.var_ref)).with_type(node.get_type())
+
     def transform_SpotFormula(self, node):
         return node
 
@@ -190,6 +193,9 @@ class IRTransformer:
 
     def transform_PralineMatchVar(self, node):
         return PralineMatchVar(self.transform(node.var))
+
+    def transform_PralineMatchPecan(self, node):
+        return PralineMatchPecan(self.transform(node.pecan_term))
 
     def transform_PralineIf(self, node):
         return PralineIf(self.transform(node.cond), self.transform(node.e1), self.transform(node.e2))

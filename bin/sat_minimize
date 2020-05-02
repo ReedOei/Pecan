@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+# Use z3 instead of PicoSAT
+export SPOT_SATSOLVER="z3 %I >%O"
+export SPOT_SATLOG="satlog.txt"
+
+if grep -q "VAR_MAP" "$1"; then
+    tail -n+2 "$1" | autfilt --sat-minimize > "temp_min.aut"
+
+    # Print out the new minimized automaton
+    grep "VAR_MAP" "$1"
+    cat "temp_min.aut"
+
+    rm "temp_min.aut"
+else
+    autfilt --sat-minimize "$1"
+fi
+

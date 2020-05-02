@@ -305,6 +305,9 @@ class ASTToIR(AstTransformer):
     def transform_PralineMatchVar(self, node):
         return ir.PralineMatchVar(self.transform(node.var))
 
+    def transform_PralineMatchPecan(self, node):
+        return ir.PralineMatchPecan(self.transform(node.pecan_term))
+
     def transform_PralineIf(self, node):
         return ir.PralineIf(self.transform(node.cond), self.transform(node.e1), self.transform(node.e2))
 

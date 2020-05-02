@@ -42,6 +42,35 @@ class VarRef(IRExpression):
     def __hash__(self):
         return hash((self.var_name, self.get_type()))
 
+class ExprLiteral(IRExpression):
+    def __init__(self, aut, var_ref, display_node=None):
+        super().__init__()
+        self.aut = aut
+        self.var_ref = var_ref
+        self.is_int = False
+        self.display_node = display_node
+
+    def evaluate(self, prog):
+        return self.aut, self.var_ref
+
+    def transform(self, transformer):
+        return transformer.transform_ExprLiteral(self)
+
+    def show(self):
+        return repr(self)
+
+    def __repr__(self):
+        if self.display_node is not None:
+            return 'ExprLiteral({}, {})'.format(repr(self.display_node), self.var_ref)
+        else:
+            return 'EXPRESSION LITERAL({})'.format(self.var_ref)
+
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.aut == other.aut and self.var_ref == other.var_ref
+
+    def __hash__(self):
+        return hash((self.aut, self.var_ref))
+
 class AutLiteral(IRPredicate):
     def __init__(self, aut, display_node=None):
         super().__init__()
@@ -179,35 +208,7 @@ class Call(IRPredicate):
         return self.with_args(self.args[:-1] + [new_arg]).with_type(self.get_type())
 
     def evaluate_node(self, prog):
-        # We may need to compute some values for the args
-        arg_preds = []
-        final_args = []
-        for arg in self.args:
-            # If it's not just a variable, we need to actually do something
-            if type(arg) is not VarRef:
-                # For some reason we need to import again here?
-                from pecan.lang.ir.arith import Equals, FunctionExpression
-
-                new_var = VarRef(prog.fresh_name()).with_type(arg.get_type())
-
-                aut, res_var = new_var.evaluate(prog)
-                arg_preds.append((Equals(arg, new_var), new_var))
-
-                final_args.append(new_var)
-            else:
-                final_args.append(arg)
-
-        if arg_preds:
-            from pecan.lang.ir.bool import Conjunction
-            from pecan.lang.ir.quant import Exists
-
-            final_pred = AutLiteral(prog.call(self.name, final_args), display_node=Call(self.name, final_args))
-            for pred, var in arg_preds:
-                final_pred = Exists([var], [None], Conjunction(pred, final_pred))
-
-            return final_pred.evaluate(prog)
-        else:
-            return prog.call(self.name, final_args)
+        return prog.call(self.name, self.args)
 
     def transform(self, transformer):
         return transformer.transform_Call(self)
@@ -388,8 +389,6 @@ class Program(IRNode):
         self.praline_aliases.update(other_prog.praline_aliases)
 
     def declare_type(self, pred_ref, val_dict):
-        # print('declare_type', type(pred_ref))
-        # input()
         self.types[pred_ref] = val_dict
 
     def type_infer(self, node):
@@ -408,12 +407,13 @@ class Program(IRNode):
             settings.log(1, lambda: '[DEBUG] Type inference and IR lowering for: {}'.format(d.name))
             transformed_def = TypedIRLowering(self).transform(self.type_infer(d))
 
-            settings.log(1, lambda: 'Lowered IR:')
-            settings.log(1, lambda: transformed_def)
-
             if settings.opt_enabled():
                 settings.log(1, lambda: '[DEBUG] Performing typed optimization on: {}'.format(d.name))
                 transformed_def = Optimizer(self).optimize(transformed_def)
+
+            transformed_def = TypedIRLowering(self).transform(transformed_def)
+            settings.log(1, lambda: 'Lowered IR:')
+            settings.log(1, lambda: transformed_def)
 
             self.defs[i] = transformed_def
             self.preds[d.name] = self.defs[i]
@@ -584,7 +584,6 @@ class Program(IRNode):
         for t in self.types:
             restriction = arg.get_type().restrict(arg)
             if self.try_unify_type(restriction, t.restrict(arg), unification):
-                # print(type(t), restriction, t.restrict(arg), unification)
                 if pred_name in self.types[t]:
                     return self.types[t][pred_name].match()
                 else:
@@ -604,10 +603,6 @@ class Program(IRNode):
         # There will always be at least one match because there should always be
         # at least one argument, so no need for an initial value
         final_match = reduce(lambda a, b: a.unify(b), matches, Match(match_any=True))
-
-        # print(unification)
-        # print(final_match)
-        # input()
 
         # Match any means that we didn't find any type-specific matches
         if final_match.match_any:
