@@ -5,7 +5,7 @@ from pecan import program
 from pecan.settings import settings
 
 def run_file(filename):
-    orig = settings.is_quiet()
+    orig_quiet = settings.is_quiet()
     settings.set_quiet(True)
 
     prog = program.load(filename)
@@ -105,4 +105,7 @@ def test_max_function():
 
 def test_inf_function():
     run_file('examples/test_inf_function.pn')
+
+def test_sup_function():
+    run_file('examples/test_sup_function.pn')
 

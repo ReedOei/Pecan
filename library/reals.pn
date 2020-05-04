@@ -21,7 +21,7 @@ real(x) := real_temp(x) & !negative_zero(x)
 #shuffle(default_equal(a, b), any2(a, b), integral_equal(a, b))
 #shuffle(any2(a, b), msd_bin_less(a, b), fractional_less(a, b))
 
-real_less(a, b) := integral_less(a, b) | (integral_equal(a, b) &
+real_less(a, b) := integral_less(a, b) | (integral_equal(a, b) & // integral_equal guarantees they have the same sign.
                                             ((negative(a) & negative(b) & fractional_less(b, a)) |
                                              (positive(a) & positive(b) & fractional_less(a, b))))
 
@@ -29,10 +29,10 @@ real_less(a, b) := integral_less(a, b) | (integral_equal(a, b) &
 
 real_leq(a, b) := real_less(a, b) | a = b
 
-real_add_dif_sign(a, b, c) := negative(a) & positive(b) & ((real_less(b, negate(a)) & negate(real_add_same_sign(_, b, negate(a)), c)) |
+real_add_neg_pos(a, b, c) := negative(a) & positive(b) & ((real_less(b, negate(a)) & negate(real_add_same_sign(_, b, negate(a)), c)) |
                                                           (real_leq(negate(a), b) & real_add_same_sign(c, negate(a), b)))
 
-real_add(a, b, c) := real_add_same_sign(a, b, c) | real_add_dif_sign(a, b, c) | real_add_dif_sign(b, a, c)
+real_add(a, b, c) := a is real & b is real & c is real & (real_add_same_sign(a, b, c) | real_add_neg_pos(a, b, c) | real_add_neg_pos(b, a, c))
 // #load("real/real_add.aut", "hoa", real_add(a, b, c))
 
 Structure real defining {
@@ -61,14 +61,16 @@ Define realFormatHelper sign cycleOffset prefix cycle :=
         let cycleFractional := if isEmpty cycleFractionalTemp then [0] else cycleFractionalTemp in
         let prefixIntegral := if isEmpty prefixIntegralTemp then [0] else prefixIntegralTemp in
         if all (= 0) cycleIntegral then
-            sign ^ concatenate prefixIntegral ^ "." ^ concatenate prefixFractional ^ "(" ^ concatenate cycleFractional ^ ")^ω"
+            sign ^ concatenate (reverse prefixIntegral) ^ "." ^ concatenate prefixFractional ^ "(" ^ concatenate cycleFractional ^ ")^ω"
         else
-            snd (stdFormat "" ((if sign = "+" then 0 else 1) :: prefix) cycle) ^ " (NOT A VALID REAL NUMBER)" ^ toString (prefixIntegral, cycleIntegral, prefixFractional, cycleFractional)
+            head (snd (stdFormat "" [(((if sign = "+" then 0 else 1) :: prefix), cycle)]))
+                ^ " (NOT A VALID REAL NUMBER)" ^ toString (prefixIntegral, cycleIntegral, prefixFractional, cycleFractional)
     end.
 
 Define realFormat var reps :=
     match reps with
-    case [(prefix, cycle)] =>
+    case [(actualPrefix, cycle)] =>
+        let prefix := if actualPrefix = [] then [0] else actualPrefix in
         (var,
             if isEmpty prefix then
                 realFormatHelper (if head cycle = 0 then "+" else "-") 1 (tail prefix) cycle
