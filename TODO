@@ -4,12 +4,12 @@ Long:
 
 Medium:
 - Rework finite automata to use a more efficient library (e.g., foma, which is currently a submodule but unused)
-
 - Try doing some of the fundamental automata operations (e.g., project, substitute) in C++ to speed things up a little bit
     - Lots of repeated calls into buddy/spot from python probably slow us down a lot on big automata
     - DONE FOR PROJECTION, because it was built-in
     - Should still do for substitution
-- Expand calls with expressions for arguments before interpretation so the optimizer can work on them
+
+Medium:
 - Improve optimization so that we don't need to do what we do in test_bounded_ostrowski_2
 - Improve CSE optimization so that we use `forall` or `exists` to reduce the number of complements, when valid.
     For example, we should optimize
@@ -33,15 +33,24 @@ Medium:
 - Expand the function expressions in typed ir lowering.
 - Implement some heuristics for smarter postprocessing?
     - For example, only do High/Deterministic or Small if the automaton is very small
+    - STATUS: Sort of done, but it doesn't work well enough to include in the general release.
 - Add a cache mode to predicates (or maybe an annotation?) so that we can save to disk and reload automatically instead of recomputing without having to save/load manually
 - Add the ability to make Praline builtins out of arbitrary Python functions
 - Add option to output intermediate results .
+- Add integer division
+- Remove FunctionExpression from the IR and make it into a PredicateExpr
+- Optmize PredicateExprs (e.g., if we have Expr(a, P) = b, make this into P[b/a])
+- See if we can remove anything from the TypedIRLowering (and therefore from the IR entirely) by using TypeHint
+- Standardize the usage of show/__repr__/__str__ in the code.
 
 Short:
 - Add a builtin to Praline that calls the optimizer
-- Move SpotFormula out of prog to keep the main program automata/library independent (replace this with a more general "Formula") operation.
 - Make all parsing functions in pecan.lang.parser into proper functions (b/c it gives better debug info)
-- Make converter warn when you try to use states that don't exist, but just map them to new, empty states
+- Make converter warn when you try to use states that don't exist, but keep going and just map them to new, empty states
+    - Also, add a setting to disable this in the context
 - Allow matching on booleans in Praline. Practically, this is useless (it's just an if expression), but it'd be nice to have for consistency's sake. Although this would let us compile if expressions into match-case expressions, which would simplify other stuff a tad.
 - Improve error messages when there is no accepting word.
+    - Right now it just crashes.
+- Move SpotFormula out of prog to keep the main program automata/library independent (replace this with a more general "Formula") operation.
+- (GOOD FIRST TASK): Update readme to the newer Pecan syntax
 

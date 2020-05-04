@@ -1,0 +1,22 @@
+Restrict i,j,k,n,m,p are binary.
+
+// The nth digit of the Thue-Morse Word, T, is 1 iff n in binary has an odd number of ones
+$T(n) := odd_ones(n)
+
+period(i,j,p) :=
+    p > 0 &
+    i is binary &
+    j is binary &
+    p is binary &
+    forall k.
+        if i <= k & k < j - p then $T[k] = $T[k+p]
+
+least_period(i,j,p) :=
+    period(i,j,p) &
+    forall m.
+        if period(i,j,m) then p <= m
+
+Theorem ("For every p, the Thue-Morse word has a factor with least period p.", {
+    forall p. if p > 0 then exists i,j. least_period(i,j,p)
+}).
+

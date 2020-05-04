@@ -1,0 +1,14 @@
+Restrict i, j, n are binary.
+
+// The nth digit of the Thue-Morse Word, T, is 1 iff n in binary has an odd number of ones
+$T(n) := odd_ones(n)
+
+square(i, n) := n > 0 & $T[i..i+n] = $T[i+n..i+2*n]
+Prove that { exists i,n. square(i, n) }.
+
+cube(i, n) := square(i, n) & square(i + n, n)
+Prove that { !(exists i,n. cube(i, n)) }.
+
+overlapping_square(i, n) := square(i,n) & $T[i] = $T[i+2*n]
+Prove that { !(exists i,n. overlapping_square(i, n)) }.
+

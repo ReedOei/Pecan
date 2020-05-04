@@ -1,20 +1,27 @@
 #import("reals.pn")
 
+Restrict x, y, delta are real.
+
+within(x, y, delta) := @postprocess[
+    abs(x - y) < delta
+]
+
 Define isContinuous f :=
+    let $IM_WITHIN := f ^ "_within" in
     let $THM := f ^ "_continuous" in do
-        emit { $THM() := @no_simplify[
-            forall x, eps are real.
+        emit { $THM() :=
+            forall x.
+            forall eps is real.
             if eps > 0 then
-                exists delt is real.
-                forall x0, y, y0, diff, fdiff are real. @simplify[@postprocess[
-                    if @postprocess[f(x, y) & f(x0, y0) & abs(x - x0, diff) & abs(y - y0, fdiff) & diff < delt] then
-                        fdiff < eps
-                ]]
-        ]};
+                exists delta.
+                forall x0 is real. @postprocess[
+                    if @postprocess[within(x, x0, delta)] then
+                        within(f(x), f(x0), eps)
+                ]
+        };
         emit { #assert_prop(true, $THM) }
     .
 
-Restrict x, y are real.
 f(x, y) := y = 2*x
 
 Execute isContinuous f.

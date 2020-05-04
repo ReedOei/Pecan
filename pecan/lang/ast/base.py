@@ -47,7 +47,16 @@ class Predicate(ASTNode):
     def __init__(self):
         super().__init__()
 
-    # The evaluate function returns an automaton representing the expression
-    def evaluate_node(self, prog):
-        return None # Should never be called on the base Predicate class
+class TypeHint(ASTNode):
+    def __init__(self, expr_a, expr_b, body):
+        super().__init__()
+        self.expr_a = expr_a
+        self.expr_b = expr_b
+        self.body = body
+
+    def transform(self, transformer):
+        return transformer.transform_TypeHint(self)
+
+    def __repr__(self):
+        return '(typ({}) = typ({}) in {})'.format(self.expr_a, self.expr_b, self.body)
 

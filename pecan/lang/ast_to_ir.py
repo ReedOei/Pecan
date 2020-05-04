@@ -230,6 +230,15 @@ class ASTToIR(AstTransformer):
         else:
             return ir.Call(node.name, new_args)
 
+    def transform_PredicateExpr(self, node):
+        # We need to set the expression depth to 0 because the predicate inside
+        # the node is NOT an expression, even if we are at the expression leve.
+        orig_depth = self.expr_depth
+        self.expr_depth = 0
+        res = ir.PredicateExpr(self.transform(VarRef(node.var_name)), self.transform(node.pred))
+        self.expr_depth = orig_depth
+        return res
+
     def transform_NamedPred(self, node):
         new_args = [self.transform(arg) for arg in node.args]
         new_restrictions = {self.transform(var): self.transform(restriction) for var, restriction in node.arg_restrictions.items()}
@@ -343,4 +352,7 @@ class ASTToIR(AstTransformer):
 
     def transform_Annotation(self, node):
         return ir.Annotation(node.annotation_name, self.transform(node.body))
+
+    def transform_TypeHint(self, node):
+        return ir.TypeHint(self.transform(node.expr_a), self.transform(node.expr_b), self.transform(node.body))
 
