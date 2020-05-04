@@ -175,6 +175,18 @@ class Neg(UnaryExpression): # Should this be allowed?
         assert self.is_int
         return -self.a.evaluate_int(prog)
 
+class PredicateExpr(Expression):
+    def __init__(self, var_name, pred):
+        super().__init__()
+        self.var_name = var_name
+        self.pred = pred
+
+    def transform(self, transformer):
+        return transformer.transform_PredicateExpr(self)
+
+    def show(self):
+        return 'Expr({}, {})'.format(self.var_name, self.pred)
+
 class AutomatonArithmeticError(Exception):
     pass
 

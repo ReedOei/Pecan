@@ -19,6 +19,11 @@ class FreeVars(IRTransformer):
         self.free_vars -= set(v.var_name for v in node.var_refs)
         return res
 
+    def transform_PredicateExpr(self, node):
+        res = self.transform(node.pred)
+        self.free_vars -= {node.label_var().var_name}
+        return res
+
     def transform_FunctionExpression(self, node: FunctionExpression):
         new_name = self.transform(node.pred_name)
         new_args = []

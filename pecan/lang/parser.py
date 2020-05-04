@@ -18,6 +18,43 @@ class PecanTransformer(Transformer):
     def varlist(self, *vals):
         return [VarRef(v) for v in vals]
 
+    def min_func(self, var_name, pred):
+        from pecan.lang.ast_substitution import ASTSubstitution
+        from pecan.lang.ir.base import IRNode
+        var = VarRef(var_name)
+        temp = VarRef(IRNode.fresh_name())
+        subs = {var_name: temp}
+        fresh_pred = ASTSubstitution(subs).transform(pred)
+        return PredicateExpr(var_name,
+                    TypeHint(temp, var,
+                        Conjunction(pred, Forall([temp], Implies(fresh_pred, GreaterEquals(var, temp))))))
+
+    def max_func(self, var_name, pred):
+        from pecan.lang.ast_substitution import ASTSubstitution
+        from pecan.lang.ir.base import IRNode
+        var = VarRef(var_name)
+        temp = VarRef(IRNode.fresh_name())
+        subs = {var_name: temp}
+        fresh_pred = ASTSubstitution(subs).transform(pred)
+        return PredicateExpr(var_name,
+                    TypeHint(temp, var,
+                        Conjunction(pred, Forall([temp], Implies(fresh_pred, GreaterEquals(var, temp))))))
+
+    def inf_func(self, var_name, pred):
+        from pecan.lang.ast_substitution import ASTSubstitution
+        from pecan.lang.ir.base import IRNode
+        var = VarRef(var_name)
+        temp = VarRef(IRNode.fresh_name())
+        subs = {var_name: temp}
+        fresh_pred = ASTSubstitution(subs).transform(pred)
+        lower_bound = TypeHint(temp, var, Forall([temp], Implies(fresh_pred, LessEquals(var, temp))))
+        return self.max_func(var_name, lower_bound)
+
+    # def sup_func(self, var_name, pred):
+    #     var = VarRef(var_name)
+    #     lower_bound = Forall([var], Implies(pred, LessEquals(res, var)))))
+    #     return self.max_func(var_name, lower_bound)
+
     def args(self, *args):
         return list(args)
 

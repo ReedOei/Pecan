@@ -150,6 +150,10 @@ varlist: var ("," var)*
      | "-" atom  -> neg
      | "(" arith ")"
      | call
+     | "min" "{" var ":" pred "}" -> min_func
+     | "max" "{" var ":" pred "}" -> max_func
+     | "inf" "{" var ":" pred "}" -> inf_func
+     | "sup" "{" var ":" pred "}" -> sup_func
      | ANNOTATION "[" pred "]" -> annotation
 
 args: (arg ("," arg)*)?
@@ -184,7 +188,7 @@ DISJ: "|" | "\\/" | "∨" | "or"
 ?forall_sym: "forall" | "∀"
 ?exists_sym: "exists" | "∃"
 
-VAR: /(?!(case|end|match|with|do|if|then|else|otherwise|iff|is|are|forall|exists|not|or|and|sometimes|true|false)\b)[a-z_$][\$a-zA-Z_0-9]*/
+VAR: /(?!(min|max|case|end|match|with|do|if|then|else|otherwise|iff|is|are|forall|exists|not|or|and|sometimes|true|false)\b)[a-z_$][\$a-zA-Z_0-9]*/
 
 ANNOTATION: /@[A-Za-z0-9_]+/
 

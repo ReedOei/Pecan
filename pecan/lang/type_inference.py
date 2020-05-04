@@ -4,6 +4,8 @@
 from pecan.lang.ir_transformer import IRTransformer
 from pecan.lang.ir import *
 
+from pecan.settings import settings
+
 class Type:
     def __init__(self):
         pass
@@ -85,8 +87,12 @@ class TypeEnv:
         # TODO: Replace these exceptions (and all the others) with something that's more appropriate (probably a
         #  custom exception type)
         if isinstance(type_a, InferredType):
+            if isinstance(a, VarRef):
+                self.type_env[a.var_name] = type_b
             return type_b
         elif isinstance(type_b, InferredType):
+            if isinstance(b, VarRef):
+                self.type_env[b.var_name] = type_a
             return type_a
         elif isinstance(type_a, AnyType) and isinstance(type_b, AnyType):
             return AnyType()
@@ -194,7 +200,7 @@ class TypeInferer(IRTransformer):
                 if len(restrictions) > 0:
                     self.type_env[node.var_name] = RestrictionType(restrictions[-1]) # For now just use the last restriction
                 else:
-                    self.type_env[node.var_name] = AnyType()
+                    self.type_env[node.var_name] = AnyType() # InferredType()
             return VarRef(node.var_name).with_type(self.type_env[node.var_name])
 
     def transform_Equals(self, node: Equals):
@@ -252,9 +258,13 @@ class TypeInferer(IRTransformer):
                 arg = temp_arg
 
             if formal.var_name in resolved_pred.restriction_env:
-                # TODO: We choose the "last" one, because there is generally only one, and the last one is usually the most specific. This is not always right, however.
+                # TODO: We choose the "last" one, because there is generally only one, and the last one is usually the most specific.
+                # TODO: However, this is perhaps not always the intended type; so we warn if there are multiple possible types
                 restrictions = resolved_pred.restriction_env[formal.var_name]
                 restriction = restrictions[-1]
+
+                # if len(set(restrictions)) > 1:
+                #     settings.log(lambda: f'[WARNING]: Multiple restrictions for {formal.var_name} found; arbitrarily choose the last one, which is {restriction} (all restrictions are {restrictions}).')
 
                 res_type = temp_type_env.unify(formal.with_type(RestrictionType(restriction)), arg)
                 final_args.append(arg.with_type(res_type))
@@ -262,6 +272,12 @@ class TypeInferer(IRTransformer):
                 final_args.append(arg)
 
         return Call(resolved_pred.name, final_args)
+
+    def transform_PredicateExpr(self, node):
+        # Need to make sure to transform the predicate first, because we may get type information out of doing that
+        new_var = self.transform(node.var)
+        new_pred = self.transform(node.pred)
+        return PredicateExpr(new_var, new_pred).with_type(new_var.get_type())
 
     def transform_NamedPred(self, node):
         self.prog.enter_scope(node.restriction_env)
@@ -293,4 +309,17 @@ class TypeInferer(IRTransformer):
             raise Exception('Missing output variable in resolved call: (was {}, resolved to {}, looking for {})'.format(node, new_call, out_var_ref))
 
         return FunctionExpression(new_call.name, new_call.args, new_idx).with_type(res_type)
+
+    def transform_TypeHint(self, node):
+        if isinstance(node.expr_a, VarRef):
+            if not node.expr_a.var_name in self.type_env:
+                b = self.transform(node.expr_b)
+                self.type_env[node.expr_a.var_name] = b.get_type()
+        else:
+            a = self.transform(node.a)
+            b = self.transform(node.b)
+            self.type_env.unify(a, b)
+
+        # Intentionally delete the TypeHint because we don't need it anymore
+        return self.transform(node.body)
 

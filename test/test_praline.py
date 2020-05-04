@@ -5,11 +5,14 @@ from contextlib import redirect_stdout
 import io
 
 from pecan import program
+from pecan.settings import settings
 
 def run_file(filename, expected_output):
+    orig = settings.is_quiet()
+    settings.set_quiet(True)
     f = io.StringIO()
     with redirect_stdout(f):
-        prog = program.load(filename, quiet=True)
+        prog = program.load(filename)
         assert prog.evaluate().result.succeeded()
     assert f.getvalue().strip() == expected_output.strip()
 

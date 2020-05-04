@@ -5,9 +5,13 @@ from pecan import program
 from pecan.settings import settings
 
 def run_file(filename):
+    orig = settings.is_quiet()
     settings.set_quiet(True)
+
     prog = program.load(filename)
     assert prog.evaluate().result.succeeded()
+
+    settings.set_quiet(orig_quiet)
 
 def test_praline_define_aut():
     run_file('examples/test_praline_define_aut.pn')
@@ -92,4 +96,13 @@ def test_annotations():
 
 def test_thue_morse_periods():
     run_file('examples/thue_morse_periods.pn')
+
+def test_min_function():
+    run_file('examples/test_min_function.pn')
+
+def test_max_function():
+    run_file('examples/test_max_function.pn')
+
+def test_inf_function():
+    run_file('examples/test_inf_function.pn')
 

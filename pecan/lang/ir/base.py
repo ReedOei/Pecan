@@ -199,3 +199,19 @@ class UnaryIRPredicate(IRPredicate):
     def __hash__(self):
         return hash(self.a)
 
+class TypeHint(IRNode):
+    def __init__(self, expr_a, expr_b, body):
+        super().__init__()
+        self.expr_a = expr_a
+        self.expr_b = expr_b
+        self.body = body
+
+    def transform(self, transformer):
+        return transformer.transform_TypeHint(self)
+
+    def show(self):
+        return repr(self)
+
+    def __repr__(self):
+        return '(typ({}) = typ({}) in {})'.format(self.expr_a, self.expr_b, self.body)
+
