@@ -90,3 +90,6 @@ def test_quant_multiple_vars():
 def test_annotations():
     run_file('examples/test_annotations.pn')
 
+def test_thue_morse_periods():
+    run_file('examples/thue_morse_periods.pn')
+
