@@ -24,7 +24,7 @@ real_add_same_sign_assoc() := forall x.
 can_sub_if_lt() := forall x. x is positive => forall y. (y is positive & real_less(y, x)) => exists w. real_add_same_sign(w, y, x)
 #assert_prop(true, can_sub_if_lt)
 
-real_add_neg_pos_closed() := forall x. forall y. (x is negative & x is real & y is positive) => exists z. real_add_neg_pos_closed(x, y, z)
+real_add_neg_pos_closed() := forall x. forall y. (x is negative & x is real & y is positive) => exists z. real_add_neg_pos(x, y, z)
 #assert_prop(true, real_add_neg_pos_closed)
 
 real_add_closed() := forall x. forall y. (x is real & y is real) => exists z. real_add(x, y, z)
