@@ -8,7 +8,7 @@ from pecan import program
 from pecan.settings import settings
 
 def run_file(filename, expected_output):
-    orig = settings.is_quiet()
+    orig_quiet = settings.is_quiet()
     settings.set_quiet(True)
 
     f = io.StringIO()
