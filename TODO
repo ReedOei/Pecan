@@ -3,6 +3,8 @@ Long:
     - Long because this may introduce new issues (including performance issues)
 
 Medium:
+- Rework finite automata to use a more efficient library (e.g., foma, which is currently a submodule but unused)
+
 - Try doing some of the fundamental automata operations (e.g., project, substitute) in C++ to speed things up a little bit
     - Lots of repeated calls into buddy/spot from python probably slow us down a lot on big automata
     - DONE FOR PROJECTION, because it was built-in

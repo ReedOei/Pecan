@@ -3,9 +3,6 @@
 
 import itertools as it
 
-import buddy
-import spot
-
 from pecan.automata.automaton import Automaton, FalseAutomaton
 from pecan.utility import VarMap
 from pecan.settings import settings
