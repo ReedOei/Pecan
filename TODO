@@ -3,13 +3,9 @@ Long:
     - Long because this may introduce new issues (including performance issues)
 
 Medium:
-- Rework finite automata to use a more efficient library (e.g., foma, which is currently a submodule but unused)
-- Try doing some of the fundamental automata operations (e.g., project, substitute) in C++ to speed things up a little bit
-    - Lots of repeated calls into buddy/spot from python probably slow us down a lot on big automata
-    - DONE FOR PROJECTION, because it was built-in
-    - Should still do for substitution
+- Simplify automata loading (e.g., format detection, unify the various loaders for pecan/walnut/hoa/finite automata)
 
-Medium:
+- Rework finite automata to use a more efficient library (e.g., foma, which is currently a submodule but unused)
 - Improve optimization so that we don't need to do what we do in test_bounded_ostrowski_2
 - Improve CSE optimization so that we use `forall` or `exists` to reduce the number of complements, when valid.
     For example, we should optimize

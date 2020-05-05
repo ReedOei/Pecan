@@ -8,6 +8,7 @@ from pecan.tools.walnut_converter import convert_aut
 from pecan.tools.hoa_loader import load_hoa
 from pecan.tools.labeled_aut_converter import convert_labeled_aut
 from pecan.tools.hoa_loader import load_hoa
+from pecan.tools.finite_loader import load_finite
 from pecan.automata.buchi import BuchiAutomaton
 from pecan.lang.ir import *
 
@@ -170,6 +171,8 @@ class DirectiveLoadAut(IRNode):
             aut = convert_aut(realpath, [v.var_name for v in self.pred.args])
         elif self.aut_format == 'pecan':
             aut = convert_labeled_aut(realpath, [v.var_name for v in self.pred.args])
+        elif self.aut_format == 'fsa-dict':
+            aut = load_finite(realpath, [v.var_name for v in self.pred.args])
         else:
             raise Exception('Unknown format: {}'.format(self.aut_format))
 

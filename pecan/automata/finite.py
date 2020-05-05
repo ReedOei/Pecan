@@ -15,7 +15,7 @@ class FiniteAutomaton(Automaton):
     fresh_counter = 0
     @staticmethod
     def fresh_ap():
-        label = f"var{FiniteAutomaton.fresh_counter}"
+        label = f"__finvar{FiniteAutomaton.fresh_counter}"
         FiniteAutomaton.fresh_counter += 1
         return label
 
@@ -35,7 +35,10 @@ class FiniteAutomaton(Automaton):
         elif aut.get_aut_type() == 'false':
             return cls.false_aut()
         else:
-            raise NotImplementedError
+            raise NotImplementedError('No known conversion from {} to NFA.'.format(aut.get_aut_type()))
+
+    def custom_convert(self, other):
+        return FiniteAutomaton.as_finite(other)
 
     @classmethod
     def true_aut(cls):
@@ -93,31 +96,39 @@ class FiniteAutomaton(Automaton):
         alphabets = list(range(len(new_var_map)))
         for v, (idx, alphabet) in new_var_map.items():
             alphabets[idx] = alphabet
-        new_alphabet = set(','.join(syms) for syms in it.product(*alphabets))
+
+        if len(alphabets) == 0:
+            new_alphabet = set()
+        else:
+            new_alphabet = set(' '.join(syms) for syms in it.product(*alphabets))
 
         new_transitions = {}
         for (src, sym), dsts in self.aut['transitions'].items():
             new_syms = list(range(len(new_var_map)))
 
             # Copy over the old symbols
-            syms = sym.split(',')
+            syms = sym.split(' ')
             for v, (idx, alphabet) in self.var_map.items():
-                new_syms[new_var_map[v][0]] = [syms[idx]]
+                # If a symbol isn't in the new map, just drop it
+                if v in new_var_map:
+                    new_syms[new_var_map[v][0]] = [syms[idx]]
 
             for v, (idx, alphabet) in new_var_map.items():
                 if not v in self.var_map:
                     new_syms[idx] = alphabet
 
             for new_sym in it.product(*new_syms):
-                new_transitions[(src, ','.join(new_sym))] = dsts
+                new_transitions[(src, ' '.join(new_sym))] = dsts
 
-        return {
+        # Rename all states because PySimpleAutomata can't union automata with the same state names...
+        # TODO: Probably very inefficient.
+        return NFA.rename_nfa_states({
             'alphabet': new_alphabet,
             'states': self.aut['states'],
             'initial_states': self.aut['initial_states'],
             'accepting_states': self.aut['accepting_states'],
             'transitions': new_transitions
-        }
+        }, FiniteAutomaton.fresh_ap())
 
     def conjunction(self, other):
         if self.special_attr == 'true' or other.special_attr == 'false':
@@ -126,68 +137,120 @@ class FiniteAutomaton(Automaton):
             return self
         else:
             aut_l, aut_r, new_var_map = self.augment_vars(other)
-            print(aut_l)
-            print(aut_r)
             return FiniteAutomaton(NFA.nfa_intersection(aut_l, aut_r), new_var_map)
 
     def disjunction(self, other):
-        aut_l = self.cross_prod(other)
-        aut_r = other.cross_prod(self)
-
-        return FiniteAutomaton(aut_l.aut & aut_r.aut, aut_l.var_map)
+        if self.special_attr == 'true' or other.special_attr == 'true':
+            return self
+        elif self.special_attr == 'false' or other.special_attr == 'false':
+            return other
+        else:
+            aut_l, aut_r, new_var_map = self.augment_vars(other)
+            return FiniteAutomaton(NFA.nfa_union(aut_l, aut_r), new_var_map)
 
     def complement(self):
-        return FiniteAutomaton(NFA.nfa_complementation(self.aut), self.var_map)
+        if self.special_attr == 'true':
+            return FiniteAutomaton.false_aut()
+        elif self.special_attr == 'false':
+            return FiniteAutomaton.true_aut()
+        else:
+            new_aut = NFA.nfa_complementation(self.aut)
+
+            # Convert to an NFA
+            new_aut['initial_states'] = {new_aut.pop('initial_state')}
+            new_aut['transitions'] = {k: [v] for k, v in new_aut.pop('transitions').items()}
+
+            return FiniteAutomaton(new_aut, self.var_map)
 
     def relabel(self):
         return self
 
     def substitute(self, arg_map, env_var_map):
-        new_var_map = VarMap()
-        ap_subs = {}
+        new_var_map = {}
+        unified = {}
 
         for formal_arg, actual_arg in arg_map.items():
-            # Get the aps for the formal argument in this automaton
-            formal_aps = self.var_map[formal_arg]
+            # If we see repeats, only keep the first in the var map, but we need to keep track so we can adjust transitions appropriately later
+            if actual_arg in new_var_map:
+                unified[formal_arg] = new_var_map[actual_arg][0]
+            else:
+                new_var_map[actual_arg] = self.var_map[formal_arg]
 
-            # Get the aps for the actual argument in the current environment
-            actual_aps = env_var_map.get_or_gen(actual_arg, self.fresh_ap, len(formal_aps))
+        alphabets = list(range(len(new_var_map)))
+        for v, (idx, alphabet) in new_var_map.items():
+            alphabets[idx] = alphabet
+        new_alphabet = set(' '.join(syms) for syms in it.product(*alphabets))
 
-            # Set up the substitutions we need to do
-            for formal_ap, actual_ap in zip(formal_aps, actual_aps):
-                ap_subs[formal_ap] = actual_ap
+        new_transitions = {}
+        for (src, sym), dsts in self.aut['transitions'].items():
+            # Check if we should keep this transition, meaning that all positions
+            # that were unified have the same letter for this transition
+            new_sym = list(range(len(new_var_map)))
+            keep = True
 
-            # Rename the formal arg to the actual arg, but leave the aps as the formal aps because that'll be done by `ap_substitute` below
-            new_var_map[actual_arg] = formal_aps
+            syms = sym.split(' ')
+            for v, (idx, alphabet) in self.var_map.items():
+                # If a symbol isn't in the new map, just drop it
+                if v in unified:
+                    keep &= syms[idx] == syms[unified[v]]
+                else:
+                    # Copy over the symbol, using the new name of the variable
+                    new_name = arg_map[v]
+                    new_sym[new_var_map[new_name][0]] = syms[idx]
 
-        # print('substitute()', arg_map, new_var_map, env_var_map, ap_subs)
+            if keep:
+                new_transitions[(src, ' '.join(new_sym))] = dsts
 
-        return BuchiAutomaton(self.aut, new_var_map).ap_substitute(ap_subs)
+        aut = {
+            'alphabet': new_alphabet,
+            'states': self.aut['states'],
+            'initial_states': self.aut['initial_states'],
+            'accepting_states': self.aut['accepting_states'],
+            'transitions': new_transitions
+        }
+
+        return FiniteAutomaton(aut, new_var_map)
 
     def project(self, var_refs, env_var_map):
         from pecan.lang.ir.prog import VarRef
-        aps = []
-        pecan_var_names = []
 
+        # print(self.to_str())
+        print(self.relabel_states().to_str())
+        # print(self.accepting_word())
+
+        print(self.var_map, var_refs)
+
+        new_var_map = dict(self.var_map)
         for v in var_refs:
-            if type(v) is VarRef:
-                aps.extend(self.var_map[v.var_name])
-                pecan_var_names.append(v.var_name)
-
-        result = self.ap_project(aps)
-
-        for var_name in pecan_var_names:
             # It may not be there (e.g., it's perfectly valid to do "exists x. y = y", even if it's pointless)
-            if var_name in result.get_var_map():
-                result.get_var_map().pop(var_name)
+            if isinstance(v, VarRef) and v.var_name in new_var_map:
+                print(v.var_name)
+                popped_idx, _ = new_var_map.pop(v.var_name)
 
-            if var_name in env_var_map:
-                env_var_map.pop(var_name)
+                # Shift down all indices of the new var map
+                for new_v, (old_idx, alphabet) in new_var_map.items():
+                    if old_idx > popped_idx:
+                        new_var_map[new_v] = (old_idx - 1, alphabet)
 
-        return result
+        # If we've become empty, return one of the special false or true automata
+        if len(new_var_map) == 0:
+            if self.is_empty():
+                return FiniteAutomaton.false_aut()
+            else:
+                return FiniteAutomaton.true_aut()
+        else:
+            new_aut = self.with_var_map(new_var_map)
+            res = FiniteAutomaton(new_aut, new_var_map)
+            print(res.relabel_states().to_str())
+            return res
 
     def is_empty(self):
-        return not NFA.nfa_nonemptiness_check(self.aut)
+        if self.special_attr == 'true':
+            return False
+        elif self.special_attr == 'false':
+            return True
+        else:
+            return not NFA.nfa_nonemptiness_check(self.aut)
 
     def truth_value(self):
         if self.is_empty(): # If we accept nothing, we are false
@@ -196,6 +259,68 @@ class FiniteAutomaton(Automaton):
             return 'true'
         else: # Otherwise, we are neither true nor false: i.e., not all variables have been eliminated
             return 'sometimes'
+
+    def relabel_states(self):
+        state_map = {}
+        for i, s in enumerate(self.aut['states']):
+            state_map[s] = str(i)
+
+        new_initial_states = { state_map[s] for s in self.aut['initial_states'] }
+        new_accepting_states = { state_map[s] for s in self.aut['accepting_states'] }
+        new_transitions = { (state_map[src], sym): {state_map[dst] for dst in dsts} for (src, sym), dsts in self.aut['transitions'].items() }
+
+        new_aut = {
+            'alphabet': self.aut['alphabet'],
+            'states': set(state_map.values()),
+            'initial_states': new_initial_states,
+            'accepting_states': new_accepting_states,
+            'transitions': new_transitions
+        }
+
+        return FiniteAutomaton(new_aut, self.var_map)
+
+    def accepting_word(self):
+        # mostly copied from PySimpleAutomata's emptiness checking code
+
+        # BFS
+        symbol_history = {}
+
+        queue = list()
+        visited = set()
+        for state in self.aut['initial_states']:
+            visited.add(state)
+            queue.append(state)
+
+        final_state = None
+        while queue:
+            state = queue.pop(0)
+            visited.add(state)
+            for a in self.aut['alphabet']:
+                if (state, a) in self.aut['transitions']:
+                    for next_state in self.aut['transitions'][state, a]:
+                        # keep track of where we've been
+                        if next_state in self.aut['accepting_states']:
+                            symbol_history[next_state] = (state, a)
+                            final_state = next_state
+                            break
+                        if next_state not in visited:
+                            symbol_history[next_state] = (state, a)
+                            queue.append(next_state)
+
+        if final_state is not None:
+            from pecan.lib.praline.builtins import as_praline
+            res = []
+            while not final_state in self.aut['initial_states']:
+                final_state, next_sym = symbol_history[final_state]
+                print(final_state, ':', next_sym)
+                res.append(next_sym)
+
+            var_order = list(range(len(self.var_map)))
+            for v, (idx, alphabet) in self.var_map.items():
+                var_order[idx] = v
+            return { ' '.join(var_order): res[::-1] }
+
+        return None
 
     def num_states(self):
         return len(self.aut['states'])
@@ -211,76 +336,9 @@ class FiniteAutomaton(Automaton):
         return self.aut
 
     def to_str(self):
-        return '{}'.format({'var_map': self.var_map, 'aut': self.aut})
+        return '{}'.format({'var_map': self.var_map, 'special_attr': self.special_attr, 'aut': self.aut})
 
     def save(self, filename):
         with open(filename, 'w') as f:
             f.write(self.to_str())
-
-def buchi_transform(original_aut, builder):
-    # Build a new automata with different edges
-    new_aut = spot.make_twa_graph()
-
-    # Set the acceptance condition to be same as the input automata
-    acc = original_aut.get_acceptance()
-    new_aut.set_acceptance(acc.used_sets().max_set(), acc)
-    new_aut.new_states(original_aut.num_states())
-    new_aut.set_init_state(original_aut.get_init_state_number())
-
-    builder.pre_build(new_aut)
-
-    ne = original_aut.num_edges()
-
-    if settings.get_debug_level() > 1:
-        import sys
-
-        for i, e in enumerate(original_aut.edges()):
-            cond = builder.build_cond(e.cond)
-            new_aut.new_edge(e.src, e.dst, cond, e.acc)
-
-            if i % 10000 == 0:
-                sys.stdout.write('\r{} of {} edges ({:.2f}%)'.format(i, ne, 100 * i / ne))
-
-        print()
-    else:
-        # TODO: This does the same thing as above, but it just doesn't run the check/print every time.
-        #       We could run the same loop and check for debug every time, but this minor overhead
-        #       accumulates a fair bit once you get to having millions of edges, so we duplicate it.
-        #       It would still be nice to avoid this, though.
-        for e in original_aut.edges():
-            cond = builder.build_cond(e.cond)
-            new_aut.new_edge(e.src, e.dst, cond, e.acc)
-
-    builder.post_build(new_aut)
-
-    return new_aut
-
-class Builder:
-    def pre_build(self, new_aut):
-        pass
-
-    def post_build(self, new_aut):
-        pass
-
-    def build_cond(self, cond):
-        return cond
-
-class Substitution(Builder):
-    def __init__(self, subs):
-        self.subs = subs
-
-    def pre_build(self, new_aut):
-        for k, v in self.subs.items():
-            if type(v) is str:
-                self.subs[k] = buddy.bdd_ithvar(new_aut.register_ap(v))
-
-    def build_cond(self, cond):
-        # TODO: ideally we could use the bdd_veccompose to do them all at once instead of
-        #   one at a time, but spot doesn't expose the bdd_newpair function to python at the moment...
-        for var, new_formula in self.subs.items():
-            # old = cond
-            cond = buddy.bdd_compose(cond, new_formula, var)
-            # print('after ({} |-> {}), is now {}, was {}'.format(spot.bdd_to_formula(buddy.bdd_ithvar(var)), spot.bdd_to_formula(new_formula), spot.bdd_to_formula(cond), spot.bdd_to_formula(old)))
-
-        return cond
 

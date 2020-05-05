@@ -1,0 +1,28 @@
+#load("automata/binary.fsa", "fsa-dict", fsa_binary(n))
+#load("bin_add.fsa", "fsa-dict", fsa_bin_add(x,y,z))
+#load("bin_less.fsa", "fsa-dict", fsa_bin_less(x,y))
+#load("bin_equal.fsa", "fsa-dict", fsa_bin_equal(x,y))
+
+Structure fsa_binary defining {
+    "adder": fsa_bin_add(any, any, any),
+    "less": fsa_bin_less(any, any),
+    "equal": fsa_bin_equal(any, any)
+}
+
+Restrict a,b,x,y,z are fsa_binary.
+
+// test(x,y,a,b) := x + y = a & y + x = b
+
+// Display acceptingWord { a != b & test(x,y,a,b) }.
+
+Prove that {
+    forall x,y. x + y = y + x
+}.
+
+// test(x,y,z,a,b) :=
+
+// Prove that {
+//     forall x,y,z,a,b. //x + (y + z) = (x + y) + z
+
+// }.
+
