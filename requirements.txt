@@ -1,6 +1,5 @@
 argparse
 lark-parser
 colorama
-pysimpleautomata
 IPython
 
