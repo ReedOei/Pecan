@@ -2,6 +2,10 @@ Long:
 - Convert all operators to predicate calls after the last stage of optimizations
     - Long because this may introduce new issues (including performance issues)
 
+- Fix finite automata to do existential quantification properly for numbers (i.e., anything with an adder/less) where we properly handle trialing/leading zeros.
+    - Maybe have a context thing that tells us whether we're using MSD or LSD
+    - Or we could just stick sonmthing in the structure that's like "LSD": f() where f() := true or sometihng.
+
 Medium:
 - Simplify automata loading (e.g., format detection, unify the various loaders for pecan/walnut/hoa/finite automata)
 
