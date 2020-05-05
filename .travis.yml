@@ -12,6 +12,7 @@ before_install:
     - bash scripts/install-spot.sh
     - pip3 install pytest
     - export PYTHONPATH="$HOME/.local/lib/python3.6/site-packages":"$PYTHONPATH"
+    - ( cd /home/travis/build/ReedOei/Pecan/PySimpleAutomata; pip3 install . )
 
 # Run the unit test
 script:
