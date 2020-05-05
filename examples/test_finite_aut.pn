@@ -9,20 +9,27 @@ Structure fsa_binary defining {
     "equal": fsa_bin_equal(any, any)
 }
 
-Restrict a,b,x,y,z are fsa_binary.
-
-// test(x,y,a,b) := x + y = a & y + x = b
-
-// Display acceptingWord { a != b & test(x,y,a,b) }.
+Restrict a,b,c,d,x,y,z are fsa_binary.
 
 Prove that {
-    forall x,y. x + y = y + x
+    forall x,y,z. fsa_bin_add(x,y,z) <=> fsa_bin_add(y,x,z)
 }.
 
-// test(x,y,z,a,b) :=
+Prove that {
+    forall x,y,z,c.
+        (exists a. fsa_bin_add(x,y,a) & fsa_bin_add(a,z,c)) <=> (exists b. fsa_bin_add(x,b,c) & fsa_bin_add(y,z,b))
+}.
+
+x is even := exists y. fsa_bin_add(y,y,x)
+x is succ(y) := x < y & forall z. z <= x | y <= z
+
+Prove that {
+    forall x.
+        if x is even then !(succ(x) is even)
+}.
 
 // Prove that {
-//     forall x,y,z,a,b. //x + (y + z) = (x + y) + z
-
+//     forall x.
+//         if !(x is even) then exists z. z is even & x is succ(z)
 // }.
 

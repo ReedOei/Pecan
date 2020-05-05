@@ -109,3 +109,6 @@ def test_inf_function():
 def test_sup_function():
     run_file('examples/test_sup_function.pn')
 
+def test_finite_basics():
+    run_file('examples/test_finite_aut.pn')
+

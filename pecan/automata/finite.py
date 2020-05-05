@@ -154,13 +154,17 @@ class FiniteAutomaton(Automaton):
         elif self.special_attr == 'false':
             return FiniteAutomaton.true_aut()
         else:
+            # print('PERFORMING COMPLEMENT')
+            # print(self.relabel_states().to_str())
             new_aut = NFA.nfa_complementation(self.aut)
 
             # Convert to an NFA
             new_aut['initial_states'] = {new_aut.pop('initial_state')}
             new_aut['transitions'] = {k: [v] for k, v in new_aut.pop('transitions').items()}
 
-            return FiniteAutomaton(new_aut, self.var_map)
+            res = FiniteAutomaton(new_aut, self.var_map)
+            # print(res.relabel_states().to_str())
+            return res
 
     def relabel(self):
         return self
@@ -175,6 +179,11 @@ class FiniteAutomaton(Automaton):
                 unified[formal_arg] = new_var_map[actual_arg][0]
             else:
                 new_var_map[actual_arg] = self.var_map[formal_arg]
+
+        # Re-index the var map because we may have lost some variables to unification
+        for i, v in enumerate(new_var_map.keys()):
+            _, alphabet = new_var_map[v]
+            new_var_map[v] = (i, alphabet)
 
         alphabets = list(range(len(new_var_map)))
         for v, (idx, alphabet) in new_var_map.items():
@@ -214,17 +223,13 @@ class FiniteAutomaton(Automaton):
     def project(self, var_refs, env_var_map):
         from pecan.lang.ir.prog import VarRef
 
-        # print(self.to_str())
-        print(self.relabel_states().to_str())
-        # print(self.accepting_word())
-
-        print(self.var_map, var_refs)
+        # print('Projecting', self.var_map, var_refs)
+        # print(self.relabel_states().to_str())
 
         new_var_map = dict(self.var_map)
         for v in var_refs:
             # It may not be there (e.g., it's perfectly valid to do "exists x. y = y", even if it's pointless)
             if isinstance(v, VarRef) and v.var_name in new_var_map:
-                print(v.var_name)
                 popped_idx, _ = new_var_map.pop(v.var_name)
 
                 # Shift down all indices of the new var map
@@ -241,7 +246,7 @@ class FiniteAutomaton(Automaton):
         else:
             new_aut = self.with_var_map(new_var_map)
             res = FiniteAutomaton(new_aut, new_var_map)
-            print(res.relabel_states().to_str())
+            # print(res.relabel_states().to_str())
             return res
 
     def is_empty(self):
@@ -312,7 +317,7 @@ class FiniteAutomaton(Automaton):
             res = []
             while not final_state in self.aut['initial_states']:
                 final_state, next_sym = symbol_history[final_state]
-                print(final_state, ':', next_sym)
+                # print(final_state, ':', next_sym)
                 res.append(next_sym)
 
             var_order = list(range(len(self.var_map)))
