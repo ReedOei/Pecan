@@ -219,9 +219,9 @@ Define natFormat var reps :=
     match reps with
     case [(prefix, cycle)] =>
         if cycle = [0] then
-            (var, if isEmpty prefix then "0" else toString (fromBinary prefix))
+            (var, if isEmpty prefix then 0 else fromBinary prefix)
         else
-            (v, omegaWord prefix cycle ^ " (NOT A VALID NATURAL NUMBER)")
+            (var, omegaWord prefix cycle ^ " (NOT A VALID NATURAL NUMBER)")
     end.
 
 Define uncurry f p := match p with case (a, b) => f a b end .

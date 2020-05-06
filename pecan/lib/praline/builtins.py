@@ -54,7 +54,12 @@ class TruthValue(Builtin):
 
     def evaluate(self, prog):
         pecan_node = prog.praline_lookup('t').evaluate(prog).get_term()
-        return PralineString(pecan_node.evaluate(prog).truth_value())
+        res = pecan_node.evaluate(prog)
+        if isinstance(res, tuple):
+            tval = res[0].truth_value()
+        else:
+            tval = res.truth_value()
+        return PralineString(tval)
 
 class ToString(Builtin):
     def __init__(self):
