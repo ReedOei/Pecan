@@ -9,6 +9,10 @@ Long:
 Medium:
 - Simplify automata loading (e.g., format detection, unify the various loaders for pecan/walnut/hoa/finite automata)
 
+- In `let x be { ... } in ...`, we should allow binding multiple variables so we could do something like:
+
+let (x,y,z) be { x + y = z } in blah
+
 - Rework finite automata to use a more efficient library (e.g., foma, which is currently a submodule but unused)
 - Improve optimization so that we don't need to do what we do in test_bounded_ostrowski_2
 - Improve CSE optimization so that we use `forall` or `exists` to reduce the number of complements, when valid.

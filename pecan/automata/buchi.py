@@ -255,8 +255,8 @@ class BuchiAutomaton(Automaton):
             self.aut = spot.sat_minimize(self.get_aut())
             settings.log(3, lambda: 'after sat_minimize: {}'.format(self.num_states()))
 
-        if self.num_states() < 50000:
-            self.merge_states()
+        # if self.num_states() < 50000:
+        self.merge_states()
 
         return self
 
@@ -264,13 +264,13 @@ class BuchiAutomaton(Automaton):
         if not self.aut.is_sba():
             settings.log(3, lambda: 'Postprocessing (before): {} states and {} edges'.format(self.num_states(), self.num_edges()))
             # Ensure that the automata we have is a Buchi (possible nondeterministic) automata
-            self.aut = self.aut.postprocess('BA')
-            # if self.aut.num_states() > 300:
-            #     self.aut = self.aut.postprocess('BA', 'Deterministic', 'Low')
-            # elif self.aut.num_states() > 100:
-            #     self.aut = self.aut.postprocess('BA', 'Deterministic', 'Medium')
-            # else:
-            #     self.aut = self.aut.postprocess('BA', 'Deterministic', 'High')
+            # self.aut = self.aut.postprocess('BA')
+            if self.aut.num_states() > 300:
+                self.aut = self.aut.postprocess('BA', 'Deterministic', 'Low')
+            elif self.aut.num_states() > 100:
+                self.aut = self.aut.postprocess('BA', 'Deterministic', 'Medium')
+            else:
+                self.aut = self.aut.postprocess('BA', 'Deterministic', 'High')
             settings.log(3, lambda: 'Postprocessing (after): {} states and {} edges'.format(self.num_states(), self.num_edges()))
         return self
 
