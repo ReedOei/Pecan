@@ -6,10 +6,11 @@ import ast
 import spot
 
 from pecan.automata.buchi import BuchiAutomaton
+from pecan.utility import VarMap
 
 def from_spot_aut(base_aut):
     # In this case, we have no information about the encoding, so we just assume that each variable maps 1-1 in the HOA file specified.
-    var_map = {}
+    var_map = VarMap()
 
     for ap in base_aut.ap():
         var_map[ap.ap_name()] = [ap.ap_name()]
