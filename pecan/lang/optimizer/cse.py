@@ -96,8 +96,6 @@ class ExpressionExtractor(IRTransformer):
                 return node
 
             if not node in self.expressions:
-                self.changed = True
-
                 new_a = self.transform(node.a)
                 new_b = self.transform(node.b)
 
