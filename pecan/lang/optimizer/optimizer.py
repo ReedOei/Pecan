@@ -48,7 +48,7 @@ class Optimizer:
     def run_optimizations(self, node, pred):
         settings.log(2, lambda: f'Optimizing: {node}')
 
-        optimization_pass = [ArithmeticOptimizer(self), CSEOptimizer(self), BooleanOptimizer(self), RedundantVariableOptimizer(self), UnusedVariableOptimizer(self)]
+        optimization_pass = [CSEOptimizer(self)] #[ArithmeticOptimizer(self), CSEOptimizer(self), BooleanOptimizer(self), RedundantVariableOptimizer(self), UnusedVariableOptimizer(self)]
         new_node = node
 
         ast_changed = True # Default to true so we run at least once

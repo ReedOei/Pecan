@@ -16,8 +16,19 @@ unbordered(i,n) := n = min { p : p is period(i,i + n) }
 //     forall r. if r > 0 & !(exists k. r = 6*k + 1) then exists i. unbordered(i,r)
 // }).
 
-unbordered_1_mod_6(n) := @postprocess[
-    exists i. (exists k. n = 6*k + 1) & unbordered(i,n)
+// unbordered_1_mod_6(n) := @postprocess[
+//     exists i. (exists k. n = 6*k + 1) & unbordered(i,n)
+// ]
+// #save_aut("unbordered_1_mod_6.aut", unbordered_1_mod_6)
+
+bordered(i,n) := @postprocess[
+    i is nat & n is nat & !unbordered(i,n)
 ]
-#save_aut("unbordered_1_mod_6.aut", unbordered_1_mod_6)
+
+all_bordered_1_mod_6(n) := @postprocess[
+    n is nat &
+    (exists k. n = 6*k + 1) &
+    forall i. bordered(i,n)
+]
+#save_aut("all_bordered_1_mod_6.aut", all_bordered_1_mod_6)
 

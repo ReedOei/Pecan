@@ -1,0 +1,8 @@
+// This failed when someone tried it on the website; also gave an error about free variables it shouldn't've.
+
+Restrict x, y are nat.
+
+Theorem ("Test", {
+    forall x,y. x + x + 3 + y + y = 1 + y + x + y + x + 2
+}).
+

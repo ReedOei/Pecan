@@ -13,6 +13,9 @@ def run_file(filename):
 
     settings.set_quiet(orig_quiet)
 
+def test_free_var_regression0():
+    run_file('examples/free-var-regression-0.pn')
+
 def test_praline_define_aut():
     run_file('examples/test_praline_define_aut.pn')
 
