@@ -115,3 +115,6 @@ def test_finite_basics():
 def test_constraints():
     run_file('examples/test_constraints.pn')
 
+def test_div():
+    run_file('examples/test_div.pn')
+

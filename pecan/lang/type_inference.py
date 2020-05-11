@@ -113,7 +113,11 @@ class TypeEnv:
             return True
 
     def unify_type(self, a, t_a, b, t_b):
-        if type(t_a) is VarRef and type(t_b) is VarRef and t_a.var_name == t_b.var_name:
+        if t_a is None:
+            return t_b
+        elif t_b is None:
+            return t_a
+        elif type(t_a) is VarRef and type(t_b) is VarRef and t_a.var_name == t_b.var_name:
             return t_a
         elif type(t_a) is Call and type(t_b) is Call:
             if t_a.name == t_b.name:
@@ -177,12 +181,6 @@ class TypeInferer(IRTransformer):
         b = self.transform(node.b)
         res_type = self.type_env.unify(a, b)
         return Sub(a, b).with_type(res_type)
-
-    def transform_Div(self, node: Div):
-        a = self.transform(node.a)
-        b = self.transform(node.b)
-        res_type = self.type_env.unify(a, b)
-        return Div(a, b).with_type(res_type)
 
     def transform_IntConst(self, node: IntConst):
         return node.with_type(InferredType())
@@ -274,9 +272,8 @@ class TypeInferer(IRTransformer):
         return Call(resolved_pred.name, final_args)
 
     def transform_PredicateExpr(self, node):
-        # Need to make sure to transform the predicate first, because we may get type information out of doing that
-        new_var = self.transform(node.var)
         new_pred = self.transform(node.pred)
+        new_var = self.transform(node.var)
         return PredicateExpr(new_var, new_pred).with_type(new_var.get_type())
 
     def transform_NamedPred(self, node):
@@ -311,13 +308,15 @@ class TypeInferer(IRTransformer):
         return FunctionExpression(new_call.name, new_call.args, new_idx).with_type(res_type)
 
     def transform_TypeHint(self, node):
+        a = self.transform(node.expr_a)
+        b = self.transform(node.expr_b)
+
         if isinstance(node.expr_a, VarRef):
-            if not node.expr_a.var_name in self.type_env:
-                b = self.transform(node.expr_b)
-                self.type_env[node.expr_a.var_name] = b.get_type()
+            # Do this instead of the standard unify because we want to allow it to
+            #  work even if node.expr_a.get_type() == AnyType().
+            res_type = self.type_env.try_unify_type(a,a.get_type().get_restriction(),b,b.get_type().get_restriction())
+            self.type_env[node.expr_a.var_name] = res_type
         else:
-            a = self.transform(node.a)
-            b = self.transform(node.b)
             self.type_env.unify(a, b)
 
         # Intentionally delete the TypeHint because we don't need it anymore

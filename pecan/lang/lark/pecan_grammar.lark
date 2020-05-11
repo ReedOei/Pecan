@@ -94,7 +94,6 @@ val_dict: "{" (kv_pair ("," kv_pair )*)? "}"
             | varlist _IS var "(" varlist ")" -> restrict_call
 
 _IS: "are" | "is" | "∈"
-_IS_NOT: _IS "not"
 
 ?pred_definition: var "(" args ")" _DEFEQ pred -> def_pred_standard
                 | var _IS var _DEFEQ pred -> def_pred_is
@@ -165,9 +164,9 @@ args: (arg ("," arg)*)?
 
 call: var "(" args ")" -> call_args
      | atom _IS var     -> call_is
-     | atom _IS_NOT var -> call_is_not
+     | atom _IS "not" var -> call_is_not
      | atom _IS var "(" args ")" -> call_is_args
-     | atom _IS_NOT var "(" args ")" -> call_is_not_args
+     | atom _IS "not" var "(" args ")" -> call_is_not_args
 
 int: INT -> int_tok
 

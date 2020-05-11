@@ -58,8 +58,6 @@ class Mul(BinaryExpression):
 class Div(BinaryExpression):
     def __init__(self, a, b):
         super().__init__(a, b)
-        if not self.is_int:
-            raise NotImplementedError("Division with automaton hasn't been implemented, sorry. {}".format(self))
         if not self.b.is_int:
             raise AutomatonArithmeticError("Second argument of division must be an integer in {}".format(self))
 

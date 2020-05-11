@@ -68,33 +68,6 @@ class Sub(BinaryIRExpression):
         assert self.is_int
         return self.a.evaluate_int(prog) - self.b.evaluate_int(prog)
 
-#TODO: Implement division if/when possible
-class Div(BinaryIRExpression):
-    def __init__(self, a, b):
-        super().__init__(a, b)
-        if not self.is_int:
-            raise NotImplementedError("Division with automaton hasn't been implemented, sorry. {}".format(self))
-        if not self.b.is_int:
-            raise AutomatonArithmeticError("Second argument of division must be an integer in {}".format(self))
-
-    def show(self):
-        return '({} / {})'.format(self.a, self.b)
-
-    def evaluate_node(self, prog):
-        if self.is_int and self.evaluate_int(prog) >= 0:
-            return IntConst(self.evaluate_int(prog)).with_type(self.get_type()).evaluate(prog)
-
-        assert False
-
-    def evaluate_int(self, prog):
-        assert self.is_int
-        if self.a.evaluate_int(prog) % self.b.evaluate_int(prog) != 0:
-                raise AutomatonArithmeticError("Division among integers must output an integer in {}".format(self))
-        return self.a.evaluate_int(prog) // self.b.evaluate_int(prog)
-
-    def transform(self, transformer):
-        return transformer.transform_Div(self)
-
 constants_map = {}
 class IntConst(IRExpression):
     def __init__(self, val):

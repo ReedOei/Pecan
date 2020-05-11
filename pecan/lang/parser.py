@@ -237,13 +237,13 @@ class PecanTransformer(Transformer):
         return Call(call_name, [var_name])
 
     def call_is_not(self, var_name, call_name):
-        return Complement(call_is(var_name, call_name))
+        return Complement(self.call_is(var_name, call_name))
 
     def call_is_args(self, var_name, call_name, args):
         return Call(call_name, args + [var_name])
 
     def call_is_not_args(self, var_name, call_name, args):
-        return Complement(call_is_args(var_name, call_name, args))
+        return Complement(self.call_is_args(var_name, call_name, args))
 
     def val_dict(self, *pairs):
         return dict(pairs)

@@ -53,7 +53,5 @@ Short:
 - Make converter warn when you try to use states that don't exist, but keep going and just map them to new, empty states
     - Also, add a setting to disable this in the context
 - Allow matching on booleans in Praline. Practically, this is useless (it's just an if expression), but it'd be nice to have for consistency's sake. Although this would let us compile if expressions into match-case expressions, which would simplify other stuff a tad.
-- Improve error messages when there is no accepting word.
-    - Right now it just crashes.
-- Move SpotFormula out of prog to keep the main program automata/library independent (replace this with a more general "Formula") operation.
+- Improve error messages when there is no accepting word (right now it just crashes).
 

@@ -135,10 +135,8 @@ class ASTToIR(AstTransformer):
             return s
 
     def transform_Div(self, node):
-        self.expr_depth += 1
-        res = ir.Div(self.transform(node.a), self.transform(node.b))
-        self.expr_depth -= 1
-        return res
+        new_var = VarRef(ir.IRNode.fresh_name())
+        return self.transform(PredicateExpr(new_var.var_name, TypeHint(new_var, node.a, Equals(node.a, Mul(node.b, new_var)))))
 
     def transform_IntConst(self, node):
         return ir.IntConst(node.val)
