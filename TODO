@@ -56,5 +56,4 @@ Short:
 - Improve error messages when there is no accepting word.
     - Right now it just crashes.
 - Move SpotFormula out of prog to keep the main program automata/library independent (replace this with a more general "Formula") operation.
-- (GOOD FIRST TASK): Update readme to the newer Pecan syntax
 

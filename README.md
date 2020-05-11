@@ -12,10 +12,10 @@ NOTE: You can also use Docker (see below), if you have it.
 
 You will need Python 3.6 or higher.
 
-Then, install [spot](https://spot.lrde.epita.fr/install.html); if you are on a Linux-y system, the `install-spot.sh` script may work for you:
+Then, install [spot](https://spot.lrde.epita.fr/install.html); if you are on a Linux-y system (hopefully including MacOS), the `install-spot.sh` script in the `scripts/` directory of this repository should work for you:
 
 ```bash
-bash install-spot.sh
+bash scripts/install-spot.sh
 ```
 
 Otherwise, follow the instructions on the spot website.
@@ -38,6 +38,12 @@ or start interactive mode via:
 python3 pecan.py -i
 ```
 
+You can also add the `bin/` directory of this repository to your `PATH`, and the simply use `pecan FILENAME` or `pecan -i`.
+To do so, add the following to your `.bashrc` (or whatever your operating system uses):
+```bash
+export PATH=/path/to/Pecan/bin:$PATH
+```
+
 ### Using Docker
 
 If you have Docker, you can run Pecan with:
@@ -56,36 +62,41 @@ Below `has_zeros` and `all_ones` are expressed as [LTL formula](https://en.wikip
 has_zeros(a) := "!(Ga)"
 all_ones(a) := "Ga"
 
-prop_true() := forall x. has_zeros(x) => (not all_ones(x))
-#assert_prop(true, prop_true)
+Prove that {
+    forall x. if has_zeros(x) then !all_ones(x)
+}.
 
-prop_false() := exists x. has_zeros(x) & all_ones(x)
-#assert_prop(false, prop_false)
+Prove that {
+    !(exists x. has_zeros(x) & all_ones(x))
+}.
 ```
 
 Below we prove basic properties of addition (specifically, binary addition), see ([here](https://github.com/ReedOei/Pecan/blob/master/examples/arith_props.pn)):
 ```
 Restrict x, y, z are nat.
 
-add_zero_id() := forall x. x + 0 = x
-add_comm() := forall x. forall y. x + y = y + x
-add_assoc() := forall x. forall y. forall z. x + (y + z) = (x + y) + z
+Theorem ("Zero is the additive identity", {
+    forall x. x + 0 = x
+}).
 
-#assert_prop(true, add_zero_id)
-#assert_prop(true, add_comm)
-#assert_prop(true, add_assoc)
+Theorem ("Addition is commutative", {
+    forall x,y. x + y = y + x
+}).
 
+Theorem ("Addition is associative", {
+    forall x,y,z. x + (y + z) = (x + y) + z
+}).
 ```
 
 Running it gives:
 ```bash
 $ python3 pecan.py examples/arith_props.pn
-[INFO] Checking if add_zero_id is true.
-add_zero_id is true.
-[INFO] Checking if add_comm is true.
-add_comm is true.
-[INFO] Checking if add_assoc is true.
-add_assoc is true.
+[INFO] Checking if Zero is the additive identity is true.
+Zero is the additive identity is true.
+[INFO] Checking if Addition is commutative is true.
+Addition is commutative is true.
+[INFO] Checking if Addition is associative is true.
+Addition is associative is true.
 ```
 
 ## Configuration
@@ -95,5 +106,5 @@ It should be a colon-separated or semicolon-separated list of paths, depending o
 
 ## Editor Setup
 
-Currently, the only "supported" editor is Vim, via a syntax file (`pecan.vim`) in this repository.
+Currently, the only supported editor is Vim, via a syntax file (`pecan.vim`) in this repository.
 
