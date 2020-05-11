@@ -28,6 +28,9 @@ pip install -r requirements.txt
 pip3 install -r requirements.txt
 ```
 
+If you are interested in using finite automata (or running all the tests), you will also need the submodule `PySimpleAutomata`, so you must either clone with `--recursive` or use `git submodule update --init --recursive`.
+Then go to the submodule `PySimpleAutomata/` and run `pip3 install ./`.
+
 Then you can run Pecan files (`*.pn`) by:
 ```bash
 python3 pecan.py FILENAME
