@@ -112,3 +112,6 @@ def test_sup_function():
 def test_finite_basics():
     run_file('examples/test_finite_aut.pn')
 
+def test_constraints():
+    run_file('examples/test_constraints.pn')
+

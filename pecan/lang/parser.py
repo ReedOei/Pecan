@@ -60,6 +60,31 @@ class PecanTransformer(Transformer):
         upper_bound = TypeHint(temp, var, Forall([temp], Implies(fresh_pred, GreaterEquals(var, temp))))
         return self.min_func(var_name, upper_bound)
 
+    def distinct(self, varlist):
+        lits = []
+        for i, var_a in enumerate(varlist):
+            # Don't want to say something impossible like var_a != var_a, so avoid at least the trivial cases.
+            for var_b in varlist[i+1:]:
+                lits.append(Complement(Equals(var_a, var_b)))
+
+        if len(lits) == 0:
+            return BoolConst(True)
+        else:
+            return reduce(Conjunction, lits)
+
+    def elementof(self, var_name, varlist):
+        lits = []
+        for v in varlist:
+            lits.append(Equals(VarRef(var_name), v))
+
+        if len(lits) == 0:
+            return BoolConst(False)
+        else:
+            return reduce(Disjunction, lits)
+
+    def not_elementof(self, var_name, varlist):
+        return Complement(self.elementof(var_name, varlist))
+
     def args(self, *args):
         return list(args)
 
@@ -211,8 +236,14 @@ class PecanTransformer(Transformer):
     def call_is(self, var_name, call_name):
         return Call(call_name, [var_name])
 
+    def call_is_not(self, var_name, call_name):
+        return Complement(call_is(var_name, call_name))
+
     def call_is_args(self, var_name, call_name, args):
         return Call(call_name, args + [var_name])
+
+    def call_is_not_args(self, var_name, call_name, args):
+        return Complement(call_is_args(var_name, call_name, args))
 
     def val_dict(self, *pairs):
         return dict(pairs)

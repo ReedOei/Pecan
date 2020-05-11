@@ -94,6 +94,7 @@ val_dict: "{" (kv_pair ("," kv_pair )*)? "}"
             | varlist _IS var "(" varlist ")" -> restrict_call
 
 _IS: "are" | "is" | "∈"
+_IS_NOT: _IS "not"
 
 ?pred_definition: var "(" args ")" _DEFEQ pred -> def_pred_standard
                 | var _IS var _DEFEQ pred -> def_pred_is
@@ -126,6 +127,9 @@ varlist: var ("," var)*
      | "(" pred ")"
      | comparison
      | COMP bool -> comp
+     | "distinct" "{" varlist "}" -> distinct
+     | var "in" "{" varlist "}" -> elementof
+     | var "not" "in" "{" varlist "}" -> not_elementof
 
 ?comparison: expr EQ expr                     -> equal
            | expr ne expr                     -> not_equal
@@ -161,7 +165,9 @@ args: (arg ("," arg)*)?
 
 call: var "(" args ")" -> call_args
      | atom _IS var     -> call_is
+     | atom _IS_NOT var -> call_is_not
      | atom _IS var "(" args ")" -> call_is_args
+     | atom _IS_NOT var "(" args ")" -> call_is_not_args
 
 int: INT -> int_tok
 
@@ -188,7 +194,7 @@ DISJ: "|" | "\\/" | "∨" | "or"
 ?forall_sym: "forall" | "∀"
 ?exists_sym: "exists" | "∃"
 
-VAR: /(?!(min|max|case|end|match|with|do|if|then|else|otherwise|iff|is|are|forall|exists|not|or|and|sometimes|true|false)\b)[a-z_$][\$a-zA-Z_0-9]*/
+VAR: /(?!(sup|inf|distinct|min|max|case|end|match|with|do|if|then|else|otherwise|iff|is|are|forall|exists|not|or|and|sometimes|true|false)\b)[a-z_$][\$a-zA-Z_0-9]*/
 
 ANNOTATION: /@[A-Za-z0-9_]+/
 
