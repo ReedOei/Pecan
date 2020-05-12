@@ -386,3 +386,11 @@ Define forgetAll vars :=
         forgetAll xs
     end.
 
+Define transpose lists :=
+    if lists = [] then
+        []
+    else if head lists = [] then
+        []
+    else
+        map head lists :: transpose (map tail lists).
+

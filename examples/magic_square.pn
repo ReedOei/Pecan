@@ -1,17 +1,56 @@
 Let a,b,c,d,e,f,g,h,i,sum be nat.
 
-Example using natFormat of {
-    @postprocess[
-        a + b + c = sum &
-        d + e + f = sum &
-        g + h + i = sum &
-        a + d + g = sum &
-        b + e + h = sum &
-        c + f + i = sum &
+// Example using natFormat of {
+//     @postprocess[
+//         a + b + c = sum &
+//         d + e + f = sum &
+//         g + h + i = sum &
 
-        a + e + i = sum &
-        c + e + g = sum
-    ] &
-    distinct { a,b,c,d,e,f,g,h,i }
-}.
+//         a + d + g = sum &
+//         b + e + h = sum &
+//         c + f + i = sum &
+
+//         a + e + i = sum &
+//         c + e + g = sum
+//     ] &
+//     distinct { a,b,c,d,e,f,g,h,i }
+// }.
+
+Let n be nat.
+
+Theorem ("There is no 2x2 magic square.", {
+    !(exists a,b,c,d,sum.
+        a + b = sum &
+        c + d = sum &
+
+        a + c = sum &
+        b + d = sum &
+
+        a + d = sum &
+        b + c = sum &
+
+        distinct { a,b,c,d }
+    )
+}).
+
+// Theorem ("There are infinitely many 3x3 magic squares.", {
+//     forall n.
+//     exists sum. sum > n &
+//     exists a,b,c,d,e.
+//     exists f,g,h,i. @postprocess[
+//         @postprocess[
+//             a + b + c = sum &
+//             d + e + f = sum &
+//             g + h + i = sum &
+
+//             a + d + g = sum &
+//             b + e + h = sum &
+//             c + f + i = sum &
+
+//             a + e + i = sum &
+//             c + e + g = sum
+//         ] &
+//         distinct { a,b,c,d,e,f,g,h,i }
+//     ]
+// }).
 
