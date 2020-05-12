@@ -135,10 +135,11 @@ class ASTToIR(AstTransformer):
             return s
 
     def transform_Div(self, node):
-        self.expr_depth += 1
-        res = ir.Div(self.transform(node.a), self.transform(node.b))
-        self.expr_depth -= 1
-        return res
+        if node.is_int:
+            return ir.IntConst(node.evaluate_int(self.prog))
+
+        new_var = VarRef(ir.IRNode.fresh_name())
+        return self.transform(PredicateExpr(new_var.var_name, TypeHint(new_var, node.a, Equals(node.a, Mul(node.b, new_var)))))
 
     def transform_IntConst(self, node):
         return ir.IntConst(node.val)
@@ -229,6 +230,15 @@ class ASTToIR(AstTransformer):
             return ir.FunctionExpression(node.name, new_args, idx)
         else:
             return ir.Call(node.name, new_args)
+
+    def transform_PredicateExpr(self, node):
+        # We need to set the expression depth to 0 because the predicate inside
+        # the node is NOT an expression, even if we are at the expression leve.
+        orig_depth = self.expr_depth
+        self.expr_depth = 0
+        res = ir.PredicateExpr(self.transform(VarRef(node.var_name)), self.transform(node.pred))
+        self.expr_depth = orig_depth
+        return res
 
     def transform_NamedPred(self, node):
         new_args = [self.transform(arg) for arg in node.args]
@@ -343,4 +353,7 @@ class ASTToIR(AstTransformer):
 
     def transform_Annotation(self, node):
         return ir.Annotation(node.annotation_name, self.transform(node.body))
+
+    def transform_TypeHint(self, node):
+        return ir.TypeHint(self.transform(node.expr_a), self.transform(node.expr_b), self.transform(node.body))
 

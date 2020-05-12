@@ -113,6 +113,9 @@ class IRTransformer:
     def transform_Call(self, node):
         return Call(node.name, [self.transform(arg) for arg in node.args])
 
+    def transform_PredicateExpr(self, node):
+        return PredicateExpr(node.var, self.transform(node.pred)).with_type(node.get_type())
+
     def transform_NamedPred(self, node):
         new_args = [self.transform(arg) for arg in node.args]
         new_restrictions = {self.transform(var): self.transform(restriction) for var, restriction in node.arg_restrictions.items()}
@@ -247,4 +250,7 @@ class IRTransformer:
 
     def transform_Annotation(self, node):
         return Annotation(node.annotation_name, self.transform(node.body))
+
+    def transform_TypeHint(self, node):
+        return TypeHint(self.transform(node.expr_a), self.transform(node.expr_b), self.transform(node.body))
 

@@ -1,0 +1,12 @@
+#import("reals.pn")
+
+Restrict x,y are real.
+
+Prove that {
+    inf { x : x > 6 } = 6
+}.
+
+Prove that {
+    !(exists y. y = min { x : x > 6 })
+}.
+

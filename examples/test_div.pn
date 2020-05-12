@@ -1,0 +1,10 @@
+Restrict x,y are nat.
+
+Prove that {
+    forall x. if x is even then exists y. x/2 = y
+}.
+
+Prove that {
+    forall x. if x is not even then !(exists y. x/2 = y)
+}.
+

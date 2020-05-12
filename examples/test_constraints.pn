@@ -1,0 +1,12 @@
+Prove that {
+    forall x,y,z. if x in { y, z } & distinct { x, y } then x = z
+}.
+
+Prove that {
+    forall x,y,z,w. if x in { y, z, w } then ! distinct { x, y, z, w }
+}.
+
+Prove that {
+    forall x,y,z,w. if x not in { y, z, w } then distinct { x, y } & distinct { x, z }
+}.
+

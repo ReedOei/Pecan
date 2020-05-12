@@ -68,33 +68,6 @@ class Sub(BinaryIRExpression):
         assert self.is_int
         return self.a.evaluate_int(prog) - self.b.evaluate_int(prog)
 
-#TODO: Implement division if/when possible
-class Div(BinaryIRExpression):
-    def __init__(self, a, b):
-        super().__init__(a, b)
-        if not self.is_int:
-            raise NotImplementedError("Division with automaton hasn't been implemented, sorry. {}".format(self))
-        if not self.b.is_int:
-            raise AutomatonArithmeticError("Second argument of division must be an integer in {}".format(self))
-
-    def show(self):
-        return '({} / {})'.format(self.a, self.b)
-
-    def evaluate_node(self, prog):
-        if self.is_int and self.evaluate_int(prog) >= 0:
-            return IntConst(self.evaluate_int(prog)).with_type(self.get_type()).evaluate(prog)
-
-        assert False
-
-    def evaluate_int(self, prog):
-        assert self.is_int
-        if self.a.evaluate_int(prog) % self.b.evaluate_int(prog) != 0:
-                raise AutomatonArithmeticError("Division among integers must output an integer in {}".format(self))
-        return self.a.evaluate_int(prog) // self.b.evaluate_int(prog)
-
-    def transform(self, transformer):
-        return transformer.transform_Div(self)
-
 constants_map = {}
 class IntConst(IRExpression):
     def __init__(self, val):
@@ -239,6 +212,37 @@ class FunctionExpression(IRExpression):
         temp_args = list(map(repr, self.args))
         temp_args[self.val_idx] = 'out({})'.format(self.args[self.val_idx])
         return '{}({})'.format(self.pred_name, ', '.join(temp_args))
+
+    def __repr__(self):
+        return self.show()
+
+class PredicateExpr(IRExpression):
+    def __init__(self, var, pred):
+        super().__init__()
+        from pecan.lang.ir_substitution import IRSubstitution
+        self.var = var
+        self.pred = pred
+        self.is_int = False
+
+    def evaluate_node(self, prog):
+        aut = Conjunction(self.var.get_type().restrict(self.var), self.pred).evaluate(prog)
+        # aut = self.pred.evaluate(prog)
+        return aut, self.var
+
+    def transform(self, transformer):
+        return transformer.transform_PredicateExpr(self)
+
+    def show(self):
+        return 'Expr({}, {})'.format(self.var, self.pred)
+
+    def __repr__(self):
+        return self.show()
+
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.var == other.var and self.pred == other.pred
+
+    def __hash__(self):
+        return hash((self.var, self.pred))
 
 class AutomatonArithmeticError(Exception):
     pass

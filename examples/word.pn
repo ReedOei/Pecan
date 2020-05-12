@@ -1,0 +1,21 @@
+#load("automata/has_zeros.aut", "hoa", has_zeros(a))
+
+Restrict i,j,k,l,n,m are binary.
+
+$W(n) := has_zeros(n)
+
+square(i, n) := $W[i..i+n] = $W[i+n..i+2*n]
+Prove that {
+    exists i,n. square(i, n)
+}.
+
+cube(i, n) := square(i, n) & square(i + n, n)
+Prove that {
+    exists i,n. cube(i, n)
+}.
+
+fourth(i,n) := square(i, n) & cube(i + n, n)
+Prove that {
+    exists i,n. fourth(i, n)
+}.
+

@@ -5,11 +5,6 @@ Restrict x, y, z, w are real.
 Execute equivalenceRelationCheck integral_equal real.
 Execute totalOrderCheck integral_less integral_equal real.
 Execute equivalenceRelationCheck real_equal real.
-
-real_less(a, b) := integral_less(a, b) | (integral_equal(a, b) &
-                                            ((negative(a) & negative(b) & fractional_less(b, a)) |
-                                             (positive(a) & positive(b) & fractional_less(a, b))))
-
 Execute totalOrderCheck real_less real_equal real.
 
 real_add_same_sign_closed() := forall x. x is positive => forall y. y is positive => exists z. real_add_same_sign(x, y, z)
@@ -29,8 +24,8 @@ real_add_same_sign_assoc() := forall x.
 can_sub_if_lt() := forall x. x is positive => forall y. (y is positive & real_less(y, x)) => exists w. real_add_same_sign(w, y, x)
 #assert_prop(true, can_sub_if_lt)
 
-real_add_dif_sign_closed() := forall x. forall y. (x is negative & x is real & y is positive) => exists z. real_add_dif_sign(x, y, z)
-#assert_prop(true, real_add_dif_sign_closed)
+real_add_neg_pos_closed() := forall x. forall y. (x is negative & x is real & y is positive) => exists z. real_add_neg_pos(x, y, z)
+#assert_prop(true, real_add_neg_pos_closed)
 
 real_add_closed() := forall x. forall y. (x is real & y is real) => exists z. real_add(x, y, z)
 #assert_prop(true, real_add_closed)

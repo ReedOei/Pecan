@@ -1,0 +1,16 @@
+#import("reals.pn")
+
+Restrict x,y,z are real.
+
+Prove that {
+    sup { x : x < -1 } = -1
+}.
+
+Prove that {
+    !(exists y. y = sup { x : x > 6 })
+}.
+
+Prove that {
+    !(exists y. y = max { x : x < -1 })
+}.
+

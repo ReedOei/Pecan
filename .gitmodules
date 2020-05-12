@@ -1,3 +1,12 @@
+<<<<<<< HEAD
 [submodule "libvata"]
 	path = libvata
 	url = https://github.com/ondrik/libvata
+=======
+[submodule "foma"]
+	path = foma
+	url = https://github.com/ReedOei/foma
+[submodule "PySimpleAutomata"]
+	path = PySimpleAutomata
+	url = https://github.com/ReedOei/PySimpleAutomata
+>>>>>>> origin/master

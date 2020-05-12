@@ -213,19 +213,15 @@ Define fromBinary := fromBase 2.
 
 Define reverse := foldl (\xs x => x :: xs) [] .
 
-Define stdFormat var reps :=
-    (var, map (\rep => match rep with
-                        case (prefix, cycle) => concatenate prefix ^ "(" ^ concatenate cycle ^ ")^ω"
-                       end) reps).
-
+Define omegaWord prefix cycle := concatenate prefix ^ "(" ^ concatenate cycle ^ ")^ω".
+Define stdFormat var reps := (var, map (uncurry omegaWord) reps).
 Define natFormat var reps :=
     match reps with
     case [(prefix, cycle)] =>
         if cycle = [0] then
-            (var, if isEmpty prefix then "0" else toString (fromBinary prefix))
+            (var, if isEmpty prefix then 0 else fromBinary prefix)
         else
-            let (v, [str]) := stdFormat var [(prefix, cycle)] in
-                (v, str ^ " (NOT A VALID NATURAL NUMBER)")
+            (var, omegaWord prefix cycle ^ " (NOT A VALID NATURAL NUMBER)")
     end.
 
 Define uncurry f p := match p with case (a, b) => f a b end .

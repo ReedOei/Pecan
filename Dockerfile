@@ -31,5 +31,7 @@ WORKDIR /home/pecan/ReedOei/Pecan
 
 RUN git pull
 RUN pip3 install -r requirements.txt
+# Install my custom version of PySimpleAutomata
+RUN ( cd PySimpleAutomata; pip3 install . )
 RUN pytest --verbose test
 
