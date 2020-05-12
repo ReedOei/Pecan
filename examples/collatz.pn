@@ -1,0 +1,45 @@
+// An example showing how we can use Pecan and Praline together.
+// Of course, Pecan cannot prove the Collatz Conjecture, but it is capable of generating the sequence.
+// We could do this in pure Praline as well, but this gives us the ability to bidirectional reasoning.
+// Not only can we compute collatz(n), but we can also compute what n will give us a certain m---we can
+// go backwards in the sequence.
+Restrict i,j,k,l,n,m are nat.
+
+collatz(n, m) :=
+    (if n is even then 2*m = n)
+    &
+    (if n is odd then m = 3*n+1)
+
+Define toNat n := snd (runFormat natFormat (wordToBinary (head (acceptingWord n)))) .
+Define genCollatz n :=
+    if holds { n = 1 } then
+        [toNat n]
+    else
+        let m be { collatz(n) = m } in
+            (toNat n) :: genCollatz m.
+Display let n be { n = 31041 } in genCollatz n.
+
+Define genNotEq var elems :=
+    match elems with
+    case [] => { true }
+    case x :: xs =>
+        let rest := genNotEq var xs in
+            { var != x & rest }
+    end.
+
+Define findAll found var t :=
+    let notIn := genNotEq var found in
+    let m be { t & notIn } in
+    if holds m then do
+        findAll (toNat m :: found) var t
+    else
+        found
+    .
+
+Display findAll [] "n" { nat(n) & collatz(n) = 208 } .
+
+// Example using natFormat of {
+//     nat(n) &
+//     collatz(n) = 381012
+// }.
+

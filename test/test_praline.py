@@ -5,13 +5,19 @@ from contextlib import redirect_stdout
 import io
 
 from pecan import program
+from pecan.settings import settings
 
 def run_file(filename, expected_output):
+    orig_quiet = settings.is_quiet()
+    settings.set_quiet(True)
+
     f = io.StringIO()
     with redirect_stdout(f):
-        prog = program.load(filename, quiet=True)
+        prog = program.load(filename)
         assert prog.evaluate().result.succeeded()
     assert f.getvalue().strip() == expected_output.strip()
+
+    settings.set_quiet(orig_quiet)
 
 def test_praline_simple():
     run_file('examples/test_praline_simple.pn', '1\n16\n')
@@ -95,5 +101,11 @@ def test_praline_match_syntax():
     run_file('examples/test_praline_match_syntax.pn', '''
 (8,10)
 (88,83109)
+''')
+
+def test_praline_collatz():
+    run_file('examples/collatz.pn', '''
+[31041,93124,46562,23281,69844,34922,17461,52384,26192,13096,6548,3274,1637,4912,2456,1228,614,307,922,461,1384,692,346,173,520,260,130,65,196,98,49,148,74,37,112,56,28,14,7,22,11,34,17,52,26,13,40,20,10,5,16,8,4,2,1]
+[416,69]
 ''')
 

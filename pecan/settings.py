@@ -17,6 +17,7 @@ class Settings:
         self.pecan_path_var = 'PECAN_PATH'
         self.history_file = 'pecan_history'
         self.simplication_level = 1
+        self.should_use_heuristics = False
 
         self.stdlib_prog = None
 
@@ -65,6 +66,13 @@ class Settings:
 
     def opt_enabled(self):
         return self.opt_level > 0
+
+    def set_use_heuristics(self, use_heuristics):
+        self.should_use_heuristics = use_heuristics
+        return self
+
+    def use_heuristics(self):
+        return self.should_use_heuristics
 
     def set_load_stdlib(self, val):
         self.load_stdlib = val

@@ -142,10 +142,10 @@ class BinaryIRExpression(IRExpression):
 
         proj_vars = set()
 
-        if type(self.a) is not VarRef:
+        if not isinstance(self.a, VarRef):
             proj_vars.add(val_a)
 
-        if type(self.b) is not VarRef:
+        if not isinstance(self.b, VarRef):
             proj_vars.add(val_b)
 
         return aut.project(proj_vars, prog.get_var_map())
@@ -174,10 +174,10 @@ class BinaryIRPredicate(IRPredicate):
 
         proj_vars = set()
 
-        if type(self.a) is not VarRef:
+        if not isinstance(self.a, VarRef):
             proj_vars.add(val_a)
 
-        if type(self.b) is not VarRef:
+        if not isinstance(self.b, VarRef):
             proj_vars.add(val_b)
 
         return aut.project(proj_vars, prog.get_var_map())
@@ -198,4 +198,20 @@ class UnaryIRPredicate(IRPredicate):
 
     def __hash__(self):
         return hash(self.a)
+
+class TypeHint(IRNode):
+    def __init__(self, expr_a, expr_b, body):
+        super().__init__()
+        self.expr_a = expr_a
+        self.expr_b = expr_b
+        self.body = body
+
+    def transform(self, transformer):
+        return transformer.transform_TypeHint(self)
+
+    def show(self):
+        return repr(self)
+
+    def __repr__(self):
+        return '(typ({}) = typ({}) in {})'.format(self.expr_a, self.expr_b, self.body)
 

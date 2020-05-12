@@ -1,0 +1,15 @@
+{
+    'var_map': {
+        'n': (0, {'0', '1'})
+    },
+    'aut': {
+        'states': {'0'},
+        'initial_states': {'0'},
+        'accepting_states': {'0'},
+        'transitions': {
+            ('0', '0'): ['0'],
+            ('0', '1'): ['0']
+        }
+    }
+}
+

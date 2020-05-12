@@ -24,6 +24,7 @@ class ExpressionExtractor(IRTransformer):
         self.expressions_compute = {}
         self.to_compute = {}
         self.dep_graph = {}
+        self.var_map = {}
 
         self.changed = False
 
@@ -32,6 +33,7 @@ class ExpressionExtractor(IRTransformer):
         self.expressions_compute.update(other.expressions_compute)
         self.to_compute.update(other.to_compute)
         self.dep_graph.update(other.dep_graph)
+        self.var_map.update(other.var_map)
 
         self.changed |= other.changed
 
@@ -41,6 +43,7 @@ class ExpressionExtractor(IRTransformer):
         compute_vars = []
 
         def add_var(new_var):
+            # Note that we care about order, so this moves new_var to the end of the list.
             if new_var in compute_vars:
                 compute_vars.remove(new_var)
             compute_vars.append(new_var)
@@ -59,8 +62,9 @@ class ExpressionExtractor(IRTransformer):
         done = set()
 
         new_pred = pred
-        for v in compute_vars:
-            expr = self.to_compute[v]
+        for var_name in compute_vars:
+            v = self.var_map[var_name]
+            expr = self.to_compute[var_name]
             to_compute = self.expressions_compute[expr]
 
             if type(to_compute) is VarRef:
@@ -74,7 +78,10 @@ class ExpressionExtractor(IRTransformer):
         return new_pred
 
     def is_var(self, var):
-        return var in self.dep_graph
+        if isinstance(var, VarRef):
+            return var.var_name in self.dep_graph
+        else: # if str
+            return var in self.dep_graph
 
     def transform_Sub(self, node):
         if node.is_int:
@@ -89,8 +96,6 @@ class ExpressionExtractor(IRTransformer):
                 return node
 
             if not node in self.expressions:
-                self.changed = True
-
                 new_a = self.transform(node.a)
                 new_b = self.transform(node.b)
 
@@ -100,10 +105,12 @@ class ExpressionExtractor(IRTransformer):
                     t = node.get_type() if node.get_type() is not None else InferredType()
                     new_var = VarRef(self.prog.fresh_name()).with_type(t)
 
+                    self.var_map[new_var.var_name] = new_var
                     self.expressions[node] = new_var
                     self.expressions_compute[node] = Sub(new_a, new_b).with_type(node.get_type())
-                    self.to_compute[new_var] = node
-                    self.dep_graph[new_var] = list(set(filter(self.is_var, [new_a, new_b])))
+                    self.to_compute[new_var.var_name] = node
+                    deps = { v for v in VariableUsage().analyze(self.expressions_compute[node]) }
+                    self.dep_graph[new_var.var_name] = list({ v.var_name for v in [new_a, new_b] if self.is_var(v) }.union(deps))
                 else:
                     return Sub(new_a, new_b).with_type(node.get_type())
 
@@ -135,10 +142,17 @@ class ExpressionExtractor(IRTransformer):
                     t = node.get_type() if node.get_type() is not None else InferredType()
                     new_var = VarRef(self.prog.fresh_name()).with_type(t)
 
+                    self.var_map[new_var.var_name] = new_var
                     self.expressions[node] = new_var
                     self.expressions_compute[node] = Add(new_a, new_b).with_type(node.get_type())
-                    self.to_compute[new_var] = node
-                    self.dep_graph[new_var] = list(set(filter(self.is_var, [new_a, new_b])))
+                    self.to_compute[new_var.var_name] = node
+                    deps = {v for v in VariableUsage().analyze(self.expressions_compute[node])}
+                    self.dep_graph[new_var.var_name] = list({ v.var_name for v in [new_a, new_b] if self.is_var(v) }.union(deps))
+                    # print(new_var)
+                    # print(self.expressions)
+                    # print(self.expressions_compute)
+                    # print(self.to_compute)
+                    # print(self.dep_graph)
                 else:
                     return Add(new_a, new_b).with_type(node.get_type())
 

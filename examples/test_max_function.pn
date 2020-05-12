@@ -1,0 +1,11 @@
+Restrict n, m, a, b, c ∈ binary.
+
+purchasable(n) := n ∈ binary ∧ ∃a. ∃b. ∃c. n = 6*a + 9*b + 20*c
+non_purchasable(n) := n ∈ binary ∧ ¬purchasable(n)
+
+largest_non_purchasable(n) := non_purchasable(n) ∧ ∀m. if non_purchasable(m) then m ≤ n
+
+Prove that {
+    largest_non_purchasable() = max { n : non_purchasable(n) }
+}.
+

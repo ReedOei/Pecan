@@ -59,6 +59,8 @@ Define a & b := if a then b else false.
 Define a | b := if a then true else b.
 
 Define a = b := equal a b.
+Define complement b := if b then false else true.
+Define a != b := complement (a = b) .
 Define a < b := compare a b = -1.
 Define a > b := compare a b = 1.
 Define a <= b := (a < b) | (a = b).
@@ -158,9 +160,18 @@ Define delete key := filter (\kv => fst kv != key).
 
 Define concatenate := foldl (\a b => a ^ toString b) "".
 
-Define boolToInt b := if b then 1 else 0.
+Define boolToInt b := if b then 1 else 0 .
+Define check t := truthValue t = "true" .
 Define checkToInt := boolToInt ∘ check.
 Define showWord word := concatenate ∘ map (\i => checkToInt { word(i) }).
+// This is generally used if you want to do something like:
+// if holds { i < j } then ... else ...
+// We want to compare to not false, rather than true, because true will
+// implicity universally quantify over all the variables, whereas we have
+// defined specific values for them, so as long as the values that satisfy these definitions
+// the formula holds.
+// Just be sure that this applies in your specific case before you call this version.
+Define holds t := truthValue t != "false" .
 
 Define zipWith f a b :=
     match (a, b) with
@@ -202,19 +213,15 @@ Define fromBinary := fromBase 2.
 
 Define reverse := foldl (\xs x => x :: xs) [] .
 
-Define stdFormat var reps :=
-    (var, map (\rep => match rep with
-                        case (prefix, cycle) => concatenate prefix ^ "(" ^ concatenate cycle ^ ")^ω"
-                       end) reps).
-
+Define omegaWord prefix cycle := concatenate prefix ^ "(" ^ concatenate cycle ^ ")^ω".
+Define stdFormat var reps := (var, map (uncurry omegaWord) reps).
 Define natFormat var reps :=
     match reps with
     case [(prefix, cycle)] =>
         if cycle = [0] then
-            (var, if isEmpty prefix then "0" else toString (fromBinary prefix))
+            (var, if isEmpty prefix then 0 else fromBinary prefix)
         else
-            let (v, [str]) := stdFormat var [(prefix, cycle)] in
-                (v, str ^ " (NOT A VALID NATURAL NUMBER)")
+            (var, omegaWord prefix cycle ^ " (NOT A VALID NATURAL NUMBER)")
     end.
 
 Define uncurry f p := match p with case (a, b) => f a b end .
@@ -356,6 +363,7 @@ Alias "Display" ==> Execute print .
 
 Alias "Example" ==> Display uncurry example .
 // This just exists so you can write "Example using ostrowskiFormat of { term }."
+Define of x := x .
 Define using format of term := (format, term) .
 
 Alias "Prove" ==> Execute proveStatement .

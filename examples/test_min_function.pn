@@ -1,0 +1,13 @@
+Restrict n,m are binary.
+
+gt6(n) := n > 6
+custom_min(m) := gt6(m) & forall n. if gt6(n) then m <= n
+
+Prove that {
+    min { n : gt6(n) } = custom_min()
+}.
+
+Prove that {
+    min { n : gt6(n) } = 7
+}.
+

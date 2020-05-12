@@ -1,0 +1,34 @@
+Restrict i,j,k,n,m,p,q,r are binary.
+
+// The nth digit of the Thue-Morse Word, T, is 1 iff n in binary has an odd number of ones
+$T(n) := odd_ones(n)
+
+p is period(i,j) := p > 0 & i is binary & j is binary & p is binary &
+    forall k.
+        if i <= k & k < j - p then $T[k] = $T[k+p]
+
+// Theorem ("For every p > 0, the Thue-Morse word has a factor with least period p.", {
+//     forall p. if p > 0 then exists i,j. p = min { m : m is period(i,j) }
+// }).
+
+unbordered(i,n) := n = min { p : p is period(i,i + n) }
+// Theorem ("The Thue-Morse word has an unbordered factor of length r for every r != 1 (mod 6).", {
+//     forall r. if r > 0 & !(exists k. r = 6*k + 1) then exists i. unbordered(i,r)
+// }).
+
+// unbordered_1_mod_6(n) := @postprocess[
+//     exists i. (exists k. n = 6*k + 1) & unbordered(i,n)
+// ]
+// #save_aut("unbordered_1_mod_6.aut", unbordered_1_mod_6)
+
+bordered(i,n) := @postprocess[
+    i is nat & n is nat & !unbordered(i,n)
+]
+
+all_bordered_1_mod_6(n) := @postprocess[
+    n is nat &
+    (exists k. n = 6*k + 1) &
+    forall i. bordered(i,n)
+]
+#save_aut("all_bordered_1_mod_6.aut", all_bordered_1_mod_6)
+

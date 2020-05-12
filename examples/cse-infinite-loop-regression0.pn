@@ -1,0 +1,14 @@
+Restrict a, x, y, z are nat.
+
+// Note that while it seems like this should be false, it is, in fact, true, because of how subtraction interacts weirdly with natural numbers (i.e., we can't do 0-5)
+Theorem ("Test", {
+    exists x,y. x - y != x + (-y)
+}).
+
+// But for ints, we get the expected result
+#import("integers.pn")
+Restrict m,n are int.
+Theorem ("Test (int)", {
+    forall m,n. m - n = m + (-n)
+}).
+

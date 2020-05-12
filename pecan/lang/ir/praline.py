@@ -681,7 +681,9 @@ class PralinePecanTerm(PralineTerm):
 
         temp_node = PralineToPecan().transform(IRSubstitution(prog.praline_env_clone()).transform(self.pecan_term))
 
-        return PralinePecanLiteral(prog.type_infer(temp_node))
+        from pecan.lang.typed_ir_lowering import TypedIRLowering
+        new_node = TypedIRLowering(prog).transform(prog.type_infer(temp_node))
+        return PralinePecanLiteral(new_node)
 
     def __eq__(self, other):
         return other is not None and type(other) is self.__class__ and self.pecan_term == other.pecan_term
@@ -726,8 +728,9 @@ class PralineLetPecan(PralineTerm):
     def evaluate(self, prog):
         result_node = self.pecan_term.evaluate(prog).evaluate(prog).pecan_term
 
-        from pecan.lang.ir.prog import AutLiteral
-        prog.praline_local_define(self.var_name, PralinePecanTerm(AutLiteral(result_node.evaluate(prog))))
+        from pecan.lang.ir.prog import ExprLiteral, VarRef
+        expr = ExprLiteral(result_node.evaluate(prog), VarRef(self.var_name))
+        prog.praline_local_define(self.var_name, PralinePecanTerm(expr).evaluate(prog))
         result = self.body.evaluate(prog)
         prog.praline_local_cleanup([self.var_name])
 

@@ -1,0 +1,7 @@
+Define removeCompl t :=
+    match t with
+    case { !(exists x. $P) } => { forall x. !$P(x) }
+    end.
+
+Display removeCompl { !(exists y. any(y)) }.
+

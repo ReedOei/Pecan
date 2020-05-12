@@ -18,6 +18,73 @@ class PecanTransformer(Transformer):
     def varlist(self, *vals):
         return [VarRef(v) for v in vals]
 
+    def min_func(self, var_name, pred):
+        from pecan.lang.ast_substitution import ASTSubstitution
+        from pecan.lang.ir.base import IRNode
+        var = VarRef(var_name)
+        temp = VarRef(IRNode.fresh_name())
+        subs = {var_name: temp}
+        fresh_pred = ASTSubstitution(subs).transform(pred)
+        return PredicateExpr(var_name,
+                    TypeHint(temp, var,
+                        Conjunction(pred, Forall([temp], Implies(fresh_pred, LessEquals(var, temp))))))
+
+    def max_func(self, var_name, pred):
+        from pecan.lang.ast_substitution import ASTSubstitution
+        from pecan.lang.ir.base import IRNode
+        var = VarRef(var_name)
+        temp = VarRef(IRNode.fresh_name())
+        subs = {var_name: temp}
+        fresh_pred = ASTSubstitution(subs).transform(pred)
+        return PredicateExpr(var_name,
+                    TypeHint(temp, var,
+                        Conjunction(pred, Forall([temp], Implies(fresh_pred, GreaterEquals(var, temp))))))
+
+    def inf_func(self, var_name, pred):
+        from pecan.lang.ast_substitution import ASTSubstitution
+        from pecan.lang.ir.base import IRNode
+        var = VarRef(var_name)
+        temp = VarRef(IRNode.fresh_name())
+        subs = {var_name: temp}
+        fresh_pred = ASTSubstitution(subs).transform(pred)
+        lower_bound = TypeHint(temp, var, Forall([temp], Implies(fresh_pred, LessEquals(var, temp))))
+        return self.max_func(var_name, lower_bound)
+
+    def sup_func(self, var_name, pred):
+        from pecan.lang.ast_substitution import ASTSubstitution
+        from pecan.lang.ir.base import IRNode
+        var = VarRef(var_name)
+        temp = VarRef(IRNode.fresh_name())
+        subs = {var_name: temp}
+        fresh_pred = ASTSubstitution(subs).transform(pred)
+        upper_bound = TypeHint(temp, var, Forall([temp], Implies(fresh_pred, GreaterEquals(var, temp))))
+        return self.min_func(var_name, upper_bound)
+
+    def distinct(self, varlist):
+        lits = []
+        for i, var_a in enumerate(varlist):
+            # Don't want to say something impossible like var_a != var_a, so avoid at least the trivial cases.
+            for var_b in varlist[i+1:]:
+                lits.append(Complement(Equals(var_a, var_b)))
+
+        if len(lits) == 0:
+            return BoolConst(True)
+        else:
+            return reduce(Conjunction, lits)
+
+    def elementof(self, var_name, varlist):
+        lits = []
+        for v in varlist:
+            lits.append(Equals(VarRef(var_name), v))
+
+        if len(lits) == 0:
+            return BoolConst(False)
+        else:
+            return reduce(Disjunction, lits)
+
+    def not_elementof(self, var_name, varlist):
+        return Complement(self.elementof(var_name, varlist))
+
     def args(self, *args):
         return list(args)
 
@@ -169,8 +236,14 @@ class PecanTransformer(Transformer):
     def call_is(self, var_name, call_name):
         return Call(call_name, [var_name])
 
+    def call_is_not(self, var_name, call_name):
+        return Complement(self.call_is(var_name, call_name))
+
     def call_is_args(self, var_name, call_name, args):
         return Call(call_name, args + [var_name])
+
+    def call_is_not_args(self, var_name, call_name, args):
+        return Complement(self.call_is_args(var_name, call_name, args))
 
     def val_dict(self, *pairs):
         return dict(pairs)
