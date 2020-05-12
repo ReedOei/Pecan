@@ -1,0 +1,67 @@
+\lstdefinelanguage{pecan}{
+	keywords=[1]{forall, exists, max, min, sup, inf, are, is, if, then, match, with, case, end, let, be, in, else, iff},
+	keywordstyle=[1]\color{blue}\bfseries,
+	keywords=[2]{false, true, sometimes},
+	commentstyle=\color{CadetBlue}\textit,
+	stringstyle=\color{ForestGreen}, % string literal style
+	keywordstyle=[2]\color{orange}\bfseries,
+	keywords=[3]{assert_prop,Structure,defining,Theorem,Prove,Example,Alias,Restrict,Define,Display,Execute,load,shuffle,import,save_aut,save_aut_img,that,context,end_context,forget,shuffle,shuffle_or,using,of},
+	keywordstyle=[3]\color{teal}\bfseries,
+	keywords=[4]{@annotation,@postprocess,@no_simplify,@simplify,@simplify_states,@simplify_edges},
+	keywordstyle=[4]\color{purple}\bfseries,
+	literate=%
+	    {\#}{{{\color{teal}\bfseries\#}}}1
+	    {+}{{{\color{red}+~}}}1
+	    {-}{{{\color{red}-~}}}1
+        {:=}{{{\color{red}:=~}}}1
+        {..}{{{\color{red}..~}}}1
+        {\{}{{{\color{red}\{}}}1
+        {\}}{{{\color{red}\}}}}1
+        {|}{{{$\color{red} \lor~$}}}1
+        {*}{{{\color{red}*~}}}1
+        {:}{{{\color{red}:~}}}1
+        {>}{{{\color{red}>~}}}1
+        {<}{{{\color{red}<~}}}1
+        {<=>}{{{$\color{red}\Leftrightarrow~$}}}1
+        % <= conflicts with <=> as iff, so I commented it out because it's more importnat that <=> not look weird (it becomes \leq > with the following line).
+        % But might as well keep something, so I keep \iff
+        % {<=}{{{$\color{red} \leq$}}}1
+        % Also got rid of >= for consistency.
+        % {>=}{{{$\color{red} \geq$}}}1
+        {.}{{{\color{red}.~}}}1
+        {&}{{{$\color{red} \land~$}}}1
+        {!}{{{$\color{red}\lnot~$}}}1
+        {!=}{{{$\color{red} \neq$}}}1
+        {=}{{{\color{red}=~}}}1
+        {exists }{{{$\color{red}\exists$}}}1
+        {forall }{{{$\color{red}\forall$}}}1,
+    sensitive=false, % keywords are not case-sensitive
+    morecomment=[l]{//}, % l is for line comment
+    morecomment=[s]{/*}{*/}, % s is for start and end delimiter
+    morestring=[b]", % defines that strings are enclosed in double quotes
+    showstringspaces=false
+}
+
+\lstnewenvironment{pecan}
+  {
+    \lstset{
+        language=pecan,
+        basicstyle=\normalsize\ttfamily,
+        mathescape=true
+        }
+  }
+  {
+  }
+
+\lstnewenvironment{pecan_output}
+  {
+    \lstset{
+        basicstyle=\normalsize\ttfamily,
+        mathescape=true
+        }
+  }
+  {
+  }
+
+\newcommand{\pecaninline}[1]{\lstinline[language=pecan,basicstyle=\normalsize\ttfamily,mathescape]{#1}}
+
