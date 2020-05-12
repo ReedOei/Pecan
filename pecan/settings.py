@@ -42,8 +42,7 @@ class Settings:
             return []
 
     def set_debug_level(self, level):
-        assert level >= 0
-        self.debug_level = level
+        self.debug_level = max(0,level)
         return self
 
     def get_debug_level(self):
