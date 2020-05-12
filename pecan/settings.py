@@ -91,12 +91,14 @@ class Settings:
 
     def include_stdlib(self, prog, loader, args, kwargs):
         if self.should_load_stdlib():
+            orig_debug_level = self.get_debug_level()
             before = self.should_load_stdlib()
             before_quiet = self.is_quiet()
             try:
                 # Don't want to load stdlib while loading stdlib
                 self.set_load_stdlib(False)
                 self.set_quiet(True)
+                self.set_debug_level(orig_debug_level - 1)
 
                 if self.stdlib_prog is None:
                     self.stdlib_prog = loader(prog.locate_file('std.pn'), *args, **kwargs)
@@ -106,6 +108,7 @@ class Settings:
             finally:
                 self.set_load_stdlib(before)
                 self.set_quiet(before_quiet)
+                self.set_debug_level(orig_debug_level)
 
         return prog
 

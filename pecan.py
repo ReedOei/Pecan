@@ -37,7 +37,8 @@ def run_repl(env):
             else:
                 prog = program.from_source(prog_str)
                 settings.log(0, lambda: str(prog))
-                env = prog.evaluate(env)
+                prog.include_with_restrictions(env)
+                env = prog.evaluate()
         except KeyboardInterrupt:
             print('') # newline to go "below" the prompt
             print("Use 'exit' to exit Pecan.")

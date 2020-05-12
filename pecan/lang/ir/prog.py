@@ -359,6 +359,11 @@ class Program(IRNode):
         self.praline_defs.update(other_prog.praline_defs)
         self.praline_aliases.update(other_prog.praline_aliases)
 
+    def include_with_restrictions(self, other_prog):
+        self.include(other_prog)
+
+        self.global_restrictions.update(other_prog.global_restrictions)
+
     def declare_type(self, pred_ref, val_dict):
         self.types[pred_ref] = val_dict
 
