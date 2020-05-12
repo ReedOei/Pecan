@@ -82,7 +82,9 @@ class IRNode:
             else:
                 sn, en = result.num_states(), result.num_edges()
             end_time = time.time()
-            settings.log(0, lambda: self.indented(prog, '{} has {} states and {} edges ({:.2f} seconds)'.format(self.get_display_node(prog), sn, en, end_time - start_time)))
+
+            if sn >= 0 and en >= 0:
+                settings.log(0, lambda: self.indented(prog, '{} has {} states and {} edges ({:.2f} seconds)'.format(self.get_display_node(prog), sn, en, end_time - start_time)))
 
         return result
 
