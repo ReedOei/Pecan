@@ -226,7 +226,6 @@ class PredicateExpr(IRExpression):
 
     def evaluate_node(self, prog):
         aut = Conjunction(self.var.get_type().restrict(self.var), self.pred).evaluate(prog)
-        # aut = self.pred.evaluate(prog)
         return aut, self.var
 
     def transform(self, transformer):

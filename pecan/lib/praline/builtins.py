@@ -279,5 +279,6 @@ builtins = [
     AutToStr().definition(),
     DeleteFile().definition(),
     WriteFile().definition(),
-    ReadFile().definition() ]
+    ReadFile().definition()
+]
 

@@ -728,8 +728,9 @@ class PralineLetPecan(PralineTerm):
     def evaluate(self, prog):
         result_node = self.pecan_term.evaluate(prog).evaluate(prog).pecan_term
 
-        from pecan.lang.ir.prog import ExprLiteral, VarRef
-        expr = ExprLiteral(result_node.evaluate(prog), VarRef(self.var_name))
+        from pecan.lang.ir.prog import AutLiteral, VarRef
+        from pecan.lang.ir.arith import PredicateExpr
+        expr = PredicateExpr(VarRef(self.var_name), AutLiteral(result_node.evaluate(prog)))
         prog.praline_local_define(self.var_name, PralinePecanTerm(expr).evaluate(prog))
         result = self.body.evaluate(prog)
         prog.praline_local_cleanup([self.var_name])

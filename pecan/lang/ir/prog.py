@@ -42,35 +42,6 @@ class VarRef(IRExpression):
     def __hash__(self):
         return hash((self.var_name, self.get_type()))
 
-class ExprLiteral(IRExpression):
-    def __init__(self, aut, var_ref, display_node=None):
-        super().__init__()
-        self.aut = aut
-        self.var_ref = var_ref
-        self.is_int = False
-        self.display_node = display_node
-
-    def evaluate(self, prog):
-        return self.aut, self.var_ref
-
-    def transform(self, transformer):
-        return transformer.transform_ExprLiteral(self)
-
-    def show(self):
-        return repr(self)
-
-    def __repr__(self):
-        if self.display_node is not None:
-            return 'ExprLiteral({}, {})'.format(repr(self.display_node), self.var_ref)
-        else:
-            return 'EXPRESSION LITERAL({})'.format(self.var_ref)
-
-    def __eq__(self, other):
-        return other is not None and type(other) is self.__class__ and self.aut == other.aut and self.var_ref == other.var_ref
-
-    def __hash__(self):
-        return hash((self.aut, self.var_ref))
-
 class AutLiteral(IRPredicate):
     def __init__(self, aut, display_node=None):
         super().__init__()

@@ -22,6 +22,7 @@ Display let n be { n = 31041 } in genCollatz n.
 Define genNotEq var elems :=
     match elems with
     case [] => { true }
+    case x :: [] => { var != x }
     case x :: xs =>
         let rest := genNotEq var xs in
             { var != x & rest }
@@ -29,7 +30,7 @@ Define genNotEq var elems :=
 
 Define findAll found var t :=
     let notIn := genNotEq var found in
-    let m be { t & notIn } in
+    let m be { t & notIn & var = m } in
     if holds m then do
         findAll (toNat m :: found) var t
     else
@@ -37,9 +38,4 @@ Define findAll found var t :=
     .
 
 Display findAll [] "n" { nat(n) & collatz(n) = 208 } .
-
-// Example using natFormat of {
-//     nat(n) &
-//     collatz(n) = 381012
-// }.
 

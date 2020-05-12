@@ -5,6 +5,7 @@ Long:
 - Fix finite automata to do existential quantification properly for numbers (i.e., anything with an adder/less) where we properly handle trialing/leading zeros.
     - Maybe have a context thing that tells us whether we're using MSD or LSD
     - Or we could just stick sonmthing in the structure that's like "LSD": f() where f() := true or sometihng.
+- Reduce other arithmetic things to just use the PredicateExpr, potentially (maybe this would hurt our ability to do optimizations?)
 
 Medium:
 - Simplify automata loading (e.g., format detection, unify the various loaders for pecan/walnut/hoa/finite automata)
