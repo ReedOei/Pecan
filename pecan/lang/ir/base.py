@@ -45,16 +45,11 @@ class IRNode:
     def simplify(self, prog, aut):
         self.show_aut_stats(prog, aut, desc='before simplify')
 
-        # if aut.num_edges() < 1000000:
         aut.simplify_edges()
         self.show_aut_stats(prog, aut, desc='after simplify_edges')
 
-        # if aut.num_states() < 100000:
         aut.simplify_states()
         self.show_aut_stats(prog, aut, desc='after simplify_states')
-
-        aut.simplify_edges()
-        self.show_aut_stats(prog, aut, desc='after simplify_edges')
 
         return aut
 
@@ -69,10 +64,17 @@ class IRNode:
             # settings.log(0, lambda: self.indented(prog, 'Evaluating {}'.format(self))
 
         result = self.evaluate_node(prog)
+
         if type(result) is tuple:
-            result = (self.simplify(prog, result[0]), result[1])
+            sn, en = result[0].num_states(), result[0].num_edges()
         else:
-            result = self.simplify(prog, result)
+            sn, en = result.num_states(), result.num_edges()
+
+        if sn >= 0 and en >= 0:
+            if type(result) is tuple:
+                result = (self.simplify(prog, result[0]), result[1])
+            else:
+                result = self.simplify(prog, result)
 
         prog.eval_level -= 1
 
