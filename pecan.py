@@ -60,6 +60,7 @@ def main():
     parser.add_argument('--no-opt', help='Turns off optimizations', required=False, action='store_true')
     parser.add_argument('--no-stdlib', help='Turns off the default behavior of loading the standard library (from library/std.pn in your Pecan installation)', required=False, action='store_false')
     parser.add_argument('--generate', help='Enumerate true statements, argument is how many variables to use', type=int, required=False)
+    parser.add_argument('--heuristics', help='Use heuristics to determine how to simplify automata. This flag is typically useful with large automata (>10000 states), and can cause worse performance with smaller automata.', required=False, action='store_true')
 
     args = parser.parse_args()
 
@@ -71,6 +72,7 @@ def main():
     settings.set_quiet(args.quiet)
     settings.set_opt_level(0 if args.no_opt else 1)
     settings.set_load_stdlib(args.no_stdlib)
+    settings.set_use_heuristics(args.heuristics)
 
     env = None
     if args.generate is not None:

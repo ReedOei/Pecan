@@ -135,6 +135,9 @@ class ASTToIR(AstTransformer):
             return s
 
     def transform_Div(self, node):
+        if node.is_int:
+            return ir.IntConst(node.evaluate_int(self.prog))
+
         new_var = VarRef(ir.IRNode.fresh_name())
         return self.transform(PredicateExpr(new_var.var_name, TypeHint(new_var, node.a, Equals(node.a, Mul(node.b, new_var)))))
 
