@@ -25,7 +25,7 @@ RUN curl -sSL https://raw.githubusercontent.com/ReedOei/Pecan/master/scripts/ins
 
 WORKDIR /home/pecan
 
-RUN git clone "https://github.com/ReedOei/Pecan" "ReedOei/Pecan"
+RUN git clone "https://github.com/ReedOei/Pecan" "ReedOei/Pecan" --recursive
 
 WORKDIR /home/pecan/ReedOei/Pecan
 
