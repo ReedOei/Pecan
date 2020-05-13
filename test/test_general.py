@@ -118,3 +118,6 @@ def test_constraints():
 def test_div():
     run_file('examples/test_div.pn')
 
+def test_website():
+    run_file('examples/website_tests.pn')
+

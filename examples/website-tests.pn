@@ -1,0 +1,56 @@
+// These are predicates that various people have submitted online to the website (http://reedoei.com/pecan), and so make for good tests.
+
+Restrict x,y,z,w are nat.
+
+Theorem ("Addition is something", {
+    forall w,x,y,z. ((w + x) + y) + z = ((x + z) + w) + y
+}).
+
+Restrict n, m, a, b, c are nat.
+
+n is purchasable := n is nat & exists a,b,c. n = 11*a + 37*b + 113*c
+largest_non_purchasable(n) := n is nat & !(n is purchasable) &
+    forall m. if !(m is purchasable) then m <= n
+
+Prove that {
+    largest_non_purchasable() = 252
+}.
+
+n is purchasable2 := n is nat & exists a,b,c. n = 6*a + 9*b + 21*c
+largest_non_purchasable2(n) := n is nat & !(n is purchasable2) &
+    forall m. if !(m is purchasable2) then m <= n
+
+Theorem ("With 6,9,21 there is no largest_non_purchasable", {
+    forall n.
+        if !purchasable2(n) then
+            exists m. m > n & !purchasable2(m)
+}).
+
+Theorem ("Nonesense", {
+    !(forall x,y,z. x + y = z)
+}).
+
+Theorem ("Test1", {
+    !(forall x,y. x + y = y + y)
+}).
+
+Theorem ("Addition is commutative (with a +0)", {
+    forall x,y. x + y = y + x + 0
+}).
+
+Theorem ("Test2", {
+    forall x,y. x + 2 = 1 + x + 1
+}).
+
+Theorem ("Test3", {
+    !(forall x,y. x + y = x + 1)
+}).
+
+n is purchasable3 := n is nat & exists a,b,c. n = 6*a + 9*b + 19*c
+largest_non_purchasable3(n) := n is nat & !(n is purchasable3) &
+    forall m. if !(m is purchasable3) then m <= n
+
+Prove that {
+    largest_non_purchasable3() = 41
+}.
+
