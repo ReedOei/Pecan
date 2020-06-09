@@ -38,7 +38,7 @@ def from_source(source_code, *args, **kwargs):
     settings.log(4, lambda: 'Parsed program:')
     settings.log(4, lambda: prog)
 
-    prog.search_paths = make_search_paths(kwargs.get('filename', None))
+    prog.search_paths = make_search_paths(filename=kwargs.get('filename', None))
     prog.loader = load
 
     prog = ASTToIR().transform(prog)

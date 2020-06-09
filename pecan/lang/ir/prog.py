@@ -347,7 +347,7 @@ class Program(IRNode):
         self.context = other_prog.context
         self.eval_level = other_prog.eval_level
         self.result = other_prog.result
-        self.search_paths = other_prog.search_paths
+        self.search_paths.extend(other_prog.search_paths)
         return self
 
     def include(self, other_prog):
