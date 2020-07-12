@@ -1009,7 +1009,7 @@ class PralineAutomaton(PralineTerm):
         if state_label not in self.state_map:
             raise Exception('No state "{}" in {}'.format(state_label, self))
 
-        self.states[self.state_map[state_label]].add_transition(Transition(transition_line))
+        self.states[self.state_map[state_label]].add_transition(Transition(len(self.input_names), transition_line))
 
         return self
 
