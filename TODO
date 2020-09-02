@@ -1,4 +1,6 @@
 Long:
+- Create a plugin for some proof assistant like Lean, Isabelle, Coq, etc.
+
 - Convert all operators to predicate calls after the last stage of optimizations
     - Long because this may introduce new issues (including performance issues)
 
@@ -6,6 +8,7 @@ Long:
     - Maybe have a context thing that tells us whether we're using MSD or LSD
     - Or we could just stick sonmthing in the structure that's like "LSD": f() where f() := true or sometihng.
 - Reduce other arithmetic things to just use the PredicateExpr, potentially (maybe this would hurt our ability to do optimizations?)
+- Rework finite automata to use a more efficient library (e.g., foma, which is currently a submodule but unused)
 
 Medium:
 - Simplify automata loading (e.g., format detection, unify the various loaders for pecan/walnut/hoa/finite automata)
@@ -14,7 +17,6 @@ Medium:
 
 let (x,y,z) be { x + y = z } in blah
 
-- Rework finite automata to use a more efficient library (e.g., foma, which is currently a submodule but unused)
 - Improve optimization so that we don't need to do what we do in test_bounded_ostrowski_2
 - Improve CSE optimization so that we use `forall` or `exists` to reduce the number of complements, when valid.
     For example, we should optimize
