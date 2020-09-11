@@ -123,6 +123,7 @@ varlist: var ("," var)*
      | "true"  -> formula_true
      | "false" -> formal_false
      | string                           -> spot_formula
+     | rstring                          -> omega_regular_expr
      | "(" pred ")"
      | comparison
      | COMP bool -> comp
@@ -173,6 +174,8 @@ int: INT -> int_tok
 var: VAR -> var_tok
 
 string: ESCAPED_STRING -> escaped_str
+
+rstring: "r" ESCAPED_STRING
 
 PROP_VAL: "sometimes"i | "true"i | "false"i // case insensitive
 

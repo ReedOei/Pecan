@@ -9,8 +9,10 @@ import time
 
 from lark import Lark, Transformer, v_args
 import spot
+import buddy
 
 from pecan.automata.automaton import FalseAutomaton
+from pecan.automata.buchi import BuchiAutomaton
 from pecan.tools.hoa_loader import from_spot_aut
 from pecan.lang.ir.base import *
 from pecan.settings import settings
@@ -92,6 +94,53 @@ class SpotFormula(IRPredicate):
 
     def __hash__(self):
         return hash((self.formula_str))
+
+class OmegaRegularExpression(IRPredicate):
+    def __init__(self, expr_str):
+        super().__init__()
+        self.expr_str = expr_str
+    
+    def evaluate(self, prog):
+        # TODO: omega regular expression impl
+        bdict = spot.make_bdd_dict()
+        aut = spot.make_twa_graph(bdict)
+        var_map = {}
+
+        p1 = buddy.bdd_ithvar(aut.register_ap("p1"))
+        p2 = buddy.bdd_ithvar(aut.register_ap("p2"))
+
+        # aut.set_generalized_buchi(2)
+        aut.set_acceptance(1, "Inf(1)")
+
+        aut.new_states(3)
+        # The default initial state is 0, but it is always better to
+        # specify it explicitly.
+        aut.set_init_state(0)
+
+        # new_edge() takes 3 mandatory parameters: source state, destination state,
+        # and label.  A last optional parameter can be used to specify membership to
+        # acceptance sets.  In the Python version, the list of acceptance sets the
+        # transition belongs to should be specified as a list.
+        aut.new_edge(0, 1, p1)
+        aut.new_edge(1, 1, p1 & p2, [0])
+        aut.new_edge(1, 2, p2, [1])
+        aut.new_edge(2, 1, p1 | p2, [0, 1])
+
+        print(aut.to_str('hoa'))
+        
+        return BuchiAutomaton(aut, var_map)
+
+    def transform(self, transformer):
+        return transformer.transform_OmegaRegularExpression(self)
+
+    def __repr__(self):
+        return 'ω({})'.format(self.expr_str)
+
+    def __eq__(self, other):
+        return other is not None and type(other) is self.__class__ and self.expr_str == other.expr_str
+
+    def __hash__(self):
+        return hash((self.expr_str))
 
 class Match:
     def __init__(self, pred_name=None, pred_args=None, match_any=False):

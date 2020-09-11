@@ -50,6 +50,18 @@ class SpotFormula(Predicate):
     def show(self):
         return 'LTL({})'.format(self.formula_str)
 
+class OmegaRegularExpression(Predicate):
+    def __init__(self, expr_str):
+        super().__init__()
+        self.expr_str = expr_str
+        print(expr_str)
+
+    def transform(self, transformer):
+        return transformer.transform_OmegaRegularExpression(self)
+
+    def show(self):
+        return 'ω({})'.format(self.expr_str)
+
 class Call(Predicate):
     def __init__(self, name, args):
         super().__init__()

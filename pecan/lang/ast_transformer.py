@@ -130,6 +130,9 @@ class AstTransformer:
     def transform_SpotFormula(self, node):
         return node
 
+    def transform_OmegaRegularExpression(self, node):
+        return node
+
     def transform_Call(self, node):
         return Call(node.name, [self.transform(arg) for arg in node.args])
 

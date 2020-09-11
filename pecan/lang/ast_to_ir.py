@@ -209,6 +209,9 @@ class ASTToIR(AstTransformer):
     def transform_SpotFormula(self, node):
         return ir.SpotFormula(node.formula_str)
 
+    def transform_OmegaRegularExpression(self, node):
+        return ir.OmegaRegularExpression(node.expr_str)
+
     def transform_Call(self, node):
         self.expr_depth += 1
         new_args = [self.transform(arg) for arg in node.args]

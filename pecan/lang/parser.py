@@ -401,6 +401,9 @@ class PecanTransformer(Transformer):
     def spot_formula(self, formula_str):
         return SpotFormula(formula_str)
 
+    def omega_regular_expr(self, expr_str):
+        return OmegaRegularExpression(expr_str)
+
     def annotation(self, annotation_tok, pred):
         return Annotation(str(annotation_tok), pred)
 
