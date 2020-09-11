@@ -112,6 +112,10 @@ Define cart_prod xss :=
     case ys :: yss => flatMap (\suf => map (\y => y :: suf) ys) (cart_prod yss)
     end.
 
+Define replicate n x :=
+    if n = 0 then []
+    else x :: replicate (n - 1) x .
+
 Define factorial n := product [1..n].
 
 Define strLength := length ∘ toChars.
@@ -165,6 +169,12 @@ Define lookup key assocs :=
 Define delete key := filter (\kv => fst kv != key).
 
 Define concatenate := foldl (\a b => a ^ toString b) "".
+Define intercalate delim xs :=
+    match xs with
+    case [] => ""
+    case [x] => toString x
+    case x :: y :: ys => toString x ^ delim ^ intercalate delim (y :: ys)
+    end.
 
 Define boolToInt b := if b then 1 else 0 .
 Define check t := truthValue t = "true" .
