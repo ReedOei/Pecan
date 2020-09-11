@@ -106,6 +106,12 @@ Define any f := foldl (\a b => a | f b) false.
 Define sum := foldl (\a b => a + b) 0.
 Define product := foldl (\a b => a * b) 1.
 
+Define cart_prod xss :=
+    match xss with
+    case [] => [[]]
+    case ys :: yss => flatMap (\suf => map (\y => y :: suf) ys) (cart_prod yss)
+    end.
+
 Define factorial n := product [1..n].
 
 Define strLength := length ∘ toChars.
