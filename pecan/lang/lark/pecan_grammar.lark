@@ -81,6 +81,7 @@ COLON: ":"
 
 ?pecan_term: "{" pred "}" -> praline_pecan_term
            | "{" def "}" -> praline_pecan_term
+           | "{" expr "}" -> praline_pecan_term
 
 ?praline_list: "[" (term ("," term)*)? "]" -> praline_list_literal
              | "[" term "." "." ["."] term "]" -> praline_list_gen

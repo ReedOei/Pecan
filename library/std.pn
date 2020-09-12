@@ -94,6 +94,10 @@ Define isEmpty l :=
 Define concat := flip (foldr cons).
 Define a @ b := concat a b.
 
+Define idx xs i :=
+    if i = 0 then head xs
+    else idx (tail xs) (i - 1) .
+
 Define flatten := foldr (\a b => a @ b) [].
 
 Define length := foldl (\cur _ => cur + 1) 0.
