@@ -133,3 +133,12 @@ class DirectiveShuffle(ASTNode):
     def __repr__(self):
         return '#shuffle({}, {}, {})'.format(self.pred_a, self.pred_b, self.output_pred)
 
+class DirectivePlot(ASTNode):
+    def __init__(self, pred_name):
+        self.pred_name = pred_name
+
+    def transform(self, transformer):
+        return transformer.transform_DirectivePlot(self)
+
+    def __repr__(self):
+        return '#plot({})'.format(self.pred_name)

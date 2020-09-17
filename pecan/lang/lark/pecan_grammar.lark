@@ -12,6 +12,7 @@
     | "Structure" formal "defining" val_dict ["."] -> directive_structure
     | "#" "shuffle" "(" formal "," formal "," formal ")" -> directive_shuffle
     | "#" "shuffle_or" "(" formal "," formal "," formal ")" -> directive_shuffle_or
+    | "#" "plot" "(" var ")" -> directive_plot
     | ("Restrict" | "Let") restriction "."
     | praline
 

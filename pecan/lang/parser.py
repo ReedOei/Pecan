@@ -269,6 +269,7 @@ class PecanTransformer(Transformer):
     directive_load_aut = DirectiveLoadAut
     directive_import = DirectiveImport
     directive_forget = DirectiveForget
+    directive_plot = DirectivePlot
 
     def directive_shuffle(self, pred_a, pred_b, output_pred):
         return DirectiveShuffle(False, pred_a, pred_b, output_pred)

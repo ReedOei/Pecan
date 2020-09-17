@@ -292,3 +292,18 @@ class DirectiveShuffle(IRNode):
 
     def __repr__(self):
         return '#shuffle({}, {}, {})'.format(self.pred_a, self.pred_b, self.output_pred)
+
+class DirectivePlot(IRNode):
+    def __init__(self, pred_name):
+        super().__init__()
+        self.pred_name = pred_name
+
+    def transform(self, transformer):
+        return transformer.transform_DirectivePlot(self)
+
+    def evaluate(self, prog):
+        print("plotting {}".format(self.pred_name))
+        print(Call(self.pred_name, []).evaluate(prog).accepting_word())
+
+    def __repr__(self):
+        return '#plot({})'.format(self.pred_name)
