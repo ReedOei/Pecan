@@ -405,6 +405,7 @@ class DirectivePlot(IRNode):
         radix = 3
 
         for layer in range(10):
+            print("plotting layer {}".format(layer))
             total = radix ** layer
             for n in range(total):
                 s = ""
