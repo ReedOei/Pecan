@@ -3,6 +3,8 @@
 
 import time
 
+import buddy
+
 from pecan.tools.shuffle_automata import ShuffleAutomata
 from pecan.tools.walnut_converter import convert_aut
 from pecan.tools.hoa_loader import load_hoa
@@ -301,9 +303,147 @@ class DirectivePlot(IRNode):
     def transform(self, transformer):
         return transformer.transform_DirectivePlot(self)
 
+    # find the reachable states from the given initial states
+    def find_reachable(self, buchi_aut, states):
+        reachable = set(states)
+        queue = list(states)
+        while len(queue):
+            state = queue.pop()
+            for edge in buchi_aut.aut.out(state):
+                # only follow satisfiable edges
+                if edge.cond != buddy.bddfalse:
+                    if edge.dst not in reachable:
+                        reachable.add(edge.dst)
+                        queue = [edge.dst] + queue
+        return reachable
+
+    """
+    Given a buchi automata, checks if there exists an omega word
+    accepted by it with the given prefix. Right now we only support
+    a word on the alphabet { 0, ..., n - 1 }
+
+    prefix should have the format "0120202", etc.
+    """
+    def accept_prefix(self, buchi_aut, prefix, n=3):
+        twa = buchi_aut.aut
+
+        # only support one argument case right now
+        assert len(buchi_aut.var_map.items()) == 1, "#plot only support predicates with one free variable right now"
+
+        # get bdd representations of each ap var
+        # ap_names = buchi_aut.var_map.items[0][0]
+        bdd_dict = twa.get_dict()
+        bdds = [ buddy.bdd_ithvar(bdd_dict.varnum(ap_formula)) for ap_formula in twa.ap() ]
+
+        # for bdd in bdds:
+        #     print(bdd)
+
+        # since the automata may be non-deterministic
+        # keep a set of states
+        current_states = { twa.state_number(twa.get_init_state()) }
+
+        for letter in prefix:
+            assert ord(letter) >= ord("0") and ord(letter) < ord("0") + n, "illegal letter in {}".format(prefix)
+
+            assignment_bdd = buddy.bddtrue
+            # TODO: check if the most significant bit corresponds to
+            # the last item in the var_map lists
+            for i, bdd in enumerate(bdds):
+                # test if the ith bit is 1
+                if int(letter) & (1 << (len(bdds) - i - 1)):
+                    assignment_bdd = buddy.bdd_and(assignment_bdd, bdd)
+                else:
+                    assignment_bdd = buddy.bdd_and(assignment_bdd, buddy.bdd_not(bdd))
+
+            # check all outgoing edges and update the current state set
+            next_states = set()
+
+            for state in current_states:
+                for edge in twa.out(state):
+                    # print(buddy.bdd_printset(edge.cond))
+                    satisfiable = buddy.bdd_and(edge.cond, assignment_bdd) != buddy.bddfalse
+                    # print(edge.cond, assignment_bdd, buddy.bdd_and(edge.cond, assignment_bdd))
+                    if satisfiable:
+                        next_states.add(edge.dst)
+
+            # print(current_states, letter, next_states)
+
+            current_states = next_states
+
+        # TODO: we are assuming that all states are accepting
+        # states (non-accepting ones should be removed from the
+        # automata already)
+        return len(current_states) != 0
+
+        # # find all reachable states T1
+        # # find all states reachable by T, T2
+        # # take T = T1 /\ T2, which is the set of states
+        # # that can be visited infinitely many times
+        # t1 = self.find_reachable(buchi_aut, current_states)
+        # t2 = self.find_reachable(buchi_aut, t1)
+        # inf_set = t1.intersection(t2)
+
+        # # checks if there is a satisfiable path from the current state to an accepting state
+        # # twa.get_acceptance().used_sets()
+
+        # # https://spot.lrde.epita.fr/doxygen/structspot_1_1acc__cond_1_1acc__code.html
+        # # assuming acc_cond is of the form `Inf(i)`
+        # acc_cond = twa.get_acceptance()
+        # print(dir(acc_cond))
+        # # print(spot.acc_cond.all_sets(acc_cond))
+
+        # print(twa.get_acceptance())
+
+        # print(current_states)
+
     def evaluate(self, prog):
+        import matplotlib.pyplot as pt
+
         print("plotting {}".format(self.pred_name))
-        print(Call(self.pred_name, []).evaluate(prog).accepting_word())
+        buchi_aut = Call(self.pred_name, []).evaluate(prog)
+
+        radix = 3
+
+        for layer in range(10):
+            total = radix ** layer
+            for n in range(total):
+                s = ""
+                for i in range(layer):
+                    s = str((n // (radix ** i)) % radix) + s
+
+                possibly_acc = self.accept_prefix(buchi_aut, s, n=radix)
+
+                # print(s, n, possibly_acc, total)
+                length = 1 / total
+                if possibly_acc:
+                    pt.plot([n * length, n * length + length], [layer, layer], color="blue")
+
+        # pt.savefig("")
+        pt.show()
+
+        # twa = buchi_aut.aut
+
+        # print(buchi_aut.var_map)
+        # print(twa.ap())
+        # print(twa.get_dict().varnum(twa.ap()[0]))
+
+        # # only support one argument case right now
+        # # assert len(buchi_aut.var_map) == 1, "#plot only support predicates with one free variable right now"
+
+        # # # get bdd representations of each ap var
+        # # buchi_aut.var_map[0]
+
+        # initial_state = twa.state_number(twa.get_init_state())
+        # for edge in twa.out(initial_state):
+        #     edge_cond = edge.cond
+
+        #     print(edge.dst)
+
+        #     ap1_bdd = buddy.bdd_ithvar(twa.get_dict().varnum(twa.ap()[0]))
+
+        #     print(buddy.bdd_and(edge_cond, buddy.bdd_not(ap1_bdd)) == buddy.bddfalse)
+
+        #     # buddy.bdd_apply()
 
     def __repr__(self):
         return '#plot({})'.format(self.pred_name)
