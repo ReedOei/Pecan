@@ -4,6 +4,7 @@
 import time
 
 import buddy
+import matplotlib.pyplot as pt
 
 from pecan.tools.shuffle_automata import ShuffleAutomata
 from pecan.tools.walnut_converter import convert_aut
@@ -296,9 +297,15 @@ class DirectiveShuffle(IRNode):
         return '#shuffle({}, {}, {})'.format(self.pred_a, self.pred_b, self.output_pred)
 
 class DirectivePlot(IRNode):
-    def __init__(self, pred_name):
+    def __init__(self, pred_name, dim, k, layer=None, layer_from=None, layer_to=None, save_to=None):
         super().__init__()
         self.pred_name = pred_name
+        self.dim = dim
+        self.k = k
+        self.layer = layer
+        self.layer_from = layer_from
+        self.layer_to = layer_to
+        self.save_to = save_to
 
     def transform(self, transformer):
         return transformer.transform_DirectivePlot(self)
@@ -343,14 +350,14 @@ class DirectivePlot(IRNode):
         current_states = { twa.state_number(twa.get_init_state()) }
 
         for letter in prefix:
-            assert ord(letter) >= ord("0") and ord(letter) < ord("0") + n, "illegal letter in {}".format(prefix)
+            # assert ord(letter) >= ord("0") and ord(letter) < ord("0") + n, "illegal letter in {}".format(prefix)
 
             assignment_bdd = buddy.bddtrue
             # TODO: check if the most significant bit corresponds to
             # the last item in the var_map lists
             for i, bdd in enumerate(bdds):
                 # test if the ith bit is 1
-                if int(letter) & (1 << (len(bdds) - i - 1)):
+                if letter & (1 << (len(bdds) - i - 1)):
                     assignment_bdd = buddy.bdd_and(assignment_bdd, bdd)
                 else:
                     assignment_bdd = buddy.bdd_and(assignment_bdd, buddy.bdd_not(bdd))
@@ -391,60 +398,90 @@ class DirectivePlot(IRNode):
         # acc_cond = twa.get_acceptance()
         # print(dir(acc_cond))
         # # print(spot.acc_cond.all_sets(acc_cond))
-
         # print(twa.get_acceptance())
-
         # print(current_states)
 
-    def evaluate(self, prog):
-        import matplotlib.pyplot as pt
+    def encode_word(self, n, layer, radix):
+        s = [ (n // (radix ** i)) % radix for i in range(layer) ]
+        s.reverse()
+        return s
 
+    """
+    Plot a cell in the corresponding dimension
+    e.g. a line segment in 1-dim or a square in 2-dim
+    """
+    def plot_cells(self, ax, cells, layer, color="black"):
+        if self.dim == 1:
+            for n in cells:
+                length = 1 / self.k ** layer
+                ax.plot([ n * length, n * length + length ], [ layer, layer ], color=color)
+        elif self.dim == 2:
+            length = 1 / self.k ** layer
+            squares = []
+
+            for n in cells:
+                word = self.encode_word(n, layer, self.k ** self.dim)
+                x = 0
+                y = 0
+                for i, letter in enumerate(word):
+                    x += (letter // self.k) * self.k ** (-i - 1)
+                    y += (letter % self.k) * self.k ** (-i - 1)
+                squares.append([ x, x + length, x + length, x ])
+                squares.append([ y, y, y + length, y + length ])
+                squares.append(color)
+
+            print("drawing squares")
+            ax.fill(*squares)
+        else:
+            raise Exception("unsupported dimention {}".format(self.dim))
+
+    """
+    Plot the layer^th convergent to the fractal
+    """
+    def plot_layer(self, ax, buchi_aut, layer):
+        radix = self.k ** self.dim
+        hit_cells = []
+
+        # TODO: parallelize this
+        for n in range(radix ** layer):
+            if (n + 1) % 100 == 0:
+                print("\r\033[2Kplotting layer {}: {}/{} prefixes tested".format(layer, n + 1, radix ** layer), end="")
+
+            possibly_acc = self.accept_prefix(buchi_aut, self.encode_word(n, layer, radix), n=radix)
+            if possibly_acc:
+                hit_cells.append(n)
+        
+        # newline
+        print("")
+
+        self.plot_cells(ax, hit_cells, layer)
+
+    def evaluate(self, prog):
         print("plotting {}".format(self.pred_name))
+
+        if self.dim == 1:
+            assert (self.layer is not None or
+                    (self.layer_from is not None and self.layer_to is not None)), \
+                   "one of layer or (layer_from, layer_to) must be specified"
+        else:
+            assert self.layer is not None, "layer must be specified for higher-dimensional plots"
+
         buchi_aut = Call(self.pred_name, []).evaluate(prog)
 
-        radix = 3
+        fig, ax = pt.subplots(1, 1)
 
-        for layer in range(10):
-            print("plotting layer {}".format(layer))
-            total = radix ** layer
-            for n in range(total):
-                s = ""
-                for i in range(layer):
-                    s = str((n // (radix ** i)) % radix) + s
+        if self.dim == 1 and (self.layer_from is not None and self.layer_to is not None):
+            for layer in range(self.layer_from, self.layer_to + 1):
+                self.plot_layer(ax, buchi_aut, layer)
+            ax.set_xlabel("x")
+            ax.set_ylabel("layer")
+        else:
+            self.plot_layer(ax, buchi_aut, self.layer)
 
-                possibly_acc = self.accept_prefix(buchi_aut, s, n=radix)
-
-                # print(s, n, possibly_acc, total)
-                length = 1 / total
-                if possibly_acc:
-                    pt.plot([n * length, n * length + length], [layer, layer], color="blue")
-
-        # pt.savefig("")
-        pt.show()
-
-        # twa = buchi_aut.aut
-
-        # print(buchi_aut.var_map)
-        # print(twa.ap())
-        # print(twa.get_dict().varnum(twa.ap()[0]))
-
-        # # only support one argument case right now
-        # # assert len(buchi_aut.var_map) == 1, "#plot only support predicates with one free variable right now"
-
-        # # # get bdd representations of each ap var
-        # # buchi_aut.var_map[0]
-
-        # initial_state = twa.state_number(twa.get_init_state())
-        # for edge in twa.out(initial_state):
-        #     edge_cond = edge.cond
-
-        #     print(edge.dst)
-
-        #     ap1_bdd = buddy.bdd_ithvar(twa.get_dict().varnum(twa.ap()[0]))
-
-        #     print(buddy.bdd_and(edge_cond, buddy.bdd_not(ap1_bdd)) == buddy.bddfalse)
-
-        #     # buddy.bdd_apply()
+        if self.save_to:
+            pt.savefig(self.save_to)
+        else:
+            pt.show()
 
     def __repr__(self):
         return '#plot({})'.format(self.pred_name)

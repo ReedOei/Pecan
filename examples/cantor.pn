@@ -1,3 +1,0 @@
-#load("cantor.txt", "walnut", cantor(x))
-
-#plot(cantor)

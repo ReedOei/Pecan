@@ -1,0 +1,12 @@
+#load("sierpinski-3-ary.txt", "walnut", sierpinski3(x))
+#load("sierpinski-5-ary.txt", "walnut", sierpinski5(x))
+#load("cantor-3-ary.txt", "walnut", cantor3(x))
+
+
+// #plot(sierpinski5, dim=2, k=5, layer=2, save_to="sierpinski5.png")
+
+#plot(sierpinski5, dim=2, k=5, layer=3)
+
+// #plot(sierpinski3, dim=2, k=3, layer=5)
+// #plot(cantor3, dim=1, k=3, layer_from=0, layer_to=6)
+// #plot(cantor3, dim=1, k=3, layer=6)
