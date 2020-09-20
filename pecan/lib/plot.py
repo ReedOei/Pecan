@@ -1,5 +1,7 @@
 import buddy
 
+import numpy as np
+
 
 class PlotMethod:
     def plot_layer(self, k, layer, cell_bitmap):
@@ -30,12 +32,13 @@ Plot the given cell bitmap in 1D
 """
 class Matplotlib1DPlotMethod(MatplotlibPlotMethod):
     def plot_layer(self, k, layer, cell_bitmap):
-        k ** layer
-        for n in range(k ** layer):
-            if cell_bitmap & (1 << n):
-                length = 1 / k ** layer
+        base = k ** layer
+        length = 1 / base
+
+        for x in range(base):
+            if cell_bitmap & (1 << x):
                 self.pt.plot(
-                    [ n * length, n * length + length ],
+                    [ x * length, x * length + length ],
                     [ layer, layer ],
                     color=self.color,
                 )
@@ -47,26 +50,41 @@ Plot the given cell bitmap in 2D
 class Matplotlib2DPlotMethod(MatplotlibPlotMethod):
     def plot_layer(self, k, layer, cell_bitmap):
         # total number of cells
-        total = (k ** 2) ** layer
-        length = 1 / k ** layer
+        base = k ** layer
+        total = (k ** layer) ** 2
 
-        for n in range(total):
-            if cell_bitmap & (1 << n):
-                word = BuchiPlotter.encode_word(n, layer, k ** 2)
-                x = 0
-                y = 0
-                for i, letter in enumerate(word):
-                    x += (letter // k) * k ** (-i - 1)
-                    y += (letter % k) * k ** (-i - 1)
-                
-                print("\r\033[2Kdrawing {}/{} squares".format(n + 1, total), end="")
+        for x in range(k ** layer):
+            for y in range(k ** layer):
+                array_index = x * base + y
+                print("\r\033[2Kdrawing {}/{} squares".format(array_index + 1, total), end="")
 
-                self.pt.fill(
-                    [ x, x + length, x + length, x ],
-                    [ y, y, y + length, y + length ],
-                    self.color,
-                )
+                if cell_bitmap & (1 << array_index):
+                    self.pt.fill(
+                        [ x, x + 1, x + 1, x ],
+                        [ y, y, y + 1, y + 1 ],
+                        self.color,
+                    )
         print("")
+
+
+"""
+Plot the given cell bitmap in 3D
+"""
+class Matplotlib3DPlotMethod(MatplotlibPlotMethod):
+    def plot_layer(self, k, layer, cell_bitmap):
+        voxels = np.zeros((k ** layer, k ** layer, k ** layer), dtype=np.uint8)
+        base = k ** layer
+
+        for x in range(base):
+            for y in range(base):
+                for z in range(base):
+                    array_index = x * base * base + y * base + z
+                    if cell_bitmap & (1 << array_index):
+                        voxels[x, y, z] = 1
+
+        fig = self.pt.figure()
+        ax = fig.gca(projection="3d")
+        ax.voxels(voxels)
 
 
 class BuchiPlotter:
@@ -74,6 +92,7 @@ class BuchiPlotter:
         "matplotlib": {
             1: Matplotlib1DPlotMethod(),
             2: Matplotlib2DPlotMethod(),
+            3: Matplotlib3DPlotMethod(),
         },
     }
 
@@ -188,8 +207,11 @@ class BuchiPlotter:
         return s
 
     """
-    Return a bitmap (integer) whose n^th least significant bit represents
-    whether the k-ary encoding of n is a prefix of some omega-word
+    Return a bitmap (integer) which can be bitwisely interpreted
+    as a voxel map of dimension (<k> ** <layer>) x (<k> ** <layer>) x ... x (<k> ** <layer>)
+                                |______________________<dim> mults_________________________|
+    in which each true bit means the corresponding cell contains an omega word that
+    is accepted by <buchi_aut>
     """
     def get_hit_cell_bitmap(self, buchi_aut, layer):
         radix = self.k ** self.dim
@@ -199,9 +221,22 @@ class BuchiPlotter:
         for n in range(radix ** layer):
             print("\r\033[2Kplotting layer {}: {}/{} prefixes tested".format(layer, n + 1, radix ** layer), end="")
 
-            possibly_acc = BuchiPlotter.accept_prefix(buchi_aut, BuchiPlotter.encode_word(n, layer, radix), n=radix)
+            word = BuchiPlotter.encode_word(n, layer, radix)
+            possibly_acc = BuchiPlotter.accept_prefix(buchi_aut, word, n=radix)
+
             if possibly_acc:
-                hit_bitmap |= 1 << n
+                # convert n to actual coordinates
+                base = self.k ** layer
+
+                # <dim> coordinates encoded into one array index, e.g.
+                # x, y, z => x * base ** 2 + y * base + z
+                array_index = 0
+                for i, letter in enumerate(word):
+                    for j in range(self.dim):
+                        coordinate = letter // (self.k ** j) % self.k
+                        array_index += base ** (self.dim - j - 1) * (self.k ** (len(word) - i - 1)) * coordinate
+
+                hit_bitmap |= 1 << array_index
 
         # newline
         print("")
