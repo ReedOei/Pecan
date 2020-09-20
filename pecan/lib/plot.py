@@ -3,6 +3,8 @@ import spot
 
 import numpy as np
 
+from pecan.automata.buchi import BuchiAutomaton
+
 
 class PlotMethod:
     def plot_layer(self, k, layer, cell_bitmap, labels):
@@ -142,15 +144,18 @@ class BuchiPlotter:
     def find_reachable(buchi_aut, states):
         reachable = set(states)
         queue = list(states)
+        mark = spot.mark_t()
         while len(queue):
             state = queue.pop()
             for edge in buchi_aut.aut.out(state):
                 # only follow satisfiable edges
                 if edge.cond != buddy.bddfalse:
+                    if edge.dst in states:
+                        mark |= edge.acc
                     if edge.dst not in reachable:
                         reachable.add(edge.dst)
                         queue = [edge.dst] + queue
-        return reachable
+        return reachable, mark
 
     """
     Given a buchi automata, checks if there exists an omega word
@@ -178,8 +183,45 @@ class BuchiPlotter:
             first_letter = prefix[0]
             word_variables = set(first_letter.keys())
             bdd_variables = set(bdds.keys())
-            assert word_variables == bdd_variables, \
-                   "unmatched number of dimenstions, expecting {}, got {}".format(bdd_variables, word_variables)
+            assert bdd_variables.issubset(word_variables), \
+                   "missing dimensions for variable(s) {}".format(bdd_variables.difference(word_variables))
+
+        # # build a machine that only accepts strings with a certain prefix
+        # edge_conditions = []
+        # for dict_letter in prefix:
+        #     # NOTE: letter is a dictionary from variable => actual letters
+        #     assignment_bdd = buddy.bddtrue
+        #     # TODO: check if the most significant bit corresponds to
+        #     # the last item in the var_map lists
+        #     for var, letter in dict_letter.items():
+        #         if var not in bdds: continue
+        #         for i, bdd in enumerate(bdds[var]):
+        #             # test if the ith bit is 1
+        #             if letter & (1 << (len(bdds[var]) - i - 1)):
+        #                 assignment_bdd = buddy.bdd_and(assignment_bdd, bdd)
+        #             else:
+        #                 assignment_bdd = buddy.bdd_and(assignment_bdd, buddy.bdd_not(bdd))
+
+        #     edge_conditions.append(assignment_bdd)
+
+        # prefix_twa = spot.make_twa_graph(bdd_dict)
+        # prefix_twa.copy_ap_of(twa)
+
+        # prev_state = prefix_twa.new_state()
+        # prefix_twa.set_init_state(prev_state)
+
+        # for i, edge_cond in enumerate(edge_conditions):
+        #     next_state = prefix_twa.new_state()
+        #     if i + 1 != len(edge_conditions):
+        #         prefix_twa.new_edge(prev_state, next_state, edge_cond)
+        #     else:
+        #         prefix_twa.new_edge(prev_state, next_state, edge_cond, [0])
+        #     prev_state = next_state
+
+        # prefix_twa.new_edge(prev_state, prev_state, buddy.bddtrue, [0])
+        # prefix_twa.set_acceptance(1, "Inf(0)")
+        # prefix_buchi_automata = BuchiAutomaton(prefix_twa, buchi_aut.var_map)
+        # return prefix_buchi_automata.conjunction(buchi_aut).truth_value() != "false"
 
         # since the automata may be non-deterministic
         # keep a set of states
@@ -190,6 +232,7 @@ class BuchiPlotter:
             # TODO: check if the most significant bit corresponds to
             # the last item in the var_map lists
             for var, letter in dict_letter.items():
+                if var not in bdds: continue
                 for i, bdd in enumerate(bdds[var]):
                     # test if the ith bit is 1
                     if letter & (1 << (len(bdds[var]) - i - 1)):
@@ -212,29 +255,18 @@ class BuchiPlotter:
 
             current_states = next_states
 
-        # TODO: we are assuming that all states are accepting
-        # states (non-accepting ones should be removed from the
-        # automata already)
-        return len(current_states) != 0
-
         # # find all reachable states T1
         # # find all states reachable by T, T2
         # # take T = T1 /\ T2, which is the set of states
         # # that can be visited infinitely many times
-        # t1 = self.find_reachable(buchi_aut, current_states)
-        # t2 = self.find_reachable(buchi_aut, t1)
+        t1, _ = BuchiPlotter.find_reachable(buchi_aut, current_states)
+        _, mark2 = BuchiPlotter.find_reachable(buchi_aut, t1)
         # inf_set = t1.intersection(t2)
 
-        # # checks if there is a satisfiable path from the current state to an accepting state
-        # # twa.get_acceptance().used_sets()
+        inf_mark = mark2
 
-        # # https://spot.lrde.epita.fr/doxygen/structspot_1_1acc__cond_1_1acc__code.html
-        # # assuming acc_cond is of the form `Inf(i)`
-        # acc_cond = twa.get_acceptance()
-        # print(dir(acc_cond))
-        # # print(spot.acc_cond.all_sets(acc_cond))
-        # print(twa.get_acceptance())
-        # print(current_states)
+        # TODO: this check may be too conservative
+        return twa.get_acceptance().inf_satisfiable(inf_mark)
 
     @staticmethod
     def encode_word(n, layer, radix):
