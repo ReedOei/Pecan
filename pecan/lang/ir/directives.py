@@ -3,9 +3,6 @@
 
 import time
 
-import buddy
-import matplotlib.pyplot as pt
-
 from pecan.tools.shuffle_automata import ShuffleAutomata
 from pecan.tools.walnut_converter import convert_aut
 from pecan.tools.hoa_loader import load_hoa
@@ -14,6 +11,8 @@ from pecan.tools.hoa_loader import load_hoa
 from pecan.tools.finite_loader import load_finite
 from pecan.automata.buchi import BuchiAutomaton
 from pecan.lang.ir import *
+
+from pecan.lib.plot import BuchiPlotter
 
 from pecan.settings import settings
 
@@ -297,191 +296,19 @@ class DirectiveShuffle(IRNode):
         return '#shuffle({}, {}, {})'.format(self.pred_a, self.pred_b, self.output_pred)
 
 class DirectivePlot(IRNode):
-    def __init__(self, pred_name, dim, k, layer=None, layer_from=None, layer_to=None, save_to=None):
+    def __init__(self, pred_name, **kwargs):
         super().__init__()
         self.pred_name = pred_name
-        self.dim = dim
-        self.k = k
-        self.layer = layer
-        self.layer_from = layer_from
-        self.layer_to = layer_to
-        self.save_to = save_to
+        self.kwargs = kwargs
 
     def transform(self, transformer):
         return transformer.transform_DirectivePlot(self)
 
-    # find the reachable states from the given initial states
-    def find_reachable(self, buchi_aut, states):
-        reachable = set(states)
-        queue = list(states)
-        while len(queue):
-            state = queue.pop()
-            for edge in buchi_aut.aut.out(state):
-                # only follow satisfiable edges
-                if edge.cond != buddy.bddfalse:
-                    if edge.dst not in reachable:
-                        reachable.add(edge.dst)
-                        queue = [edge.dst] + queue
-        return reachable
-
-    """
-    Given a buchi automata, checks if there exists an omega word
-    accepted by it with the given prefix. Right now we only support
-    a word on the alphabet { 0, ..., n - 1 }
-
-    prefix should have the format "0120202", etc.
-    """
-    def accept_prefix(self, buchi_aut, prefix, n=3):
-        twa = buchi_aut.aut
-
-        # only support one argument case right now
-        assert len(buchi_aut.var_map.items()) == 1, "#plot only support predicates with one free variable right now"
-
-        # get bdd representations of each ap var
-        # ap_names = buchi_aut.var_map.items[0][0]
-        bdd_dict = twa.get_dict()
-        bdds = [ buddy.bdd_ithvar(bdd_dict.varnum(ap_formula)) for ap_formula in twa.ap() ]
-
-        # for bdd in bdds:
-        #     print(bdd)
-
-        # since the automata may be non-deterministic
-        # keep a set of states
-        current_states = { twa.state_number(twa.get_init_state()) }
-
-        for letter in prefix:
-            # assert ord(letter) >= ord("0") and ord(letter) < ord("0") + n, "illegal letter in {}".format(prefix)
-
-            assignment_bdd = buddy.bddtrue
-            # TODO: check if the most significant bit corresponds to
-            # the last item in the var_map lists
-            for i, bdd in enumerate(bdds):
-                # test if the ith bit is 1
-                if letter & (1 << (len(bdds) - i - 1)):
-                    assignment_bdd = buddy.bdd_and(assignment_bdd, bdd)
-                else:
-                    assignment_bdd = buddy.bdd_and(assignment_bdd, buddy.bdd_not(bdd))
-
-            # check all outgoing edges and update the current state set
-            next_states = set()
-
-            for state in current_states:
-                for edge in twa.out(state):
-                    # print(buddy.bdd_printset(edge.cond))
-                    satisfiable = buddy.bdd_and(edge.cond, assignment_bdd) != buddy.bddfalse
-                    # print(edge.cond, assignment_bdd, buddy.bdd_and(edge.cond, assignment_bdd))
-                    if satisfiable:
-                        next_states.add(edge.dst)
-
-            # print(current_states, letter, next_states)
-
-            current_states = next_states
-
-        # TODO: we are assuming that all states are accepting
-        # states (non-accepting ones should be removed from the
-        # automata already)
-        return len(current_states) != 0
-
-        # # find all reachable states T1
-        # # find all states reachable by T, T2
-        # # take T = T1 /\ T2, which is the set of states
-        # # that can be visited infinitely many times
-        # t1 = self.find_reachable(buchi_aut, current_states)
-        # t2 = self.find_reachable(buchi_aut, t1)
-        # inf_set = t1.intersection(t2)
-
-        # # checks if there is a satisfiable path from the current state to an accepting state
-        # # twa.get_acceptance().used_sets()
-
-        # # https://spot.lrde.epita.fr/doxygen/structspot_1_1acc__cond_1_1acc__code.html
-        # # assuming acc_cond is of the form `Inf(i)`
-        # acc_cond = twa.get_acceptance()
-        # print(dir(acc_cond))
-        # # print(spot.acc_cond.all_sets(acc_cond))
-        # print(twa.get_acceptance())
-        # print(current_states)
-
-    def encode_word(self, n, layer, radix):
-        s = [ (n // (radix ** i)) % radix for i in range(layer) ]
-        s.reverse()
-        return s
-
-    """
-    Plot a cell in the corresponding dimension
-    e.g. a line segment in 1-dim or a square in 2-dim
-    """
-    def plot_cells(self, ax, cells, layer, color="black"):
-        if self.dim == 1:
-            for n in cells:
-                length = 1 / self.k ** layer
-                ax.plot([ n * length, n * length + length ], [ layer, layer ], color=color)
-        elif self.dim == 2:
-            length = 1 / self.k ** layer
-            squares = []
-
-            for n in cells:
-                word = self.encode_word(n, layer, self.k ** self.dim)
-                x = 0
-                y = 0
-                for i, letter in enumerate(word):
-                    x += (letter // self.k) * self.k ** (-i - 1)
-                    y += (letter % self.k) * self.k ** (-i - 1)
-                squares.append([ x, x + length, x + length, x ])
-                squares.append([ y, y, y + length, y + length ])
-                squares.append(color)
-
-            print("drawing squares")
-            ax.fill(*squares)
-        else:
-            raise Exception("unsupported dimention {}".format(self.dim))
-
-    """
-    Plot the layer^th convergent to the fractal
-    """
-    def plot_layer(self, ax, buchi_aut, layer):
-        radix = self.k ** self.dim
-        hit_cells = []
-
-        # TODO: parallelize this
-        for n in range(radix ** layer):
-            if (n + 1) % 100 == 0:
-                print("\r\033[2Kplotting layer {}: {}/{} prefixes tested".format(layer, n + 1, radix ** layer), end="")
-
-            possibly_acc = self.accept_prefix(buchi_aut, self.encode_word(n, layer, radix), n=radix)
-            if possibly_acc:
-                hit_cells.append(n)
-        
-        # newline
-        print("")
-
-        self.plot_cells(ax, hit_cells, layer)
-
     def evaluate(self, prog):
         print("plotting {}".format(self.pred_name))
-
-        if self.dim == 1:
-            assert (self.layer is not None or
-                    (self.layer_from is not None and self.layer_to is not None)), \
-                   "one of layer or (layer_from, layer_to) must be specified"
-        else:
-            assert self.layer is not None, "layer must be specified for higher-dimensional plots"
-
         buchi_aut = Call(self.pred_name, []).evaluate(prog)
-
-        fig, ax = pt.subplots(1, 1)
-
-        if self.dim == 1 and (self.layer_from is not None and self.layer_to is not None):
-            for layer in range(self.layer_from, self.layer_to + 1):
-                self.plot_layer(ax, buchi_aut, layer)
-            ax.set_xlabel("x")
-            ax.set_ylabel("layer")
-        else:
-            self.plot_layer(ax, buchi_aut, self.layer)
-
-        if self.save_to:
-            pt.savefig(self.save_to)
-        else:
-            pt.show()
+        plotter = BuchiPlotter(buchi_aut, **self.kwargs)
+        plotter.plot()
 
     def __repr__(self):
         return '#plot({})'.format(self.pred_name)

@@ -5,8 +5,9 @@
 
 // #plot(sierpinski5, dim=2, k=5, layer=2, save_to="sierpinski5.png")
 
-#plot(sierpinski5, dim=2, k=5, layer=3)
+// #plot(sierpinski5, dim=2, k=5, layer=3)
 
 // #plot(sierpinski3, dim=2, k=3, layer=5)
-// #plot(cantor3, dim=1, k=3, layer_from=0, layer_to=6)
+
+#plot(cantor3, dim=1, k=3, layer_from=0, layer_to=10)
 // #plot(cantor3, dim=1, k=3, layer=6)
