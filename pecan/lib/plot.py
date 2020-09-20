@@ -1,10 +1,11 @@
 import buddy
+import spot
 
 import numpy as np
 
 
 class PlotMethod:
-    def plot_layer(self, k, layer, cell_bitmap):
+    def plot_layer(self, k, layer, cell_bitmap, labels):
         raise NotImplementedError()
 
     def show(self):
@@ -15,15 +16,17 @@ class PlotMethod:
 
 
 class MatplotlibPlotMethod(PlotMethod):
-    def __init__(self, color="black"):
+    def __init__(self, color="blue"):
         import matplotlib.pyplot as pt
         self.pt = pt
         self.color = color
 
     def show(self):
+        self.pt.tight_layout()
         self.pt.show()
 
     def save(self, path):
+        self.pt.tight_layout()
         self.pt.savefig(path)
 
 
@@ -31,7 +34,7 @@ class MatplotlibPlotMethod(PlotMethod):
 Plot the given cell bitmap in 1D
 """
 class Matplotlib1DPlotMethod(MatplotlibPlotMethod):
-    def plot_layer(self, k, layer, cell_bitmap):
+    def plot_layer(self, k, layer, cell_bitmap, labels):
         base = k ** layer
         length = 1 / base
 
@@ -43,12 +46,16 @@ class Matplotlib1DPlotMethod(MatplotlibPlotMethod):
                     color=self.color,
                 )
 
+        assert len(labels) == 1
+        self.pt.xlabel(labels[0])
+        self.pt.ylabel("layer")
+
 
 """
 Plot the given cell bitmap in 2D
 """
 class Matplotlib2DPlotMethod(MatplotlibPlotMethod):
-    def plot_layer(self, k, layer, cell_bitmap):
+    def plot_layer(self, k, layer, cell_bitmap, labels):
         # total number of cells
         base = k ** layer
         total = (k ** layer) ** 2
@@ -66,14 +73,20 @@ class Matplotlib2DPlotMethod(MatplotlibPlotMethod):
                     )
         print("")
 
+        assert len(labels) == 2
+        self.pt.xlabel(labels[0])
+        self.pt.ylabel(labels[1])
+
 
 """
 Plot the given cell bitmap in 3D
 """
 class Matplotlib3DPlotMethod(MatplotlibPlotMethod):
-    def plot_layer(self, k, layer, cell_bitmap):
+    def plot_layer(self, k, layer, cell_bitmap, labels):
         voxels = np.zeros((k ** layer, k ** layer, k ** layer), dtype=np.uint8)
         base = k ** layer
+
+        print("preparing voxel map")
 
         for x in range(base):
             for y in range(base):
@@ -82,9 +95,16 @@ class Matplotlib3DPlotMethod(MatplotlibPlotMethod):
                     if cell_bitmap & (1 << array_index):
                         voxels[x, y, z] = 1
 
+        print("drawing voxels")
+
         fig = self.pt.figure()
         ax = fig.gca(projection="3d")
         ax.voxels(voxels)
+
+        assert len(labels) == 3
+        ax.set_xlabel(labels[0])
+        ax.set_ylabel(labels[1])
+        ax.set_zlabel(labels[2])
 
 
 class BuchiPlotter:
@@ -96,16 +116,26 @@ class BuchiPlotter:
         },
     }
 
-    def __init__(self, buchi_aut, dim, k, layer=None, layer_from=None, layer_to=None, save_to=None, plot_method="matplotlib"):
+    def __init__(self, buchi_aut, layer=None, layer_from=None, layer_to=None, save_to=None, plot_method="matplotlib", **kwargs):
         super().__init__()
         self.buchi_aut = buchi_aut
-        self.dim = dim
-        self.k = k
         self.layer = layer
         self.layer_from = layer_from
         self.layer_to = layer_to
         self.save_to = save_to
         self.plot_method = plot_method
+        self.alphabet_sizes = {}
+        self.max_alphabet_size = 0
+
+        for key in kwargs:
+            if key.startswith("alphabet_"):
+                self.alphabet_sizes[key[len("alphabet_"):]] = kwargs[key]
+                self.max_alphabet_size = max(self.max_alphabet_size, kwargs[key])
+
+        # fix an arbitrary order of the arguments
+        self.dimensions = list(self.alphabet_sizes.keys())
+
+        assert self.max_alphabet_size > 0
 
     # find the reachable states from the given initial states
     @staticmethod
@@ -124,42 +154,48 @@ class BuchiPlotter:
 
     """
     Given a buchi automata, checks if there exists an omega word
-    accepted by it with the given prefix. Right now we only support
-    a word on the alphabet { 0, ..., n - 1 }
+    accepted by it with the given prefix.
 
-    prefix should have the format "0120202", etc.
+    prefix is a word on python dictionaries, e.g.
+    { "a": 1, "b": 0 } { "a": 1, "b": 2 } ...
     """
     @staticmethod
     def accept_prefix(buchi_aut, prefix, n=3):
         twa = buchi_aut.aut
 
         # only support one argument case right now
-        assert len(buchi_aut.var_map.items()) == 1, "#plot only support predicates with one free variable right now"
+        # assert len(buchi_aut.var_map.items()) == 1, "#plot only support predicates with one free variable right now"
 
         # get bdd representations of each ap var
-        # ap_names = buchi_aut.var_map.items[0][0]
         bdd_dict = twa.get_dict()
-        bdds = [ buddy.bdd_ithvar(bdd_dict.varnum(ap_formula)) for ap_formula in twa.ap() ]
 
-        # for bdd in bdds:
-        #     print(bdd)
+        bdds = {}
+        for var, aps in buchi_aut.var_map.items():
+            bdds[var] = [ buddy.bdd_ithvar(bdd_dict.varnum(spot.formula(ap))) for ap in aps ]
+
+        # check if the variables match
+        if len(prefix):
+            first_letter = prefix[0]
+            word_variables = set(first_letter.keys())
+            bdd_variables = set(bdds.keys())
+            assert word_variables == bdd_variables, \
+                   "unmatched number of dimenstions, expecting {}, got {}".format(bdd_variables, word_variables)
 
         # since the automata may be non-deterministic
         # keep a set of states
         current_states = { twa.state_number(twa.get_init_state()) }
-
-        for letter in prefix:
-            # assert ord(letter) >= ord("0") and ord(letter) < ord("0") + n, "illegal letter in {}".format(prefix)
-
+        for dict_letter in prefix:
+            # NOTE: letter is a dictionary from variable => actual letters
             assignment_bdd = buddy.bddtrue
             # TODO: check if the most significant bit corresponds to
             # the last item in the var_map lists
-            for i, bdd in enumerate(bdds):
-                # test if the ith bit is 1
-                if letter & (1 << (len(bdds) - i - 1)):
-                    assignment_bdd = buddy.bdd_and(assignment_bdd, bdd)
-                else:
-                    assignment_bdd = buddy.bdd_and(assignment_bdd, buddy.bdd_not(bdd))
+            for var, letter in dict_letter.items():
+                for i, bdd in enumerate(bdds[var]):
+                    # test if the ith bit is 1
+                    if letter & (1 << (len(bdds[var]) - i - 1)):
+                        assignment_bdd = buddy.bdd_and(assignment_bdd, bdd)
+                    else:
+                        assignment_bdd = buddy.bdd_and(assignment_bdd, buddy.bdd_not(bdd))
 
             # check all outgoing edges and update the current state set
             next_states = set()
@@ -210,11 +246,14 @@ class BuchiPlotter:
     Return a bitmap (integer) which can be bitwisely interpreted
     as a voxel map of dimension (<k> ** <layer>) x (<k> ** <layer>) x ... x (<k> ** <layer>)
                                 |______________________<dim> mults_________________________|
-    in which each true bit means the corresponding cell contains an omega word that
+    where k is the maximum alphabet size, dim is the number of variables in the buchi automata var_map
+    
+    In the bitmap, each true bit means the corresponding cell contains an omega word that
     is accepted by <buchi_aut>
     """
     def get_hit_cell_bitmap(self, buchi_aut, layer):
-        radix = self.k ** self.dim
+        # sample using the highest largest alphabet size first
+        radix = self.max_alphabet_size ** len(self.dimensions)
         hit_bitmap = 0
 
         # TODO: parallelize this
@@ -222,19 +261,38 @@ class BuchiPlotter:
             print("\r\033[2Kplotting layer {}: {}/{} prefixes tested".format(layer, n + 1, radix ** layer), end="")
 
             word = BuchiPlotter.encode_word(n, layer, radix)
-            possibly_acc = BuchiPlotter.accept_prefix(buchi_aut, word, n=radix)
+            splitted_word = []
+            early_reject = False
+
+            # split each letter into separate components
+            # reject the word directly if any of the letters exceeds any of the alphabet sizes
+            for letter in word:
+                splitted_letter = {}
+
+                for i, dim in enumerate(self.dimensions):
+                    component = letter // (self.max_alphabet_size ** i) % self.max_alphabet_size
+                    if component > self.alphabet_sizes[dim]:
+                        early_reject = True
+                        break
+                    splitted_letter[dim] = component
+
+                if early_reject: break
+                splitted_word.append(splitted_letter)
+
+            possibly_acc = not early_reject and BuchiPlotter.accept_prefix(buchi_aut, splitted_word)
 
             if possibly_acc:
                 # convert n to actual coordinates
-                base = self.k ** layer
+                k = self.max_alphabet_size
+                dim = len(self.dimensions)
+                base = k ** layer
 
                 # <dim> coordinates encoded into one array index, e.g.
                 # x, y, z => x * base ** 2 + y * base + z
                 array_index = 0
-                for i, letter in enumerate(word):
-                    for j in range(self.dim):
-                        coordinate = letter // (self.k ** j) % self.k
-                        array_index += base ** (self.dim - j - 1) * (self.k ** (len(word) - i - 1)) * coordinate
+                for i, letter in enumerate(splitted_word):
+                    for j, var in enumerate(self.dimensions):
+                        array_index += base ** (dim - j - 1) * (k ** (len(splitted_word) - i - 1)) * letter[var]
 
                 hit_bitmap |= 1 << array_index
 
@@ -244,7 +302,9 @@ class BuchiPlotter:
         return hit_bitmap
 
     def plot(self):
-        if self.dim == 1:
+        dim = len(self.dimensions)
+
+        if dim == 1:
             assert (self.layer is not None or
                     (self.layer_from is not None and self.layer_to is not None)), \
                    "one of layer or (layer_from, layer_to) must be specified"
@@ -254,7 +314,7 @@ class BuchiPlotter:
         # layers is a list of tuple [(layer_num, bitmap), (layer_num, bitmap), ...]
         # that records the cell bitmap at each layer
         layers = []
-        if self.dim == 1 and (self.layer_from is not None and self.layer_to is not None):
+        if dim == 1 and (self.layer_from is not None and self.layer_to is not None):
             for layer in range(self.layer_from, self.layer_to + 1):
                 layers.append((layer, self.get_hit_cell_bitmap(self.buchi_aut, layer)))
         else:
@@ -264,13 +324,13 @@ class BuchiPlotter:
         if self.plot_method not in BuchiPlotter.PLOT_METHOD_MAP:
             raise Exception("unsupported plot method {}".format(self.plot_method))
         
-        if self.dim not in BuchiPlotter.PLOT_METHOD_MAP[self.plot_method]:
-            raise Exception("plot method {} cannot plot in dimension {}".format(self.plot_method, self.dim))
+        if dim not in BuchiPlotter.PLOT_METHOD_MAP[self.plot_method]:
+            raise Exception("plot method {} cannot plot in dimension {}".format(self.plot_method, dim))
 
-        plot_method = BuchiPlotter.PLOT_METHOD_MAP[self.plot_method][self.dim]
+        plot_method = BuchiPlotter.PLOT_METHOD_MAP[self.plot_method][dim]
         
         for layer, cell_bitmap in layers:
-            plot_method.plot_layer(self.k, layer, cell_bitmap)
+            plot_method.plot_layer(self.max_alphabet_size, layer, cell_bitmap, self.dimensions)
 
         if self.save_to:
             plot_method.save(self.save_to)
