@@ -1,8 +1,16 @@
-#load("cantor-3-ary.txt", "walnut", cantor3(x))
-#load("sierpinski-3-ary.txt", "walnut", sierpinski3(x, y))
-#load("sierpinski-5-ary.txt", "walnut", sierpinski5(x, y))
-#load("menger-3-ary.txt", "walnut", menger3(x, y, z))
-#load("cantor-dust-3-ary.txt", "walnut", cantor_dust3(x, y, z))
+#load("fractal/cantor-3-self-similar.txt", "walnut", cantor3(x))
+#load("fractal/sierpinski-3-self-similar.txt", "walnut", sierpinski3(x, y))
+#load("fractal/sierpinski-5-self-similar.txt", "walnut", sierpinski5(x, y))
+#load("fractal/menger-3-self-similar.txt", "walnut", menger3(x, y, z))
+#load("fractal/cantor-dust-3-self-similar.txt", "walnut", cantor_dust3(x, y, z))
+#load("fractal/pascal-mod-2.txt", "walnut", pascal2(x, y))
+#load("fractal/pascal-mod-2-3d.txt", "walnut", pascal2_3d(x, y, z))
+#load("fractal/pascal-mod-3.txt", "walnut", pascal3(x, y))
+
+#plot(pascal2, alphabet_x=2, alphabet_y=2, layer=7)
+// #plot(pascal3, alphabet_x=3, alphabet_y=3, layer=4)
+
+// #plot(pascal2_3d, alphabet_x=2, alphabet_y=2, alphabet_z=2, layer=5)
 
 // #plot(sierpinski5, alphabet_x=3, alphabet_y=3, save_to="sierpinski5.png")
 // #plot(sierpinski5, alphabet_x=3, alphabet_y=3, layer=5)
@@ -10,7 +18,7 @@
 
 // #plot(cantor3, alphabet_x=3, layer_from=0, layer_to=10)
 
-#plot(menger3, alphabet_x=3, alphabet_y=3, alphabet_z=3, layer=3)
+// #plot(menger3, alphabet_x=3, alphabet_y=3, alphabet_z=3, layer=3)
 
 // #plot(cantor_dust3, alphabet_x=3, alphabet_y=3, alphabet_z=3, layer=3)
 
@@ -44,4 +52,6 @@
 
 // line(a is real, b is real, c is real) := a + b = c
 
-// #plot(line, alphabet_a=2, alphabet_b=2, alphabet_c=2, layer=5)
+// lt(a is real, b is real) := a = b
+
+// #plot(lt, alphabet_a=2, alphabet_b=2, layer=5)
