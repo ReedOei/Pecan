@@ -45,7 +45,8 @@ Define qseq q2 q1 cf :=
     case a :: as => q2 :: qseq q1 (a * q1 + q2) as
     end.
 
-Define q cf := tail (tail (qseq 1 0 cf)) .
+// we run with 0 1 and not 1 0 since q_(-2) = 1, q(-1) = 0, and q(0) = 1 since a0 = 1 and we only care about q1,q2,etc.
+Define q cf := tail (qseq 0 1 cf) .
 
 Define makeSum var n :=
     if n < 0 then let temp := makeSum var (-n) in { -temp }
@@ -53,19 +54,27 @@ Define makeSum var n :=
     else if n = 1 then { var }
     else let rest := makeSum var (n - 1) in { rest + var } .
 
+Define binToDec a :=
+    match a with
+    case [] => 0
+    case x :: xs => if x = "1" then 1 + 2* (binToDec xs) else 2 * (binToDec xs)
+    end.
+
 #import("../SturmianWords/ostrowski_defs.pn")
 
 // TODO: Currently requires some manual repetition of a (unfortunately, unlike Haskell, Praline doesn't do infinite lists)
 // TODO: Make specific numeration system for the alpha using our general automata/the quadratic irrational representation.
-Define makeGAlpha k as :=
-    let $SHIFT := "shift_" ^ toString k in
-    let (a0 :: a1 :: _) := as in
-    let qk := idx (q as) k in
-    let qk1 := idx (q as) (k + 1) in
-    let mu_num := (a0*a1 + 1)*qk - a0*qk1 in
-    let d := a1*qk - qk1 in
-    let yd := makeSum "y" d in do
-    makeShift 3 k;
-    emit { g_alpha(a, x is ostrowski(a), y is ostrowski(a)) := exists z is ostrowski(a). $SHIFT(x, z) & z + yd = x };
-    emit { #save_aut("test.aut", g_alpha) }.
 
+#import("../SturmianWords/ostrowski_defs.pn")
+
+Define makeGAlpha k as :=
+    let shiftBy := sum (map strLength (take k as)) + k in
+    let aNums := map binToDec (map reverse (map toChars as)) in
+    let $SHIFT := "shift_" ^ (toString shiftBy) in 
+    let qk := idx(q aNums) k in
+    let qkm1 := idx(q aNums) (k-1) in 
+    let qkx := makeSum "x" qk in 
+    let qkm1y := makeSum "y" qkm1 in do
+    makeShift 3 shiftBy;
+    emit { g_alpha(a, x is ostrowski(a), y is ostrowski(a)) := exists z is ostrowski(a). $SHIFT(x,z) & qkx + qkm1y = z };
+    emit { #save_aut("test.aut", g_alpha) }.
