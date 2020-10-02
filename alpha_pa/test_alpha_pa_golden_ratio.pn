@@ -1,0 +1,175 @@
+#import("../SturmianWords/ostrowski_defs.pn")
+#load("./g_alpha/g_alpha_golden_ratio.aut", "hoa", g_alpha(a, x, y))
+#load("./f_alpha_lt.txt", "walnut", f_alpha_lt(x, y))
+#load("./alpha_golden_ratio.txt", "walnut", alpha(a))
+
+#load("./shift1.aut", "hoa", shift1(n, m))
+
+// fix alpha = [0;1,1,1...] = (sqrt(5) - 1) / 2
+
+// find: n such that
+//   1. alpha * n < 2
+//   2. 1 < alpha * n
+// eq1 === 0 + alpha * n < 2 + alpha * 0
+//     === 0 + g_alpha(n) < 2 + g_alpha(0) \/ (0 + g_alpha(n) = 2 + g_alpha(0) /\ f_alpha_lt(n, 0))
+//
+// eq2 === 1 + alpha * 0 < 0 + alpha * n
+//     === 1 + g_alpha(0) < 0 + g_alpha(n) \/ (1 + g_alpha(0) = 0 + g_alpha(n) /\ f_alpha_lt(0, n))
+
+// there should be two solutions: n = 2 or 3
+
+eq1(n is ostrowski(a)) := @no_simplify[
+	exists a is alpha.
+	exists o0 is ostrowski_zero(a).
+	exists o1 is bco_succ(a, o0).
+	exists o2 is bco_succ(a, o1).
+	exists o3 is bco_succ(a, o2).
+	exists o4 is bco_succ(a, o3).
+	exists o5 is bco_succ(a, o4).
+	exists o6 is bco_succ(a, o5).
+	exists o7 is bco_succ(a, o6).
+	exists o8 is bco_succ(a, o7).
+	exists g_n is ostrowski(a).
+	exists g_0 is ostrowski(a).
+	g_alpha(a, n, g_n) /\ g_alpha(a, o0, g_0) /\
+	// (o0 + g_n < o2 + g_0 \/ (o0 + g_n = o2 + g_0 /\ f_alpha_lt(n, o0))) /\
+	// (o1 + g_0 < o0 + g_n \/ (o1 + g_0 = o0 + g_n /\ f_alpha_lt(o0, n)))
+	(g_n < o2 + g_0 \/ (g_n = o2 + g_0 /\ f_alpha_lt(n, o0)))
+	// (o1 + g_0 < g_n \/ (o1 + g_0 = g_n /\ f_alpha_lt(o0, n)))
+]
+
+eq2(n is ostrowski(a)) := @no_simplify[
+	exists a is alpha.
+	exists o0 is ostrowski_zero(a).
+	exists o1 is bco_succ(a, o0).
+	exists o2 is bco_succ(a, o1).
+	exists o3 is bco_succ(a, o2).
+	exists o4 is bco_succ(a, o3).
+	exists o5 is bco_succ(a, o4).
+	exists o6 is bco_succ(a, o5).
+	exists o7 is bco_succ(a, o6).
+	exists o8 is bco_succ(a, o7).
+	exists g_n is ostrowski(a).
+	exists g_0 is ostrowski(a).
+	g_alpha(a, n, g_n) /\ g_alpha(a, o0, g_0) /\
+	// (o0 + g_n < o2 + g_0 \/ (o0 + g_n = o2 + g_0 /\ f_alpha_lt(n, o0))) /\
+	// (o1 + g_0 < o0 + g_n \/ (o1 + g_0 = o0 + g_n /\ f_alpha_lt(o0, n)))
+	// (g_n < o2 + g_0 \/ (g_n = o2 + g_0 /\ f_alpha_lt(n, o0)))
+	(o1 + g_0 < g_n \/ (o1 + g_0 = g_n /\ f_alpha_lt(o0, n)))
+]
+
+two_solutions() :=
+	exists a is alpha.
+	exists o0 is ostrowski_zero(a).
+	exists o1 is bco_succ(a, o0).
+	exists o2 is bco_succ(a, o1).
+	exists o3 is bco_succ(a, o2).
+	forall n is ostrowski(a).
+	(eq1(n) /\ eq2(n)) => (n = o2 \/ n = o3)
+
+// Example (ostrowskiFormat, { eq1(n) /\ eq2(n) }).
+#assert_prop(true, two_solutions)
+
+sanity_g_alpha() := @no_simplify[
+	exists a is alpha.
+	forall n is ostrowski(a).
+	forall g1 is ostrowski(a).
+	forall g2 is ostrowski(a).
+	((g_alpha(a, n, g1) /\ g_alpha(a, n, g2)) => g1 = g2)
+]
+
+#assert_prop(true, sanity_g_alpha)
+
+sanity_shift() := @no_simplify[
+	exists a is alpha.
+	forall n is ostrowski(a).
+	forall g1 is ostrowski(a).
+	forall g2 is ostrowski(a).
+	((shift1(n, g1) /\ shift1(n, g2)) => g1 = g2)
+]
+
+#assert_prop(true, sanity_shift)
+
+sanity_g_alpha() := @no_simplify[
+	exists a is alpha.
+	exists o0 is ostrowski_zero(a).
+	exists o1 is bco_succ(a, o0).
+	exists o2 is bco_succ(a, o1).
+	exists o3 is bco_succ(a, o2).
+	exists o4 is bco_succ(a, o3).
+	exists o5 is bco_succ(a, o4).
+	exists o6 is bco_succ(a, o5).
+	exists o7 is bco_succ(a, o6).
+	exists o8 is bco_succ(a, o7).
+	exists o9 is bco_succ(a, o8).
+	exists o10 is bco_succ(a, o9).
+	exists o11 is bco_succ(a, o10).
+	exists o12 is bco_succ(a, o11).
+	exists o13 is bco_succ(a, o12).
+	exists o14 is bco_succ(a, o13).
+	exists o15 is bco_succ(a, o14).
+	exists o16 is bco_succ(a, o15).
+	exists o17 is bco_succ(a, o16).
+	exists o18 is bco_succ(a, o17).
+	exists o19 is bco_succ(a, o18).
+	exists o20 is bco_succ(a, o19).
+	forall g is ostrowski(a).
+	// g_a
+	// 1 -> 1
+	// 2 -> 1
+	// 3 -> 2
+	// 4 -> 3
+	// 5 -> 3
+	// 6 -> 4
+	// 7 -> 4
+	// 8 -> 5
+	// 9 -> 6
+	// 10 -> 6
+	// 11 -> 7
+	// 12 -> 8
+	// 13 -> 8
+	// 14 -> 9
+	// 15 -> 9
+	// 16 -> 10
+	// 17 -> 11
+	// 18 -> 11
+	// 19 -> 12
+	// 20 -> 12
+	g_alpha(a, o6, g) => g = o4
+]
+
+#assert_prop(true, sanity_g_alpha)
+
+// test_shift(s) :=
+// 	exists a is alpha.
+// 	exists o0 is ostrowski_zero(a).
+// 	exists o1 is bco_succ(a, o0).
+// 	exists o2 is bco_succ(a, o1).
+// 	exists o3 is bco_succ(a, o2).
+// 	exists o4 is bco_succ(a, o3).
+// 	exists o5 is bco_succ(a, o4).
+// 	exists o6 is bco_succ(a, o5).
+// 	exists o7 is bco_succ(a, o6).
+// 	exists o8 is bco_succ(a, o7).
+// 	exists o9 is bco_succ(a, o8).
+// 	exists o10 is bco_succ(a, o9).
+// 	ostrowski(a, s) /\ shift1(o7, s)
+
+some_number(n is ostrowski(a)) :=
+	exists a is alpha.
+	exists o0 is ostrowski_zero(a).
+	exists o1 is bco_succ(a, o0).
+	exists o2 is bco_succ(a, o1).
+	exists o3 is bco_succ(a, o2).
+	exists o4 is bco_succ(a, o3).
+	exists o5 is bco_succ(a, o4).
+	exists o6 is bco_succ(a, o5).
+	exists o7 is bco_succ(a, o6).
+	exists o8 is bco_succ(a, o7).
+	exists o9 is bco_succ(a, o8).
+	exists o10 is bco_succ(a, o9).
+	ostrowski(a, n) /\ n = o1
+
+// Example (ostrowskiFormat, { test(g) }).
+// Example (ostrowskiFormat, { test_shift(s) }).
+// Example (ostrowskiFormat, { some_number(n) }).

@@ -5,7 +5,7 @@ Define mkShiftStates alphabet k :=
          map (\sts => (intercalate "," sts, true)) (cart_prod (replicate k alphabet)) .
 
 Define mkShiftInit alphabet aut :=
-    foldl (\curAut sym => addTransition curAut "init" sym (sym ^ " 0")) aut alphabet.
+    foldl (\curAut sym => addTransition curAut "init" sym (sym ^ " 2")) aut alphabet.
 
 // The difference between mkShiftPrefix and mkShiftTransitions is that mkShiftTransitions considers states with *at most* k symbols (we truncate with tail),
 // whereas mkShiftPrefix will just add the symbol to the end of the current state.
@@ -14,9 +14,13 @@ Define mkShiftPrefix alphabet k aut :=
     else mkShiftPrefix alphabet (k - 1) (
         foldl (\curAut curState =>
                 foldl (\innerAut sym =>
-                        addTransition innerAut (intercalate "," curState)
-                                               (intercalate "," (curState @ [sym]))
-                                               (sym ^ " 0"))
+                         addTransition
+                        (addTransition innerAut (intercalate "," curState)
+                                                (intercalate "," (curState @ [sym]))
+                                                (sym ^ " 0"))
+                                                (intercalate "," curState)
+                                                (intercalate "," (curState @ [sym]))
+                                                (sym ^ " 2"))
                       curAut alphabet)
               aut (cart_prod (replicate k alphabet))).
 
@@ -60,7 +64,7 @@ Define binToDec a :=
     case x :: xs => if x = "1" then 1 + 2* (binToDec xs) else 2 * (binToDec xs)
     end.
 
-#import("../SturmianWords/ostrowski_defs.pn")
+// #import("../SturmianWords/ostrowski_defs.pn")
 
 // TODO: Currently requires some manual repetition of a (unfortunately, unlike Haskell, Praline doesn't do infinite lists)
 // TODO: Make specific numeration system for the alpha using our general automata/the quadratic irrational representation.
@@ -76,5 +80,9 @@ Define makeGAlpha k as :=
     let qkx := makeSum "x" qk in 
     let qkm1y := makeSum "y" qkm1 in do
     makeShift 3 shiftBy;
-    emit { g_alpha(a, x is ostrowski(a), y is ostrowski(a)) := exists z is ostrowski(a). $SHIFT(x,z) & qkx + qkm1y = z };
-    emit { #save_aut("test.aut", g_alpha) }.
+    emit { g_alpha(a, x is ostrowski(a), y is ostrowski(a)) := @no_simplify[exists z is ostrowski(a). $SHIFT(x,z) & qkx + qkm1y = z] };
+    emit { #save_aut("test.aut", g_alpha) };
+    emit { #save_aut("shift.aut", $SHIFT) };
+    .
+
+Execute makeGAlpha 1 ["1"] .
