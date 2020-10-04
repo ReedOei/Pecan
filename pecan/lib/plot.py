@@ -6,6 +6,37 @@ import numpy as np
 from pecan.automata.buchi import BuchiAutomaton
 
 
+# A multidimensional bitmap
+class Bitmap:
+    # order of the dimension follows the same order as in C
+    # e.g. Bitmap(2, 3) is roughly an "array": bool bitmap[2][3]
+    def __init__(self, *dims):
+        self.dims = dims
+        self.bitmap = 0 # use pylong as the bitmap
+
+    def get_index(self, indices):
+        if type(indices) is int:
+            return indices
+
+        array_index = 0
+        base = 1
+        for dim, index in list(zip(self.dims, indices))[::-1]:
+            assert index < dim, "index out of range"
+            array_index += base * index
+            base *= dim
+
+        return array_index
+
+    def __getitem__(self, indices):
+        return self.bitmap & (1 << self.get_index(indices)) != 0
+
+    def __setitem__(self, indices, value):
+        if bool(value):
+            self.bitmap |= 1 << self.get_index(indices)
+        else:
+            self.bitmap &= ~(1 << self.get_index(indices))
+
+
 class PlotMethod:
     def plot_layer(self, k, layer, cell_bitmap, labels):
         raise NotImplementedError()
@@ -36,12 +67,14 @@ class MatplotlibPlotMethod(PlotMethod):
 Plot the given cell bitmap in 1D
 """
 class Matplotlib1DPlotMethod(MatplotlibPlotMethod):
-    def plot_layer(self, k, layer, cell_bitmap, labels):
-        base = k ** layer
+    def plot_layer(self, alphabet_sizes, layer, cell_bitmap, labels):
+        assert len(alphabet_sizes) == 1
+
+        base = alphabet_sizes[0] ** layer
         length = 1 / base
 
         for x in range(base):
-            if cell_bitmap & (1 << x):
+            if cell_bitmap[x]:
                 self.pt.plot(
                     [ x * length, x * length + length ],
                     [ layer, layer ],
@@ -57,17 +90,18 @@ class Matplotlib1DPlotMethod(MatplotlibPlotMethod):
 Plot the given cell bitmap in 2D
 """
 class Matplotlib2DPlotMethod(MatplotlibPlotMethod):
-    def plot_layer(self, k, layer, cell_bitmap, labels):
+    def plot_layer(self, alphabet_sizes, layer, cell_bitmap, labels):
+        assert len(alphabet_sizes) == 2
+        k1, k2 = alphabet_sizes
+
         # total number of cells
-        base = k ** layer
-        total = (k ** layer) ** 2
+        total = k1 ** layer * k2 ** layer
 
-        for x in range(k ** layer):
-            for y in range(k ** layer):
-                array_index = x * base + y
-                print("\r\033[2Kdrawing {}/{} squares".format(array_index + 1, total), end="")
+        for x in range(k1 ** layer):
+            for y in range(k2 ** layer):
+                print("\r\033[2Kdrawing {}/{} squares".format(x * k2 ** layer + y + 1, total), end="")
 
-                if cell_bitmap & (1 << array_index):
+                if cell_bitmap[x, y]:
                     self.pt.fill(
                         [ x, x + 1, x + 1, x ],
                         [ y, y, y + 1, y + 1 ],
@@ -84,17 +118,18 @@ class Matplotlib2DPlotMethod(MatplotlibPlotMethod):
 Plot the given cell bitmap in 3D
 """
 class Matplotlib3DPlotMethod(MatplotlibPlotMethod):
-    def plot_layer(self, k, layer, cell_bitmap, labels):
-        voxels = np.zeros((k ** layer, k ** layer, k ** layer), dtype=np.uint8)
-        base = k ** layer
+    def plot_layer(self, alphabet_sizes, layer, cell_bitmap, labels):
+        assert len(alphabet_sizes) == 3
+        k1, k2, k3 = alphabet_sizes
+
+        voxels = np.zeros((k1 ** layer, k2 ** layer, k3 ** layer), dtype=np.uint8)
 
         print("preparing voxel map")
 
-        for x in range(base):
-            for y in range(base):
-                for z in range(base):
-                    array_index = x * base * base + y * base + z
-                    if cell_bitmap & (1 << array_index):
+        for x in range(k1 ** layer):
+            for y in range(k2 ** layer):
+                for z in range(k3 ** layer):
+                    if cell_bitmap[x, y, z]:
                         voxels[x, y, z] = 1
 
         print("drawing voxels")
@@ -109,12 +144,58 @@ class Matplotlib3DPlotMethod(MatplotlibPlotMethod):
         ax.set_zlabel(labels[2])
 
 
+"""
+Given a 4d voxel bitmap, combine the last two
+coordinates by twisting/shuffle two words
+"""
+class Matplotlib4DShufflePlotMethod(Matplotlib3DPlotMethod):
+    # given an integer a_1 * k^(n - 1) + a_2 * k^(n - 2) + ... + a_n
+    # return a_1 * k^((n - 1) * 2) + a_2 * k^((n - 2) * 2) + ... + a_n
+    def shuffle_zero(self, k, x):
+        assert x >= 0
+        y = 0
+        i = 0
+        while x != 0:
+            y += (x % k) * (k ** (2 * i))
+            x = x // k
+            i += 1
+        return y
+
+    def plot_layer(self, alphabet_sizes, layer, cell_bitmap, labels):
+        assert len(alphabet_sizes) == 4
+        k1, k2, k3, k4 = alphabet_sizes
+        assert k3 == k4, "shuffling two words with different alphabets does not make sense"
+
+        voxels = np.zeros((k1 ** layer, k2 ** layer, k3 ** layer * k4 ** layer), dtype=np.uint8)
+
+        for x in range(k1 ** layer):
+            for y in range(k2 ** layer):
+                for z in range(k3 ** layer):
+                    for w in range(k4 ** layer):
+                        # twist/shuffle z and w
+                        shuffled = self.shuffle_zero(k3, z) * k3 + self.shuffle_zero(k4, w)
+                        if cell_bitmap[x, y, z, w]:
+                            voxels[x, y, shuffled] = 1
+
+        print("drawing voxels")
+
+        fig = self.pt.figure()
+        ax = fig.gca(projection="3d")
+        ax.voxels(voxels)
+
+        assert len(labels) == 4
+        ax.set_xlabel(labels[0])
+        ax.set_ylabel(labels[1])
+        ax.set_zlabel("#shuffle(" + labels[2] + ", " + labels[3] + ")")
+
+
 class BuchiPlotter:
     PLOT_METHOD_MAP = {
         "matplotlib": {
             1: Matplotlib1DPlotMethod(),
             2: Matplotlib2DPlotMethod(),
             3: Matplotlib3DPlotMethod(),
+            4: Matplotlib4DShufflePlotMethod(),
         },
     }
 
@@ -286,7 +367,7 @@ class BuchiPlotter:
     def get_hit_cell_bitmap(self, buchi_aut, layer):
         # sample using the highest largest alphabet size first
         radix = self.max_alphabet_size ** len(self.dimensions)
-        hit_bitmap = 0
+        hit_bitmap = Bitmap(*[ self.alphabet_sizes[dim] ** layer for dim in self.dimensions ])
 
         # TODO: parallelize this
         for n in range(radix ** layer):
@@ -315,18 +396,29 @@ class BuchiPlotter:
 
             if possibly_acc:
                 # convert n to actual coordinates
-                k = self.max_alphabet_size
-                dim = len(self.dimensions)
-                base = k ** layer
+                # k = self.max_alphabet_size
+                # dim = len(self.dimensions)
+                # base = k ** layer
 
-                # <dim> coordinates encoded into one array index, e.g.
-                # x, y, z => x * base ** 2 + y * base + z
-                array_index = 0
-                for i, letter in enumerate(splitted_word):
-                    for j, var in enumerate(self.dimensions):
-                        array_index += base ** (dim - j - 1) * (k ** (len(splitted_word) - i - 1)) * letter[var]
+                # # <dim> coordinates encoded into one array index, e.g.
+                # # x, y, z => x * base ** 2 + y * base + z
+                # array_index = 0
+                # for i, letter in enumerate(splitted_word):
+                #     for j, var in enumerate(self.dimensions):
+                #         array_index += base ** (dim - j - 1) * (k ** (len(splitted_word) - i - 1)) * letter[var]
 
-                hit_bitmap |= 1 << array_index
+                # each word component corresponds to one (sub)index in the bitmap
+                indices = []
+                for var in self.dimensions:
+                    k = self.alphabet_sizes[var]
+                    word_index = 0
+
+                    for i, letter in enumerate(splitted_word):
+                        word_index += k ** (len(splitted_word) - i - 1) * letter[var]
+
+                    indices.append(word_index)
+
+                hit_bitmap[indices] = True
 
         # newline
         print("")
@@ -360,9 +452,12 @@ class BuchiPlotter:
             raise Exception("plot method {} cannot plot in dimension {}".format(self.plot_method, dim))
 
         plot_method = BuchiPlotter.PLOT_METHOD_MAP[self.plot_method][dim]
-        
+
         for layer, cell_bitmap in layers:
-            plot_method.plot_layer(self.max_alphabet_size, layer, cell_bitmap, self.dimensions)
+            plot_method.plot_layer(
+                [ self.alphabet_sizes[dim] for dim in self.dimensions],
+                layer, cell_bitmap, self.dimensions,
+            )
 
         if self.save_to:
             plot_method.save(self.save_to)
