@@ -167,6 +167,9 @@ class Matplotlib4DShufflePlotMethod(Matplotlib3DPlotMethod):
         assert k3 == k4, "shuffling two words with different alphabets does not make sense"
 
         voxels = np.zeros((k1 ** layer, k2 ** layer, k3 ** layer * k4 ** layer), dtype=np.uint8)
+        color = np.empty((k1 ** layer, k2 ** layer, k3 ** layer * k4 ** layer), dtype=object)
+
+        cmap = self.pt.get_cmap("jet")
 
         for x in range(k1 ** layer):
             for y in range(k2 ** layer):
@@ -176,12 +179,13 @@ class Matplotlib4DShufflePlotMethod(Matplotlib3DPlotMethod):
                         shuffled = self.shuffle_zero(k3, z) * k3 + self.shuffle_zero(k4, w)
                         if cell_bitmap[x, y, z, w]:
                             voxels[x, y, shuffled] = 1
+                            color[x, y, shuffled] = cmap(shuffled / (k3 ** layer * k4 ** layer))
 
         print("drawing voxels")
 
         fig = self.pt.figure()
         ax = fig.gca(projection="3d")
-        ax.voxels(voxels)
+        ax.voxels(voxels, facecolors=color)
 
         assert len(labels) == 4
         ax.set_xlabel(labels[0])

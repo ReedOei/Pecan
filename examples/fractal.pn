@@ -9,9 +9,8 @@
 #load("fractal/peano.txt", "walnut", peano(x, y, z, w))
 #load("fractal/hilbert.txt", "walnut", hilbert(x, y, z, w))
 
-// #plot(peano, alphabet_x=3, alphabet_y=3, alphabet_z=3, alphabet_w=3, layer=1)
-
-// #plot(hilbert, alphabet_x=2, alphabet_y=2, alphabet_z=2, alphabet_w=2, layer=4)
+// #plot(peano, alphabet_x=3, alphabet_y=3, alphabet_z=3, alphabet_w=3, layer=2)
+#plot(hilbert, alphabet_x=2, alphabet_y=2, alphabet_z=2, alphabet_w=2, layer=4)
 
 // #plot(pascal2, alphabet_x=2, alphabet_y=2, layer=7)
 // #plot(pascal3, alphabet_x=3, alphabet_y=3, layer=5)
