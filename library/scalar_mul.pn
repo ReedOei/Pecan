@@ -36,12 +36,15 @@ Define mkShiftTransitions alphabet k aut :=
 
 Define makeShift base k :=
     let $SHIFT := "shift_" ^ toString k in
+    let shiftName := "shift_" ^ toString k ^ ".aut" in
     let alphabet := map toString [0..base - 1] in
     let states := ("init", true) :: mkShiftStates alphabet k in
     let baseAut := withStates (mkAut ["n", "m"] [base, base]) states in
     let finalAut := buildAut (mkShiftTransitions alphabet k (mkShiftInit alphabet baseAut)) in do
 
-    emit { $SHIFT(n, m) := finalAut }.
+    emit { $SHIFT(n, m) := finalAut };
+    emit { #save_aut(shiftName, $SHIFT) };
+    .
 
 Define qseq q2 q1 cf :=
     match cf with
@@ -64,15 +67,12 @@ Define binToDec a :=
     case x :: xs => if x = "1" then 1 + 2* (binToDec xs) else 2 * (binToDec xs)
     end.
 
-// #import("../SturmianWords/ostrowski_defs.pn")
-
-// TODO: Currently requires some manual repetition of a (unfortunately, unlike Haskell, Praline doesn't do infinite lists)
-// TODO: Make specific numeration system for the alpha using our general automata/the quadratic irrational representation.
-
 #import("../SturmianWords/ostrowski_defs.pn")
+#load("./automata/ostrowski/f_alpha_lt.txt", "walnut", f_alpha_lt(x,y))
 
 Define makeGAlpha k as :=
     let shiftBy := sum (map strLength (take k as)) + k in
+    let gAlphaName := "g_alpha-" ^ intercalate "-" as ^ ".aut" in
     let aNums := map binToDec (map toChars as) in
     let $SHIFT := "shift_" ^ (toString shiftBy) in 
     let qk := idx(q aNums) k in
@@ -80,9 +80,14 @@ Define makeGAlpha k as :=
     let qkx := makeSum "x" qk in 
     let qkm1y := makeSum "y" qkm1 in do
     makeShift 3 shiftBy;
-    emit { g_alpha(a, x is ostrowski(a), y is ostrowski(a)) := @no_simplify[exists z is ostrowski(a). $SHIFT(x,z) & qkx + qkm1y = z] };
-    emit { #save_aut("test.aut", g_alpha) };
-    emit { #save_aut("shift.aut", $SHIFT) };
+    emit { g_alpha(a, x is ostrowski(a), y is ostrowski(a)) := @no_simplify[ exists z is ostrowski(a). $SHIFT(x,z) & qkx + qkm1y = z ] };
+    emit { #save_aut(gAlphaName, g_alpha) };
     .
 
-Execute makeGAlpha 2 ["1", "01"] .
+Define makeAlphaMonicLT k as :=
+    let ltName := "alpha_monic_lt-" ^ intercalate "-" as ^ ".aut" in do
+    makeGAlpha k as;
+    emit { alpha_monic_lt(a,x is ostrowski(a),y is ostrowski(a),p is ostrowski(a),q is ostrowski(a)) := @no_simplify [ exists g_y is ostrowski(a). exists g_q is ostrowski(a). g_alpha(a,y,g_y) /\ g_alpha(a,q,g_q) /\ (x+g_y < p + g_q \/ (x+g_y = p + g_q /\ f_alpha_lt(y,q))) ] };
+    emit { #save_aut(ltName , alpha_monic_lt) };
+    .
+
