@@ -73,7 +73,7 @@ Define binToDec a :=
 
 Define makeGAlpha k as :=
     let shiftBy := sum (map strLength (take k as)) + k in
-    let aNums := map binToDec (map reverse (map toChars as)) in
+    let aNums := map binToDec (map toChars as) in
     let $SHIFT := "shift_" ^ (toString shiftBy) in 
     let qk := idx(q aNums) k in
     let qkm1 := idx(q aNums) (k-1) in 
@@ -85,4 +85,4 @@ Define makeGAlpha k as :=
     emit { #save_aut("shift.aut", $SHIFT) };
     .
 
-Execute makeGAlpha 1 ["1"] .
+Execute makeGAlpha 2 ["1", "01"] .

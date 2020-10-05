@@ -1,0 +1,100 @@
+#import("../SturmianWords/ostrowski_defs.pn")
+
+#load("./g_alpha/g_alpha_(sqrt3-1).aut", "hoa", g_alpha(a, x, y))
+#load("./f_alpha_lt.txt", "walnut", f_alpha_lt(x, y))
+#load("./alpha_(sqrt3-1).txt", "walnut", alpha(a))
+#load("./shift2.aut", "hoa", shift2(n, m))
+
+// fix alpha = [0;1,2,1,2,1,2...] = sqrt(3) - 1
+
+// find: n such that
+//   1. alpha * n < 2
+//   2. 1 < alpha * n
+// 1 === 0 + alpha * n < 2 + alpha * 0
+//   === 0 + g_alpha(n) < 2 + g_alpha(0) \/ (0 + g_alpha(n) = 2 + g_alpha(0) /\ f_alpha_lt(n, 0))
+//
+// 2 === 1 + alpha * 0 < 0 + alpha * n
+//   === 1 + g_alpha(0) < 0 + g_alpha(n) \/ (1 + g_alpha(0) = 0 + g_alpha(n) /\ f_alpha_lt(0, n))
+
+eq1(n is ostrowski(a)) := @no_simplify[
+	exists a is alpha.
+	exists o0 is ostrowski_zero(a).
+	exists o1 is bco_succ(a, o0).
+	exists o2 is bco_succ(a, o1).
+	exists g_n is ostrowski(a).
+	g_alpha(a, n, g_n) /\ // g_alpha(a, o0) is zero in this case
+	(g_n < o2 \/ (g_n = o2 /\ f_alpha_lt(n, o0)))
+]
+
+eq2(n is ostrowski(a)) := @no_simplify[
+	exists a is alpha.
+	exists o0 is ostrowski_zero(a).
+	exists o1 is bco_succ(a, o0).
+	exists g_n is ostrowski(a).
+	g_alpha(a, n, g_n) /\ // g_alpha(a, o0) is zero in this case
+	(o1 < g_n \/ (o1 = g_n /\ f_alpha_lt(o0, n)))
+]
+
+one_solution() := @no_simplify[
+	exists a is alpha.
+	exists o0 is ostrowski_zero(a).
+	exists o1 is bco_succ(a, o0).
+	exists o2 is bco_succ(a, o1).
+	forall n is ostrowski(a).
+	eq1(n) /\ eq2(n) => n = o2
+]
+
+#assert_prop(true, one_solution)
+
+// g_alpha is a function
+// g_alpha_functional() := @no_simplify[
+// 	exists a is alpha.
+// 	forall n is ostrowski(a).
+// 	(exists g is ostrowski(a). g_alpha(a, n, g)) /\
+// 	(forall g1 is ostrowski(a).
+// 	 forall g2 is ostrowski(a).
+// 	 ((g_alpha(a, n, g1) /\ g_alpha(a, n, g2)) => g1 = g2))
+// ]
+
+// #assert_prop(true, g_alpha_functional)
+
+// shift is a function
+shift_functional() := @no_simplify[
+	exists a is alpha.
+	forall n is ostrowski(a).
+	(exists g is ostrowski(a). shift2(n, g)) /\
+	(forall g1 is ostrowski(a).
+	 forall g2 is ostrowski(a).
+	 ((shift2(n, g1) /\ shift2(n, g2)) => g1 = g2))
+]
+
+#assert_prop(true, shift_functional)
+
+some_g_alpha_values() := @no_simplify[
+	exists a is alpha.
+	exists o0 is ostrowski_zero(a).
+	exists o1 is bco_succ(a, o0).
+	exists o2 is bco_succ(a, o1).
+	exists o3 is bco_succ(a, o2).
+	exists o4 is bco_succ(a, o3).
+	exists o5 is bco_succ(a, o4).
+	exists o6 is bco_succ(a, o5).
+	// g_a
+	// 1 -> 1
+	// 2 -> 2
+	// 3 -> 2
+	// 4 -> 3
+	// 5 -> 4
+	// 6 -> 5
+	// 7 -> 5
+	// 8 -> 6
+	// 9 -> 7
+	// g_alpha(a, o1, o1)
+	// g_alpha(a, o2, o2)
+	g_alpha(a, o3, o2)
+	// g_alpha(a, o4, o3)
+	// g_alpha(a, o5, o4)
+	// g_alpha(a, o6, o5)
+]
+
+#assert_prop(true, some_g_alpha_values)
