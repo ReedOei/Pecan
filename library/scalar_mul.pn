@@ -80,14 +80,19 @@ Define makeGAlpha k as :=
     let qkx := makeSum "x" qk in 
     let qkm1y := makeSum "y" qkm1 in do
     makeShift 3 shiftBy;
-    emit { g_alpha(a, x is ostrowski(a), y is ostrowski(a)) := @no_simplify[ exists z is ostrowski(a). $SHIFT(x,z) & qkx + qkm1y = z ] };
+    emit { g_alpha(a, x is ostrowski(a), y is ostrowski(a)) := @no_simplify [ $SHIFT(x, qkx + qkm1y) ] };
     emit { #save_aut(gAlphaName, g_alpha) };
     .
 
 Define makeAlphaMonicLT k as :=
     let ltName := "alpha_monic_lt-" ^ intercalate "-" as ^ ".aut" in do
     makeGAlpha k as;
-    emit { alpha_monic_lt(a,x is ostrowski(a),y is ostrowski(a),p is ostrowski(a),q is ostrowski(a)) := @no_simplify [ exists g_y is ostrowski(a). exists g_q is ostrowski(a). g_alpha(a,y,g_y) /\ g_alpha(a,q,g_q) /\ (x+g_y < p + g_q \/ (x+g_y = p + g_q /\ f_alpha_lt(y,q))) ] };
+    emit {
+        alpha_monic_lt(a, x is ostrowski(a), y is ostrowski(a), p is ostrowski(a), q is ostrowski(a)) :=
+            @no_simplify [
+                exists g_y is ostrowski(a). exists g_q is ostrowski(a).
+                g_alpha(a, y, g_y) /\ g_alpha(a, q, g_q) /\ (x + g_y < p + g_q \/ (bco_eq(x + g_y, p + g_q) /\ f_alpha_lt(y, q)))
+            ]
+    };
     emit { #save_aut(ltName , alpha_monic_lt) };
     .
-

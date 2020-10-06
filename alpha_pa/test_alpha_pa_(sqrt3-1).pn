@@ -23,7 +23,7 @@ eq1(n is ostrowski(a)) := @no_simplify[
 	exists o2 is bco_succ(a, o1).
 	exists g_n is ostrowski(a).
 	g_alpha(a, n, g_n) /\ // g_alpha(a, o0) is zero in this case
-	(g_n < o2 \/ (g_n = o2 /\ f_alpha_lt(n, o0)))
+	(g_n < o2 \/ (bco_eq(g_n, o2) /\ f_alpha_lt(n, o0)))
 ]
 
 eq2(n is ostrowski(a)) := @no_simplify[
@@ -32,7 +32,7 @@ eq2(n is ostrowski(a)) := @no_simplify[
 	exists o1 is bco_succ(a, o0).
 	exists g_n is ostrowski(a).
 	g_alpha(a, n, g_n) /\ // g_alpha(a, o0) is zero in this case
-	(o1 < g_n \/ (o1 = g_n /\ f_alpha_lt(o0, n)))
+	(o1 < g_n \/ (bco_eq(o1, g_n) /\ f_alpha_lt(o0, n)))
 ]
 
 one_solution() := @no_simplify[
@@ -41,9 +41,10 @@ one_solution() := @no_simplify[
 	exists o1 is bco_succ(a, o0).
 	exists o2 is bco_succ(a, o1).
 	forall n is ostrowski(a).
-	eq1(n) /\ eq2(n) => n = o2
+	eq1(n) /\ eq2(n) => bco_eq(n, o2)
 ]
 
+// Example (ostrowskiFormat, { eq1(n) /\ eq2(n) }).
 #assert_prop(true, one_solution)
 
 // g_alpha is a function
@@ -65,7 +66,7 @@ shift_functional() := @no_simplify[
 	(exists g is ostrowski(a). shift2(n, g)) /\
 	(forall g1 is ostrowski(a).
 	 forall g2 is ostrowski(a).
-	 ((shift2(n, g1) /\ shift2(n, g2)) => g1 = g2))
+	 ((shift2(n, g1) /\ shift2(n, g2)) => bco_eq(g1, g2)))
 ]
 
 #assert_prop(true, shift_functional)
