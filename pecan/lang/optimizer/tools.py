@@ -134,3 +134,13 @@ class VariableUsage(IRTransformer):
         self.transform(node)
         return self.used_vars
 
+class NodeFilter(IRTransformer):
+    def __init__(self, filter_pred):
+        self.filter_pred = filter_pred
+        self.results = []
+
+    def transform(self, node):
+        if self.filter_pred(node):
+            self.results.append(node)
+        return super().transform(node)
+
