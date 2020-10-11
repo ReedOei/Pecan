@@ -6,11 +6,16 @@
 #load("fractal/pascal-mod-2.txt", "walnut", pascal2(x, y))
 #load("fractal/pascal-mod-2-3d.txt", "walnut", pascal2_3d(x, y, z))
 #load("fractal/pascal-mod-3.txt", "walnut", pascal3(x, y))
-#load("fractal/peano.txt", "walnut", peano(x, y, z, w))
-#load("fractal/hilbert.txt", "walnut", hilbert(x, y, z, w))
+#load("fractal/peano.txt", "walnut", peano(x, y, t))
+#load("fractal/hilbert.txt", "walnut", hilbert(x, y, t))
+#load("fractal/cantor-distance.txt", "walnut", cantord(x, y))
+#load("fractal/cantor-distance-hmm.txt", "walnut", cantord_hmm(x, y))
 
-// #plot(peano, alphabet_x=3, alphabet_y=3, alphabet_z=3, alphabet_w=3, layer=2)
-#plot(hilbert, alphabet_x=2, alphabet_y=2, alphabet_z=2, alphabet_w=2, layer=4)
+#plot(cantord, alphabet_x=3, alphabet_y=3, layer=5)
+// #plot(cantord_hmm, alphabet_x=3, alphabet_y=3, layer=5)
+
+// #plot(peano, alphabet_x=3, alphabet_y=3, alphabet_t=9, layer=2, color_by_axis="t")
+// #plot(hilbert, alphabet_x=2, alphabet_y=2, alphabet_t=4, layer=2, color_by_axis="t")
 
 // #plot(pascal2, alphabet_x=2, alphabet_y=2, layer=7)
 // #plot(pascal3, alphabet_x=3, alphabet_y=3, layer=5)
@@ -18,12 +23,12 @@
 // #plot(pascal2_3d, alphabet_x=2, alphabet_y=2, alphabet_z=2, layer=5)
 
 // #plot(sierpinski5, alphabet_x=3, alphabet_y=3, save_to="sierpinski5.png")
-// #plot(sierpinski5, alphabet_x=3, alphabet_y=3, layer=5)
+// #plot(sierpinski5, alphabet_x=3, alphabet_y=3, layer=4)
 // #plot(sierpinski3, alphabet_x=3, alphabet_y=3, layer=4)
 
 // #plot(cantor3, alphabet_x=3, layer_from=0, layer_to=10)
 
-// #plot(menger3, alphabet_x=3, alphabet_y=3, alphabet_z=3, layer=3)
+// #plot(menger3, alphabet_x=3, alphabet_y=3, alphabet_z=3, layer=3, color_by_axis="z")
 
 // #plot(cantor_dust3, alphabet_x=3, alphabet_y=3, alphabet_z=3, layer=3)
 

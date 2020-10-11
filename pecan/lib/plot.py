@@ -16,12 +16,13 @@ class Bitmap:
 
     def get_index(self, indices):
         if type(indices) is int:
+            assert indices < self.dims[0]
             return indices
 
         array_index = 0
         base = 1
         for dim, index in list(zip(self.dims, indices))[::-1]:
-            assert index < dim, "index out of range"
+            assert index < dim, "index out of range, index {} in {}".format(indices, self.dims)
             array_index += base * index
             base *= dim
 
@@ -67,7 +68,7 @@ class MatplotlibPlotMethod(PlotMethod):
 Plot the given cell bitmap in 1D
 """
 class Matplotlib1DPlotMethod(MatplotlibPlotMethod):
-    def plot_layer(self, alphabet_sizes, layer, cell_bitmap, labels):
+    def plot_layer(self, alphabet_sizes, layer, cell_bitmap, labels, **kwargs):
         assert len(alphabet_sizes) == 1
 
         base = alphabet_sizes[0] ** layer
@@ -90,7 +91,7 @@ class Matplotlib1DPlotMethod(MatplotlibPlotMethod):
 Plot the given cell bitmap in 2D
 """
 class Matplotlib2DPlotMethod(MatplotlibPlotMethod):
-    def plot_layer(self, alphabet_sizes, layer, cell_bitmap, labels):
+    def plot_layer(self, alphabet_sizes, layer, cell_bitmap, labels, **kwargs):
         assert len(alphabet_sizes) == 2
         k1, k2 = alphabet_sizes
 
@@ -118,7 +119,7 @@ class Matplotlib2DPlotMethod(MatplotlibPlotMethod):
 Plot the given cell bitmap in 3D
 """
 class Matplotlib3DPlotMethod(MatplotlibPlotMethod):
-    def plot_layer(self, alphabet_sizes, layer, cell_bitmap, labels):
+    def plot_layer(self, alphabet_sizes, layer, cell_bitmap, labels, color_by_axis=None, **kwargs):
         assert len(alphabet_sizes) == 3
         k1, k2, k3 = alphabet_sizes
 
@@ -132,65 +133,41 @@ class Matplotlib3DPlotMethod(MatplotlibPlotMethod):
                     if cell_bitmap[x, y, z]:
                         voxels[x, y, z] = 1
 
+        if color_by_axis is not None:
+            print("preparing color map")
+            colors = np.empty(np.shape(voxels), dtype=object)
+            cmap = self.pt.get_cmap("jet")
+
+            axis_index = labels.index(color_by_axis)
+
+            for x in range(k1 ** layer):
+                for y in range(k2 ** layer):
+                    for z in range(k3 ** layer):
+                        if axis_index == 0:                    
+                            colors[x, y, z] = cmap(x / k1 ** layer)
+                        elif axis_index == 1:
+                            colors[x, y, z] = cmap(y / k2 ** layer)
+                        elif axis_index == 2:
+                            colors[x, y, z] = cmap(z / k3 ** layer)
+
         print("drawing voxels")
 
         fig = self.pt.figure()
         ax = fig.gca(projection="3d")
-        ax.voxels(voxels)
+
+        if color_by_axis is not None:
+            ax.voxels(voxels, facecolors=colors)
+        else:
+            ax.voxels(voxels)
 
         assert len(labels) == 3
         ax.set_xlabel(labels[0])
         ax.set_ylabel(labels[1])
         ax.set_zlabel(labels[2])
 
-
-"""
-Given a 4d voxel bitmap, combine the last two
-coordinates by twisting/shuffle two words
-"""
-class Matplotlib4DShufflePlotMethod(Matplotlib3DPlotMethod):
-    # given an integer a_1 * k^(n - 1) + a_2 * k^(n - 2) + ... + a_n
-    # return a_1 * k^((n - 1) * 2) + a_2 * k^((n - 2) * 2) + ... + a_n
-    def shuffle_zero(self, k, x):
-        assert x >= 0
-        y = 0
-        i = 0
-        while x != 0:
-            y += (x % k) * (k ** (2 * i))
-            x = x // k
-            i += 1
-        return y
-
-    def plot_layer(self, alphabet_sizes, layer, cell_bitmap, labels):
-        assert len(alphabet_sizes) == 4
-        k1, k2, k3, k4 = alphabet_sizes
-        assert k3 == k4, "shuffling two words with different alphabets does not make sense"
-
-        voxels = np.zeros((k1 ** layer, k2 ** layer, k3 ** layer * k4 ** layer), dtype=np.uint8)
-        color = np.empty((k1 ** layer, k2 ** layer, k3 ** layer * k4 ** layer), dtype=object)
-
-        cmap = self.pt.get_cmap("jet")
-
-        for x in range(k1 ** layer):
-            for y in range(k2 ** layer):
-                for z in range(k3 ** layer):
-                    for w in range(k4 ** layer):
-                        # twist/shuffle z and w
-                        shuffled = self.shuffle_zero(k3, z) * k3 + self.shuffle_zero(k4, w)
-                        if cell_bitmap[x, y, z, w]:
-                            voxels[x, y, shuffled] = 1
-                            color[x, y, shuffled] = cmap(shuffled / (k3 ** layer * k4 ** layer))
-
-        print("drawing voxels")
-
-        fig = self.pt.figure()
-        ax = fig.gca(projection="3d")
-        ax.voxels(voxels, facecolors=color)
-
-        assert len(labels) == 4
-        ax.set_xlabel(labels[0])
-        ax.set_ylabel(labels[1])
-        ax.set_zlabel("#shuffle(" + labels[2] + ", " + labels[3] + ")")
+        ax.xaxis.set_ticklabels([])
+        ax.yaxis.set_ticklabels([])
+        ax.zaxis.set_ticklabels([])
 
 
 class BuchiPlotter:
@@ -199,11 +176,20 @@ class BuchiPlotter:
             1: Matplotlib1DPlotMethod(),
             2: Matplotlib2DPlotMethod(),
             3: Matplotlib3DPlotMethod(),
-            4: Matplotlib4DShufflePlotMethod(),
         },
     }
 
-    def __init__(self, buchi_aut, layer=None, layer_from=None, layer_to=None, save_to=None, plot_method="matplotlib", **kwargs):
+    def __init__(
+        self,
+        buchi_aut,
+        layer=None,
+        layer_from=None,
+        layer_to=None,
+        save_to=None,
+        plot_method="matplotlib",
+        color_by_axis=None,
+        **kwargs,
+    ):
         super().__init__()
         self.buchi_aut = buchi_aut
         self.layer = layer
@@ -212,17 +198,14 @@ class BuchiPlotter:
         self.save_to = save_to
         self.plot_method = plot_method
         self.alphabet_sizes = {}
-        self.max_alphabet_size = 0
+        self.color_by_axis = color_by_axis # only available for 3d
 
         for key in kwargs:
             if key.startswith("alphabet_"):
                 self.alphabet_sizes[key[len("alphabet_"):]] = kwargs[key]
-                self.max_alphabet_size = max(self.max_alphabet_size, kwargs[key])
 
         # fix an arbitrary order of the arguments
         self.dimensions = list(self.alphabet_sizes.keys())
-
-        assert self.max_alphabet_size > 0
 
     # find the reachable states from the given initial states
     @staticmethod
@@ -370,7 +353,10 @@ class BuchiPlotter:
     """
     def get_hit_cell_bitmap(self, buchi_aut, layer):
         # sample using the highest largest alphabet size first
-        radix = self.max_alphabet_size ** len(self.dimensions)
+        radix = 1
+        for var in self.dimensions:
+            radix *= self.alphabet_sizes[var]
+
         hit_bitmap = Bitmap(*[ self.alphabet_sizes[dim] ** layer for dim in self.dimensions ])
 
         # TODO: parallelize this
@@ -379,38 +365,24 @@ class BuchiPlotter:
 
             word = BuchiPlotter.encode_word(n, layer, radix)
             splitted_word = []
-            early_reject = False
 
             # split each letter into separate components
             # reject the word directly if any of the letters exceeds any of the alphabet sizes
             for letter in word:
                 splitted_letter = {}
+                prev_radix = 1
 
                 for i, dim in enumerate(self.dimensions):
-                    component = letter // (self.max_alphabet_size ** i) % self.max_alphabet_size
-                    if component > self.alphabet_sizes[dim]:
-                        early_reject = True
-                        break
+                    k = self.alphabet_sizes[dim]
+                    component = letter // prev_radix % k
                     splitted_letter[dim] = component
+                    prev_radix *= k
 
-                if early_reject: break
                 splitted_word.append(splitted_letter)
 
-            possibly_acc = not early_reject and BuchiPlotter.accept_prefix(buchi_aut, splitted_word)
+            possibly_acc = BuchiPlotter.accept_prefix(buchi_aut, splitted_word)
 
             if possibly_acc:
-                # convert n to actual coordinates
-                # k = self.max_alphabet_size
-                # dim = len(self.dimensions)
-                # base = k ** layer
-
-                # # <dim> coordinates encoded into one array index, e.g.
-                # # x, y, z => x * base ** 2 + y * base + z
-                # array_index = 0
-                # for i, letter in enumerate(splitted_word):
-                #     for j, var in enumerate(self.dimensions):
-                #         array_index += base ** (dim - j - 1) * (k ** (len(splitted_word) - i - 1)) * letter[var]
-
                 # each word component corresponds to one (sub)index in the bitmap
                 indices = []
                 for var in self.dimensions:
@@ -461,6 +433,7 @@ class BuchiPlotter:
             plot_method.plot_layer(
                 [ self.alphabet_sizes[dim] for dim in self.dimensions],
                 layer, cell_bitmap, self.dimensions,
+                color_by_axis=self.color_by_axis
             )
 
         if self.save_to:
