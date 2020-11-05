@@ -1,3 +1,6 @@
+#import("../SturmianWords/ostrowski_defs.pn")
+#load("./automata/ostrowski/f_alpha_lt.txt", "walnut", f_alpha_lt(x,y))
+
 Define mkShiftStates alphabet k :=
     if k = 1 then map (\a => (a, true)) alphabet
     else mkShiftStates alphabet (k - 1)
@@ -46,6 +49,40 @@ Define makeShift base k :=
     emit { #save_aut(shiftName, $SHIFT) };
     .
 
+
+
+
+
+Define makeAlphaStates as :=
+    let nums := ( toChars ( intercalate "2" as ) ) @ ["2"]  in
+    foldl ( \acc x => head acc ^ x :: acc  ) [head nums] (tail nums) .
+
+Define mkAlphaTransitions sts aut :=
+    match sts with
+    case [a] => aut
+    case x :: xs => mkAlphaTransitions xs (addTransition aut (head xs) x (last (toChars x)))
+    end.
+
+
+Define makeAlpha as :=
+    let $ALPHA := "alpha-" ^ intercalate "-" as in
+    let alphaName := "alpha-" ^ intercalate "-" as ^ ".aut" in
+    let states := makeAlphaStates as in
+    let baseAut := withStates (mkAut ["a"] [3]) ( ("init", true) :: map (\x => (x,true) ) states ) in
+    let finalAut := buildAut (addTransition (mkAlphaTransitions (last states :: states) baseAut) "init" (head states) "2") in do
+
+    emit { $ALPHA(a) := finalAut };
+    emit { #save_aut(alphaName, $ALPHA) };
+    .
+    
+
+
+
+
+
+
+
+
 Define qseq q2 q1 cf :=
     match cf with
     case [] => [q2,q1]
@@ -55,14 +92,31 @@ Define qseq q2 q1 cf :=
 // we run with 0 1 and not 1 0 since q_(-2) = 1, q(-1) = 0, and q(0) = 1 since a0 = 1 and we only care about q1,q2,etc.
 Define q cf := tail (qseq 0 1 cf) .
 
-Define makeSum var a n :=
+Define makeSumNew var a n :=
     if n = 0 then let v0 := var ^ "0" in { exists v0. ostrowski_zero(a, v0) }
     else if n = 1 then let v1 := var ^ "1" in {  exists v1 is ostrowski(a). bco_eq(x,v1) }
-    else if n = 2 then let v2 := var ^ "2" in {  @postprocess [ exists v2 is ostrowski(a). bco_adder(a, var, var,v2) ] }
+    else if n = 2 then let v2 := var ^ "2" in {  exists v2 is ostrowski(a). bco_adder(a, var, var,v2) }
     else let rest := makeSum var a (n - 1) in
          let vn := var ^ (toString n) in 
          let vnm1 := var ^ (toString (n-1)) in
-         { @postprocess [  rest /\ (  @postprocess [ exists vn is ostrowski(a).  bco_adder(a, vnm1, var, vn) ] ) ] } .
+         { rest /\ ( exists vn is ostrowski(a).  bco_adder(a, vnm1, var, vn) ) } .
+
+
+Define makeSum var n :=
+    if n < 0 then let temp := makeSum var (-n) in { -temp }
+    else if n = 0 then { 0 }
+    else if n = 1 then { var }
+    else let rest := makeSum var (n - 1) in { rest + var } .
+
+Define makeTimesN n as :=
+    let $ALPHA := "alpha-" ^ intercalate "-" as in
+    let ntx := makeSum "x" n in
+    let $TIMESN := "times-" ^ toString n in
+    let timesNName := "times-" ^ toString n ^ ".aut" in do
+    makeAlpha as; 
+    emit { $TIMESN(x is ostrowski(a), y is ostrowski(a) ) := exists a is $ALPHA. bco_eq(ntx, y) };
+    emit { #save_aut( timesNName, $TIMESN ) };
+    .
 
 Define binToDec a :=
     match a with
@@ -70,32 +124,32 @@ Define binToDec a :=
     case x :: xs => if x = "1" then 1 + 2* (binToDec xs) else 2 * (binToDec xs)
     end.
 
-#import("../SturmianWords/ostrowski_defs.pn")
-#load("./automata/ostrowski/f_alpha_lt.txt", "walnut", f_alpha_lt(x,y))
 
-Define makeGAlpha k as :=
+Define makeGAlpha as :=
+    let k := length as in
     let $GALPHA := "g_alpha-" ^ intercalate "-" as in 
+    let $ALPHA := "alpha-" ^ intercalate "-" as in
     let shiftBy := sum (map strLength (take k as)) + k in
     let gAlphaName := "g_alpha-" ^ intercalate "-" as ^ ".aut" in
     let aNums := map binToDec (map toChars as) in
     let $SHIFT := "shift_" ^ (toString shiftBy) in 
     let qk := idx(q aNums) k in
     let qkm1 := idx(q aNums) (k-1) in 
-    let qkx := if qk = 1 then "x" else "x" ^ (toString qk) in 
-    let qkm1y := if qkm1 = 1 then "y" else "y" ^ (toString qkm1) in do
-    let mulx := makeSum "x" "a" qk in
-    let muly := makeSum "y" "a" qkm1 in do
+    let qkx := makeSum "x" qk in
+    let qkm1y := makeSum "y" qkm1 in do
     makeShift 3 shiftBy;
-    emit { $GALPHA(a, x is ostrowski(a), y is ostrowski(a)) :=  @postprocess [ @postprocess[ mulx ] /\ @postprocess[ muly ] /\ @postprocess [ exists sum. bco_adder(a,qkx,qkm1y,sum) /\ $SHIFT(x, sum ) ] ] };
+    makeAlpha as;
+    emit { $GALPHA(x is ostrowski(a), y is ostrowski(a)) := @no_simplify[ exists a is $ALPHA. exists sum is ostrowski(a). $SHIFT(x, sum) /\ qkx + qkm1y = sum ] };
     emit { #save_aut(gAlphaName, $GALPHA) };
     .
 
-Define makeAlphaMonicLT k as :=
+Define makeAlphaMonicLT as :=
     let ltName := "alpha_monic_lt-" ^ intercalate "-" as ^ ".aut" in
+    let $ALPHA := "alpha-" ^ intercalate "-" as in
     let $GALPHA := "g_alpha-" ^ intercalate "-" as in do
-    makeGAlpha k as;
+    makeGAlpha as;
     emit {
-        alpha_monic_lt(a, c is ostrowski(a), d is ostrowski(a), p is ostrowski(a), q is ostrowski(a)) := @postprocess [ @postprocess [ exists gd is ostrowski(a). exists gq is ostrowski(a). $GALPHA(a, q, gq) /\ $GALPHA(a, d, gd) ] /\ @postprocess[ (c + gd < p + gq \/ ( bco_eq(c + gd, p + gq ) /\ f_alpha_lt(d, q) ) ) ] ]
+        alpha_monic_lt(x is ostrowski(a), y is ostrowski(a), p is ostrowski(a), q is ostrowski(a)) := @no_simplify [ exists a is $ALPHA. exists gy is ostrowski(a). $GALPHA(y,gy)  /\ exists xgy is ostrowski(a). x+gy = xgy /\ exists gq is ostrowski(a). $GALPHA(q,gq) /\ exists pgq is ostrowski(a). p+gq = pgq /\ (xgy < pgq \/ ( bco_eq(xgy, pgq ) /\ f_alpha_lt(y, q) ) ) ]
         };
     emit { #save_aut(ltName , alpha_monic_lt) };
     .
