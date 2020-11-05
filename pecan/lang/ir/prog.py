@@ -494,7 +494,7 @@ class Program(IRNode):
     def get_restrictions(self, var_name: str):
         result = []
         # for scope in self.restrictions:
-        for r in self.restrictions[-1].get(var_name, []) + self.global_restrictions.get(var_name, []):
+        for r in self.get_restriction_env().get(var_name, []):
             if not r in result:
                 result.append(r)
         return result
