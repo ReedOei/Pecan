@@ -122,7 +122,9 @@ varlist: var ("," var)*
 
 ?bool: expr
      | "true"  -> formula_true
-     | "false" -> formal_false
+     | "⊤"  -> formula_true
+     | "false" -> formula_false
+     | "⊥" -> formula_false
      | string                           -> spot_formula
      | "(" pred ")"
      | comparison

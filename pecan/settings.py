@@ -19,8 +19,16 @@ class Settings:
         self.simplication_level = 1
         self.should_use_heuristics = False
         self.only_min_opt = False
+        self.extract_implications = False
 
         self.stdlib_prog = None
+
+    def get_extract_implications(self):
+        return self.extract_implications
+
+    def set_extract_implications(self, b):
+        self.extract_implications = b
+        return self
 
     def min_opt(self):
         return self.only_min_opt

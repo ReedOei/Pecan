@@ -53,11 +53,17 @@ class EqualsCompareIndex(Predicate):
     def transform(self, transformer):
         return transformer.transform_EqualsCompareIndex(self)
 
+    def format(self, x):
+        if isinstance(x, BoolConst):
+            return IntConst(1 if x.bool_val else 0)
+        else:
+            return repr(x)
+
     def __repr__(self):
         if self.is_equals:
-            return '{} = {}'.format(self.index_a, self.index_b)
+            return '{} = {}'.format(self.index_a, self.format(self.index_b))
         else:
-            return '{} ≠ {}'.format(self.index_a, self.index_b)
+            return '{} ≠ {}'.format(self.index_a, self.format(self.index_b))
 
 class EqualsCompareRange(Predicate):
     def __init__(self, is_equals, index_a, index_b):

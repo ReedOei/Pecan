@@ -41,6 +41,9 @@ def from_source(source_code, *args, **kwargs):
     prog.search_paths = make_search_paths(filename=kwargs.get('filename', None))
     prog.loader = load
 
+    if settings.get_extract_implications():
+        prog.extract_implications()
+
     prog = ASTToIR().transform(prog)
 
     settings.log(0, lambda: 'Search path: {}'.format(prog.search_paths))

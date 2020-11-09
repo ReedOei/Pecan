@@ -113,6 +113,56 @@ class Program(ASTNode):
         self.search_paths = other_prog.search_paths
         return self
 
+    def extract_implications(self):
+        from pecan.lang.ast.praline import PralineDirective
+        from pecan.lang.ast.directives import DirectiveLoadAut
+
+        restrict = {}
+        for d in self.defs:
+            if isinstance(d, PralineDirective):
+                if d.name == 'Theorem':
+                    a, b = self.extract_implication(restrict, d.term.vals[1].pecan_term)
+                    safe_name = d.term.vals[0].val.replace(' ', '_').replace('.', '')
+
+                    if a is not None and b is not None:
+                        print(f'Implication ("{safe_name}", {{{a}}}, {{{b}}}).')
+            elif isinstance(d, DirectiveLoadAut):
+                print(d)
+            elif isinstance(d, Restriction):
+                for v in d.restrict_vars:
+                    if v.var_name in restrict:
+                        restrict[v.var_name].append(d.pred.add_arg(v))
+                    else:
+                        restrict[v.var_name] = [d.pred.add_arg(v)]
+
+    def extract_implication(self, restrict, term):
+        from pecan.lang.ast.quant import Forall
+        from pecan.lang.ast.bool import Implies, Conjunction, BoolConst
+        from pecan.lang.ast.annotation import Annotation
+        if isinstance(term, Forall):
+            cs = [ cond for cond in term.conds if cond is not None ]
+            for v in term.vars:
+                cs.extend(restrict.get(v.var_name, []))
+            if len(cs) == 0:
+                lhs = BoolConst(True)
+            else:
+                lhs = reduce(Conjunction, cs)
+            l1, r1 = self.extract_implication(restrict, term.pred)
+            if l1 is None:
+                return lhs, r1
+            else:
+                return Conjunction(lhs, l1), r1
+        elif isinstance(term, Implies):
+            l1, r1 = self.extract_implication(restrict, term.b)
+            if l1 is None:
+                return term.a, r1
+            else:
+                return Conjunction(term.a, l1), r1
+        elif isinstance(term, Annotation):
+            return self.extract_implication(restrict, term.body)
+        else:
+            return None, term
+
     def transform(self, transformer):
         return transformer.transform_Program(self)
 
