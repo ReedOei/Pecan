@@ -18,8 +18,24 @@ class Settings:
         self.history_file = 'pecan_history'
         self.simplication_level = 1
         self.should_use_heuristics = False
+        self.only_min_opt = False
+        self.extract_implications = False
 
         self.stdlib_prog = None
+
+    def get_extract_implications(self):
+        return self.extract_implications
+
+    def set_extract_implications(self, b):
+        self.extract_implications = b
+        return self
+
+    def min_opt(self):
+        return self.only_min_opt
+
+    def set_min_opt(self, min_opt):
+        self.only_min_opt = min_opt
+        return self
 
     def get_simplication_level(self):
         return self.simplication_level

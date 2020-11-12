@@ -1,0 +1,6 @@
+Let k,l,m be nat.
+
+Theorem ("test", {
+    forall k. forall l. forall m. (((l = m) /\ (l < k)) => (m < k))
+}).
+

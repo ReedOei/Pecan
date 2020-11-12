@@ -186,7 +186,8 @@ class TypeInferer(IRTransformer):
         return node.with_type(InferredType())
 
     def transform_VarRef(self, node: VarRef):
-        if node.get_type() is not None:
+        # TODO: It would be nice not to have this kludge and either remove the condition "node.get_type() != AnyType" or remove the first branch altogether and always recalculate the type.
+        if node.get_type() is not None and node.get_type() != AnyType():
             return node
         else:
             restrictions = self.prog.get_restrictions(node.var_name)

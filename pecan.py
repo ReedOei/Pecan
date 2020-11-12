@@ -59,11 +59,33 @@ def main():
     parser.add_argument('-d', '--debug', help='Output debugging information', required=False, action='count')
     parser.add_argument('-q', '--quiet', help='Quiet mode', required=False, action='store_true')
     parser.add_argument('--no-opt', help='Turns off optimizations', required=False, action='store_true')
+    parser.add_argument('--min-opt', help='Set optimizations to minimal levels (only boolean and arithmetic optimizations).', required=False, action='store_true')
     parser.add_argument('--no-stdlib', help='Turns off the default behavior of loading the standard library (from library/std.pn in your Pecan installation)', required=False, action='store_false')
     parser.add_argument('--generate', help='Enumerate true statements, argument is how many variables to use', type=int, required=False)
     parser.add_argument('--heuristics', help='Use heuristics to determine how to simplify automata. This flag is typically useful with large automata (>10000 states), and can cause worse performance with smaller automata.', required=False, action='store_true')
+    parser.add_argument('--extract-implications', help='Alternate mode of running a program involving going through each theorem, extracting the top-level implication that needs to be checked (if applicable).', required=False, action='store_true')
+    parser.add_argument('--use-var-map', help='Use the var_map from the specified file and convert the main file to use the same var map (i.e., the argument corresponding to <file>)', required=False, type=str)
 
     args = parser.parse_args()
+
+    if args.use_var_map is not None:
+        if args.file is None:
+            print('If --use-var-map is specified, you must also specify <file>!')
+            exit(1)
+
+        from pecan.tools.hoa_loader import load_hoa
+        use_var_map_aut = load_hoa(args.use_var_map)
+        main_file_aut = load_hoa(args.file)
+
+        ap_subs = {}
+        for v, aps in use_var_map_aut.get_var_map().items():
+            for main_ap, new_ap in zip(main_file_aut.get_var_map().get(v, []), aps):
+                ap_subs[main_ap] = new_ap
+
+        main_file_aut = main_file_aut.ap_substitute(ap_subs)
+        print(main_file_aut.to_str())
+
+        return
 
     if args.debug is None:
         settings.set_debug_level(0)
@@ -74,6 +96,8 @@ def main():
     settings.set_opt_level(0 if args.no_opt else 1)
     settings.set_load_stdlib(args.no_stdlib)
     settings.set_use_heuristics(args.heuristics)
+    settings.set_min_opt(args.min_opt)
+    settings.set_extract_implications(args.extract_implications)
 
     env = None
     if args.generate is not None:
@@ -82,7 +106,8 @@ def main():
     elif args.file is not None:
         try:
             prog = program.load(args.file)
-            env = prog.evaluate()
+            if not settings.get_extract_implications():
+                env = prog.evaluate()
         except UnexpectedToken as e:
             print(e)
             return None

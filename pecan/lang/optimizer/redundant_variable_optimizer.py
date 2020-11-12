@@ -7,6 +7,8 @@ from pecan.lang.optimizer.tools import ExpressionFrequency, NodeSubstitution
 
 from pecan.lang.ir import *
 
+from functools import reduce
+
 class CustomNodeSubstitution(NodeSubstitution):
     def transform_Exists(self, node: Exists):
         # Don't change the variable, or it could go out of scope too soon
@@ -20,6 +22,8 @@ class RedundantVariableOptimizer(BasicOptimizer):
         # This is useful so we can decide which of two variables to keep (the one which was declared higher up)
         self.decl_level = {}
         self.cur_level = 0
+
+        self.enabled = True
 
     def pre_optimize(self, node):
         self.decl_level = {}
@@ -39,19 +43,43 @@ class RedundantVariableOptimizer(BasicOptimizer):
 
         return subs
 
+    def transform(self, node):
+        if not isinstance(node, Conjunction):
+            self.enabled = True
+        return super().transform(node)
+
+    def gather_conjuncts(self, node):
+        res = []
+        if isinstance(node.a, Conjunction):
+            res += self.gather_conjuncts(node.a)
+        else:
+            res += [node.a]
+
+        if isinstance(node.b, Conjunction):
+            res += self.gather_conjuncts(node.b)
+        else:
+            res += [node.b]
+
+        return res
+
     def transform_Conjunction(self, node):
-        orig_a = self.transform(node.a)
-        orig_b = self.transform(node.b)
+        if self.enabled:
+            conjuncts = self.gather_conjuncts(node)
 
-        info = self.gather_info(orig_a)
-        substituter = CustomNodeSubstitution(info)
+            info = {}
+            for conjunct in conjuncts:
+                info.update(self.gather_info(conjunct))
 
-        new_a = substituter.transform(orig_a)
-        new_b = substituter.transform(orig_b)
+            substituter = CustomNodeSubstitution(info)
+            new_conjuncts = [ substituter.transform(conjunct) for conjunct in conjuncts ]
+            self.changed |= substituter.changed
 
-        self.changed |= substituter.changed
+            new_node = reduce(Conjunction, new_conjuncts)
 
-        return Conjunction(new_a, new_b)
+            self.enabled = False
+            return super().transform(new_node)
+        else:
+            return super().transform_Conjunction(node)
 
     def transform_Complement(self, node):
         # Clear out the level dictionary, because the complement means that variables outside should not interact with variables inside

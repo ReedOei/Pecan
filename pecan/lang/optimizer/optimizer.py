@@ -24,7 +24,13 @@ class UntypedOptimizer:
     def run_optimizations(self, node, pred):
         settings.log(2, lambda: f'Optimizing: {node}')
 
-        optimization_pass = [ArithmeticOptimizer(self), BooleanOptimizer(self), RedundantVariableOptimizer(self)]
+        if settings.min_opt():
+            optimization_pass = [ ArithmeticOptimizer(self), BooleanOptimizer(self) ]
+        else:
+            optimization_pass = [ ArithmeticOptimizer(self), BooleanOptimizer(self) ] # RedundantVariableOptimizer(self) ]
+
+        settings.log(2, lambda: f'Optimization passes: {optimization_pass}')
+
         new_node = node
 
         ast_changed = True # Default to true so we run at least once
@@ -48,7 +54,14 @@ class Optimizer:
     def run_optimizations(self, node, pred):
         settings.log(2, lambda: f'Optimizing: {node}')
 
-        optimization_pass = [ArithmeticOptimizer(self), CSEOptimizer(self), BooleanOptimizer(self), RedundantVariableOptimizer(self), UnusedVariableOptimizer(self)]
+        if settings.min_opt():
+            optimization_pass = [ ArithmeticOptimizer(self), BooleanOptimizer(self) ]
+        else:
+            # optimization_pass = [ ArithmeticOptimizer(self), CSEOptimizer(self), BooleanOptimizer(self), RedundantVariableOptimizer(self), UnusedVariableOptimizer(self) ]
+            optimization_pass = [ ArithmeticOptimizer(self), CSEOptimizer(self), BooleanOptimizer(self), UnusedVariableOptimizer(self) ]
+
+        settings.log(2, lambda: f'Optimization passes: {optimization_pass}')
+
         new_node = node
 
         ast_changed = True # Default to true so we run at least once

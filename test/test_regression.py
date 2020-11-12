@@ -19,3 +19,6 @@ def test_free_var_regression0():
 def test_cse_loop_regression0():
     run_file('examples/cse-infinite-loop-regression0.pn')
 
+def test_redundant_var_opt_regression0():
+    run_file('examples/redundant_var_optimize.pn')
+
