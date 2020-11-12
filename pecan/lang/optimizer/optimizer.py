@@ -27,7 +27,7 @@ class UntypedOptimizer:
         if settings.min_opt():
             optimization_pass = [ ArithmeticOptimizer(self), BooleanOptimizer(self) ]
         else:
-            optimization_pass = [ ArithmeticOptimizer(self), BooleanOptimizer(self), RedundantVariableOptimizer(self) ]
+            optimization_pass = [ ArithmeticOptimizer(self), BooleanOptimizer(self) ] # RedundantVariableOptimizer(self) ]
 
         settings.log(2, lambda: f'Optimization passes: {optimization_pass}')
 
@@ -57,7 +57,8 @@ class Optimizer:
         if settings.min_opt():
             optimization_pass = [ ArithmeticOptimizer(self), BooleanOptimizer(self) ]
         else:
-            optimization_pass = [ ArithmeticOptimizer(self), CSEOptimizer(self), BooleanOptimizer(self), RedundantVariableOptimizer(self), UnusedVariableOptimizer(self) ]
+            # optimization_pass = [ ArithmeticOptimizer(self), CSEOptimizer(self), BooleanOptimizer(self), RedundantVariableOptimizer(self), UnusedVariableOptimizer(self) ]
+            optimization_pass = [ ArithmeticOptimizer(self), CSEOptimizer(self), BooleanOptimizer(self), UnusedVariableOptimizer(self) ]
 
         settings.log(2, lambda: f'Optimization passes: {optimization_pass}')
 
