@@ -39,11 +39,6 @@ class Sub(BinaryExpression):
 class Mul(BinaryExpression):
     def __init__(self, a, b):
         super().__init__(a, b)
-        if not self.a.is_int and not self.b.is_int:
-            raise AutomatonArithmeticError("At least one argument of multiplication must be an constant integer in {}".format(self))
-        # We assumed above that a was the int, but it might not be; if it wasn't, just swap the two
-        if not self.a.is_int:
-            self.a, self.b = self.b, self.a
 
     def transform(self, transformer):
         return transformer.transform_Mul(self)

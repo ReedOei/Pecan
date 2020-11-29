@@ -1,0 +1,13 @@
+Let x, y be binary.
+
+Define f n :=
+    let $NAME := "mul_" ^ toString n in
+        emit { $NAME(x,y) := n*x = y }.
+
+Execute f 1.
+Execute f 2.
+Execute f 7.
+Execute f 9.
+
+Prove that { forall x. mul_9(x) = mul_7(x) + mul_2(x) }.
+

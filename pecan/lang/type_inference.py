@@ -176,6 +176,12 @@ class TypeInferer(IRTransformer):
         res_type = self.type_env.unify(a, b)
         return Add(a, b).with_type(res_type)
 
+    def transform_Mul(self, node: Mul):
+        a = self.transform(node.a)
+        b = self.transform(node.b)
+        res_type = self.type_env.unify(a, b)
+        return Mul(a, b).with_type(res_type)
+
     def transform_Sub(self, node: Sub):
         a = self.transform(node.a)
         b = self.transform(node.b)
