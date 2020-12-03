@@ -121,3 +121,6 @@ def test_div():
 def test_website():
     run_file('examples/website_tests.pn')
 
+def test_praline_constant_mul():
+    run_file('examples/praline_constant_mul.pn')
+

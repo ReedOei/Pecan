@@ -101,6 +101,15 @@ class ASTToIR(AstTransformer):
         return res
 
     def transform_Mul(self, node):
+        # If they are both ints, translate to an IR node that will multiply
+        # This will fail at runtime if one/both of the variables doesn't get substituted before this runs
+        if not node.a.is_int and not node.b.is_int:
+            return ir.Mul(self.transform(node.a), self.transform(node.b))
+
+        # We assumed above that a was the int, but it might not be; if it wasn't, just swap the two
+        if not node.a.is_int:
+            node.a, node.b = node.b, node.a
+
         if node.is_int:
             return ir.IntConst(node.evaluate_int(self.prog))
 

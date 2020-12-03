@@ -14,6 +14,7 @@ class Add(BinaryIRExpression):
 
     def change_label(self, label): # for changing label to __constant#
         self.label = label
+        return self
 
     def show(self):
         # The operands should always have the same type, but in the interest of debugging, we should display when this is not the case
@@ -67,6 +68,71 @@ class Sub(BinaryIRExpression):
     def evaluate_int(self, prog):
         assert self.is_int
         return self.a.evaluate_int(prog) - self.b.evaluate_int(prog)
+
+class Mul(BinaryIRExpression):
+    def __init__(self, a, b):
+        super().__init__(a, b)
+
+    def change_label(self, label): # for changing label to __constant#
+        self.label = label
+        return self
+
+    def show(self):
+        # The operands should always have the same type, but in the interest of debugging, we should display when this is not the case
+        if self.a.get_type() == self.b.get_type():
+            return '({} * {})'.format(self.a.show(), self.b.show())
+        else:
+            return '({} * {})'.format(self.a, self.b)
+
+    def evaluate_node(self, prog):
+        if self.is_int:
+            n = self.evaluate_int(prog)
+            if n >= 0:
+                return IntConst(n).with_type(self.get_type()).evaluate(prog)
+            else:
+                return Sub(IntConst(0), IntConst(n)).with_type(self.get_type()).evaluate(prog)
+
+        if not self.a.is_int and not self.b.is_int:
+            raise AutomatonArithmeticError("At least one argument of multiplication must be an constant integer in {}".format(self))
+
+        # We assumed above that a was the int, but it might not be; if it wasn't, just swap the two
+        if not self.a.is_int:
+            self.a, self.b = self.b, self.a
+
+        # We are guaranteed that self.a will be an integer, so we don't need to worry about transforming it
+        c = self.a.evaluate_int(prog)  # copy of a
+
+        negative = False
+
+        if c == 0:
+            return ir.IntConst(0).with_type(self.get_type()).evaluate(prog)
+
+        if c < 0:
+            negative = True
+            c = -c
+
+        power = self.b
+
+        s = IntConst(0).with_type(self.get_type())
+        while True:
+            if c & 1 == 1:
+                s = Add(power, s).with_type(self.get_type())
+            c = c // 2
+            if c <= 0:
+                break
+            power = Add(power, power).with_type(self.get_type())
+
+        if negative:
+            return Sub(ir.IntConst(0), s).with_type(self.get_type()).evaluate(prog)
+        else:
+            return s.evaluate(prog)
+
+    def transform(self, transformer):
+        return transformer.transform_Mul(self)
+
+    def evaluate_int(self, prog):
+        assert self.is_int
+        return self.a.evaluate_int(prog) * self.b.evaluate_int(prog)
 
 constants_map = {}
 class IntConst(IRExpression):
