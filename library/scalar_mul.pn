@@ -1,12 +1,14 @@
 #import("../SturmianWords/ostrowski_defs.pn")
 #load("./automata/ostrowski/f_alpha_lt.txt", "walnut", f_alpha_lt(x,y))
 
+// Make states for shift automaton
 Define mkShiftStates alphabet k :=
     if k = 1 then map (\a => (a, true)) alphabet
     else mkShiftStates alphabet (k - 1)
          @
          map (\sts => (intercalate "," sts, true)) (cart_prod (replicate k alphabet)) .
 
+// Make initial state in shift automaton
 Define mkShiftInit alphabet aut :=
     foldl (\curAut sym => addTransition curAut "init" sym (sym ^ " 2")) aut alphabet.
 
@@ -37,6 +39,7 @@ Define mkShiftTransitions alphabet k aut :=
                       curAut alphabet)
                aut (cart_prod (replicate k alphabet))).
 
+// Makes actual shift automaton
 Define makeShift base k :=
     let $SHIFT := "shift_" ^ toString k in
     let shiftName := "shift_" ^ toString k ^ ".aut" in
@@ -51,80 +54,78 @@ Define makeShift base k :=
 
 
 
-
-
+// Make states of quadratic alpha recognization automata
 Define makeAlphaStates as :=
     let nums := ( toChars ( intercalate "2" as ) ) @ ["2"]  in
     foldl ( \acc x => head acc ^ x :: acc  ) [head nums] (tail nums) .
 
+// Makes transitions between states to ensure the alpha is the desired quadratic alpha
 Define mkAlphaTransitions sts aut :=
     match sts with
     case [a] => aut
     case x :: xs => mkAlphaTransitions xs (addTransition aut (head xs) x (last (toChars x)))
     end.
 
-
+// Make automata to recognize quadratic alpha 0 <= a < 1 which are immediately repeating
 Define makeAlpha as :=
     let $ALPHA := "alpha-" ^ intercalate "-" as in
     let alphaName := "alpha-" ^ intercalate "-" as ^ ".aut" in
     let states := makeAlphaStates as in
     let baseAut := withStates (mkAut ["a"] [3]) ( ("init", true) :: map (\x => (x,true) ) states ) in
     let finalAut := buildAut (addTransition (mkAlphaTransitions (last states :: states) baseAut) "init" (head states) "2") in do
-
     emit { $ALPHA(a) := finalAut };
     emit { #save_aut(alphaName, $ALPHA) };
     .
     
 
 
-
-
-
-
-
-
+// Definition of the qi's - denominators of the continued fraction representation of a
 Define qseq q2 q1 cf :=
     match cf with
     case [] => [q2,q1]
     case a :: as => q2 :: qseq q1 (a * q1 + q2) as
     end.
 
-// we run with 0 1 and not 1 0 since q_(-2) = 1, q(-1) = 0, and q(0) = 1 since a0 = 1 and we only care about q1,q2,etc.
+// We run with 0 1 and not 1 0 since q_(-2) = 1, q(-1) = 0, and q(0) = 1 since a0 = 1 and we only care about q1,q2,etc.
 Define q cf := tail (qseq 0 1 cf) .
 
-Define makeSumNew var a n :=
-    if n = 0 then let v0 := var ^ "0" in { exists v0. ostrowski_zero(a, v0) }
-    else if n = 1 then let v1 := var ^ "1" in {  exists v1 is ostrowski(a). bco_eq(x,v1) }
-    else if n = 2 then let v2 := var ^ "2" in {  exists v2 is ostrowski(a). bco_adder(a, var, var,v2) }
-    else let rest := makeSum var a (n - 1) in
-         let vn := var ^ (toString n) in 
-         let vnm1 := var ^ (toString (n-1)) in
-         { rest /\ ( exists vn is ostrowski(a).  bco_adder(a, vnm1, var, vn) ) } .
-
-
-Define makeSum var n :=
-    if n < 0 then let temp := makeSum var (-n) in { -temp }
-    else if n = 0 then { 0 }
-    else if n = 1 then { var }
-    else let rest := makeSum var (n - 1) in { rest + var } .
-
+// Simple automata to recognize if n*x = y, uses binary addition to do O(log n) operations
 Define makeTimesN n as :=
     let $ALPHA := "alpha-" ^ intercalate "-" as in
-    let ntx := makeSum "x" n in
-    let $TIMESN := "times-" ^ toString n in
-    let timesNName := "times-" ^ toString n ^ ".aut" in do
+    let $TIMESN := "times" ^ toString n ^ "_" intercalate "-" as in
+    let timesNName := "times-" ^ toString n ^ "_" intercalate "-" as ^  ".aut" in do
     makeAlpha as; 
-    emit { $TIMESN(x is ostrowski(a), y is ostrowski(a) ) := exists a is $ALPHA. bco_eq(ntx, y) };
+    emit { $TIMESN(x is ostrowski(a), y is ostrowski(a) ) := exists a is $ALPHA. bco_eq(n*x, y) };
     emit { #save_aut( timesNName, $TIMESN ) };
     .
-
+ 
+// Transform a binary number with least significant bit first into its decimal counterpart
 Define binToDec a :=
     match a with
     case [] => 0
     case x :: xs => if x = "1" then 1 + 2* (binToDec xs) else 2 * (binToDec xs)
     end.
 
+// Make the powers of 2 < n
+Define make2Powers n acc :=
+    if acc > n then []
+    else acc :: ( make2Powers n (2*acc) ).
 
+Define decToBinH n arr :=
+    match arr with
+    case [] => []
+    case x :: xs => if n - x >= 0 then "1" :: (decToBinH (n-x) xs) else "0" :: (decToBinH n xs)
+    end.
+
+// Turn a decimal into least significant first binary representation
+Define decToBin n := reverse (decToBinH n (reverse (make2Powers n 1) )).
+
+
+// Make g_alpha function as defined in https://arxiv.org/pdf/1805.03624.pdf
+// The constants qk, qkm1 can be shown to be the correct ones inductively
+// 
+// To use:
+// as = ["n1", "n2", ... ] where the desired infinite fraction is 1/(n1+1/(n2+...)) which cycles through the coefficients. Each ni is written as a least significant digit first binary number.
 Define makeGAlpha as :=
     let k := length as in
     let $GALPHA := "g_alpha-" ^ intercalate "-" as in 
@@ -135,14 +136,14 @@ Define makeGAlpha as :=
     let $SHIFT := "shift_" ^ (toString shiftBy) in 
     let qk := idx(q aNums) k in
     let qkm1 := idx(q aNums) (k-1) in 
-    let qkx := makeSum "x" qk in
-    let qkm1y := makeSum "y" qkm1 in do
     makeShift 3 shiftBy;
     makeAlpha as;
-    emit { $GALPHA(x is ostrowski(a), y is ostrowski(a)) := @no_simplify[ exists a is $ALPHA. exists sum is ostrowski(a). $SHIFT(x, sum) /\ qkx + qkm1y = sum ] };
+    emit { $GALPHA(x is ostrowski(a), y is ostrowski(a)) := @postprocess[ exists a is $ALPHA. exists sum is ostrowski(a). $SHIFT(x, sum) /\ qk * x + qkm1 * y = sum ] };
     emit { #save_aut(gAlphaName, $GALPHA) };
     .
 
+// Make a function which determines whether x+ay < p+aq for x,y,p,q integers and a a quadratic irrational. From above paper.
+// Often too slow to be created and too large to use for even simple as, so in practice it's better to take one or more of x,y,p,q to be zero and rewrite formula accordingly noting that g_alpha(0) = 0.
 Define makeAlphaMonicLT as :=
     let ltName := "alpha_monic_lt-" ^ intercalate "-" as ^ ".aut" in
     let $ALPHA := "alpha-" ^ intercalate "-" as in

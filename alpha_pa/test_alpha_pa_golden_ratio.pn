@@ -1,9 +1,13 @@
 #import("../SturmianWords/ostrowski_defs.pn")
-#load("./g_alpha/g_alpha_golden_ratio.aut", "hoa", g_alpha(a, x, y))
+
+// #load("./g_alpha/g_alpha_golden_ratio.aut", "hoa", g_alpha(a, x, y))
+#load("../g_alpha-1.aut", "hoa", g_alpha(a, x, y))
+
 #load("./f_alpha_lt.txt", "walnut", f_alpha_lt(x, y))
 #load("./alpha_golden_ratio.txt", "walnut", alpha(a))
 
-#load("./shift1.aut", "hoa", shift1(n, m))
+#load("../shift_2.aut", "hoa", shift1(n, m))
+// #load("./shift1.aut", "hoa", shift1(n, m))
 
 // fix alpha = [0;1,1,1...] = (sqrt(5) - 1) / 2
 
@@ -18,7 +22,7 @@
 
 // there should be two solutions: n = 2 or 3
 
-eq1(n is ostrowski(a)) := @no_simplify[
+eq1(n is ostrowski(a)) := @postprocess[
 	exists a is alpha.
 	exists o0 is ostrowski_zero(a).
 	exists o1 is bco_succ(a, o0).
@@ -28,11 +32,11 @@ eq1(n is ostrowski(a)) := @no_simplify[
 	g_alpha(a, n, g_n) /\ g_alpha(a, o0, g_0) /\
 	// (o0 + g_n < o2 + g_0 \/ (o0 + g_n = o2 + g_0 /\ f_alpha_lt(n, o0))) /\
 	// (o1 + g_0 < o0 + g_n \/ (o1 + g_0 = o0 + g_n /\ f_alpha_lt(o0, n)))
-	((o0 + g_n < o2 + g_0) \/ (bco_eq(o0 + g_n, o2 + g_0) /\ f_alpha_lt(n, o0)))
+	((g_n < o2 + g_0) \/ (bco_eq(g_n, o2 + g_0) /\ f_alpha_lt(n, o0)))
 	// (o1 + g_0 < g_n \/ (o1 + g_0 = g_n /\ f_alpha_lt(o0, n)))
 ]
 
-eq2(n is ostrowski(a)) := @no_simplify[
+eq2(n is ostrowski(a)) := @postprocess[
 	exists a is alpha.
 	exists o0 is ostrowski_zero(a).
 	exists o1 is bco_succ(a, o0).
@@ -45,7 +49,7 @@ eq2(n is ostrowski(a)) := @no_simplify[
 	(o1 + g_0 < g_n \/ (bco_eq(o1 + g_0, g_n) /\ f_alpha_lt(o0, n)))
 ]
 
-two_solutions() :=
+two_solutions() := @no_simplify[
 	exists a is alpha.
 	exists o0 is ostrowski_zero(a).
 	exists o1 is bco_succ(a, o0).
@@ -53,8 +57,9 @@ two_solutions() :=
 	exists o3 is bco_succ(a, o2).
 	forall n is ostrowski(a).
 	(eq1(n) /\ eq2(n)) => (bco_eq(n, o2) \/ bco_eq(n, o3))
+]
 
-// Example (ostrowskiFormat, { eq1(n) }).
+Example (ostrowskiFormat, { eq1(n) }).
 #assert_prop(true, two_solutions)
 
 // // g_alpha is a function

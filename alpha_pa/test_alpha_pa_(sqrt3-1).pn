@@ -1,6 +1,7 @@
 #import("../SturmianWords/ostrowski_defs.pn")
 
 #load("./g_alpha/g_alpha_(sqrt3-1).aut", "hoa", g_alpha(a, x, y))
+// #load("./g_alpha/g_alpha_sqrt3_simple.aut", "hoa", g_alpha(a, x, y))
 #load("./f_alpha_lt.txt", "walnut", f_alpha_lt(x, y))
 #load("./alpha_(sqrt3-1).txt", "walnut", alpha(a))
 #load("./shift2.aut", "hoa", shift2(n, m))
