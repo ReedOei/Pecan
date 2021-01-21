@@ -78,11 +78,15 @@ class IRNode:
 
         prog.eval_level -= 1
 
+        if type(result) is tuple:
+            sn, en = result[0].num_states(), result[0].num_edges()
+        else:
+            sn, en = result.num_states(), result.num_edges()
+
+        if settings.should_write_statistics():
+            prog.update_max_aut(sn, en)
+
         if settings.get_debug_level() > 0:
-            if type(result) is tuple:
-                sn, en = result[0].num_states(), result[0].num_edges()
-            else:
-                sn, en = result.num_states(), result.num_edges()
             end_time = time.time()
 
             if sn >= 0 and en >= 0:

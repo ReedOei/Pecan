@@ -20,8 +20,16 @@ class Settings:
         self.should_use_heuristics = False
         self.only_min_opt = False
         self.extract_implications = False
+        self.write_statistics = False
 
         self.stdlib_prog = None
+
+    def should_write_statistics(self):
+        return self.write_statistics
+
+    def set_write_statistics(self, write_statistics):
+        self.write_statistics = write_statistics
+        return self
 
     def get_extract_implications(self):
         return self.extract_implications

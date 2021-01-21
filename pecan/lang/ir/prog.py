@@ -6,6 +6,7 @@ from colorama import Fore, Style
 import os
 from functools import reduce
 import time
+from typing import Tuple
 
 from lark import Lark, Transformer, v_args
 import spot
@@ -241,13 +242,21 @@ class NamedPred(IRNode):
 
         try:
             if self.body_evaluated is None:
+                if settings.should_write_statistics():
+                    prog.reset_max_aut()
+
                 self.body_evaluated = self.body.evaluate(prog).relabel()
+
+                if settings.should_write_statistics():
+                    sn, en = prog.get_max_aut()
+                    print('[INFO] Max states for {} is {}'.format(self.name, sn))
+                    print('[INFO] Max edges for {} is {}'.format(self.name, en))
 
             if not arg_names:
                 return self.body_evaluated
             else:
                 if len(arg_names) < len(self.args):
-                    raise Exception('Not enough arugments for {}. Expected {}, got {}'.format(self.name, len(self.args), len(arg_names)))
+                    raise Exception('Not enough arguments for {}. Expected {}, got {}'.format(self.name, len(self.args), len(arg_names)))
                 subs_dict = {arg.var_name: name.var_name for arg, name in zip(self.args, arg_names)}
                 return self.body_evaluated.substitute(subs_dict, prog.get_var_map())
         finally:
@@ -288,10 +297,29 @@ class Program(IRNode):
         self.idx = None
         self.emit_offset = 0
 
+        self.max_aut_states = 0
+        self.max_aut_edges = 0
+
         self.var_map = []
 
         from pecan.lang.type_inference import TypeInferer
         self.type_inferer = TypeInferer(self)
+
+    def reset_max_aut(self):
+        self.max_aut_states = 0
+        self.max_aut_edges = 0
+        return self
+
+    def get_max_aut(self) -> Tuple[int, int]:
+        return self.max_aut_states, self.max_aut_edges
+
+    def update_max_aut(self, sn : int, en : int) -> bool:
+        if sn > self.max_aut_states:
+            self.max_aut_states = sn
+            self.max_aut_edges = en
+            return True
+        else:
+            return False
 
     def get_var_map(self):
         return self.var_map[-1]

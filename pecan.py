@@ -65,8 +65,22 @@ def main():
     parser.add_argument('--heuristics', help='Use heuristics to determine how to simplify automata. This flag is typically useful with large automata (>10000 states), and can cause worse performance with smaller automata.', required=False, action='store_true')
     parser.add_argument('--extract-implications', help='Alternate mode of running a program involving going through each theorem, extracting the top-level implication that needs to be checked (if applicable).', required=False, action='store_true')
     parser.add_argument('--use-var-map', help='Use the var_map from the specified file and convert the main file to use the same var map (i.e., the argument corresponding to <file>)', required=False, type=str)
+    parser.add_argument('--stats', help='Write out statistics about each predicate defined and theorem tested (i.e., in save_aut and assert_prop)', required=False, action='store_true')
 
     args = parser.parse_args()
+
+    settings.set_quiet(args.quiet)
+    settings.set_opt_level(0 if args.no_opt else 1)
+    settings.set_load_stdlib(args.no_stdlib)
+    settings.set_use_heuristics(args.heuristics)
+    settings.set_min_opt(args.min_opt)
+    settings.set_extract_implications(args.extract_implications)
+    settings.set_write_statistics(args.stats)
+
+    if args.debug is None:
+        settings.set_debug_level(0)
+    else:
+        settings.set_debug_level(args.debug)
 
     if args.use_var_map is not None:
         if args.file is None:
@@ -82,22 +96,16 @@ def main():
             for main_ap, new_ap in zip(main_file_aut.get_var_map().get(v, []), aps):
                 ap_subs[main_ap] = new_ap
 
-        main_file_aut = main_file_aut.ap_substitute(ap_subs)
-        print(main_file_aut.to_str())
+        s = main_file_aut.aut.to_str('hoa')
+        for a,b in ap_subs.items():
+            s = s.replace(a, b)
+        print(s)
+
+        # print(ap_subs)
+        # main_file_aut = main_file_aut.ap_substitute(ap_subs)
+        # print(main_file_aut.to_str())
 
         return
-
-    if args.debug is None:
-        settings.set_debug_level(0)
-    else:
-        settings.set_debug_level(args.debug)
-
-    settings.set_quiet(args.quiet)
-    settings.set_opt_level(0 if args.no_opt else 1)
-    settings.set_load_stdlib(args.no_stdlib)
-    settings.set_use_heuristics(args.heuristics)
-    settings.set_min_opt(args.min_opt)
-    settings.set_extract_implications(args.extract_implications)
 
     env = None
     if args.generate is not None:
