@@ -242,15 +242,19 @@ class NamedPred(IRNode):
 
         try:
             if self.body_evaluated is None:
+                # TODO: START AND FINISH HERE!!!!
                 if settings.should_write_statistics():
-                    prog.reset_max_aut()
+                    prog.start_max_aut(self.name)
 
                 self.body_evaluated = self.body.evaluate(prog).relabel()
 
                 if settings.should_write_statistics():
-                    sn, en = prog.get_max_aut()
+                    sn, en, runtime = prog.finish_max_aut(self.name)
+                    sn = max(self.body_evaluated.num_states(), sn)
+                    en = max(self.body_evaluated.num_edges(), en)
                     print('[INFO] Max states for {} is {}'.format(self.name, sn))
                     print('[INFO] Max edges for {} is {}'.format(self.name, en))
+                    print('[INFO] Runtime for {} is {}'.format(self.name, runtime))
 
             if not arg_names:
                 return self.body_evaluated
@@ -297,29 +301,28 @@ class Program(IRNode):
         self.idx = None
         self.emit_offset = 0
 
-        self.max_aut_states = 0
-        self.max_aut_edges = 0
+        self.aut_stats = {}
 
         self.var_map = []
 
         from pecan.lang.type_inference import TypeInferer
         self.type_inferer = TypeInferer(self)
 
-    def reset_max_aut(self):
-        self.max_aut_states = 0
-        self.max_aut_edges = 0
+    def start_max_aut(self, name : str):
+        self.aut_stats[name] = { 'states': 0, 'edges': 0, 'runtime': 0 }
         return self
 
-    def get_max_aut(self) -> Tuple[int, int]:
-        return self.max_aut_states, self.max_aut_edges
+    def finish_max_aut(self, name : str) -> Tuple[int, int, float]:
+        stats = self.aut_stats.pop(name)
+        return stats['states'], stats['edges'], stats['runtime']
 
-    def update_max_aut(self, sn : int, en : int) -> bool:
-        if sn > self.max_aut_states:
-            self.max_aut_states = sn
-            self.max_aut_edges = en
-            return True
-        else:
-            return False
+    def update_max_aut(self, sn : int, en : int, runtime : float):
+        for name in self.aut_stats:
+            if sn > self.aut_stats[name]['states']:
+                self.aut_stats[name]['states'] = sn
+                self.aut_stats[name]['edges'] = en
+
+            self.aut_stats[name]['runtime'] = max(self.aut_stats[name]['runtime'], runtime)
 
     def get_var_map(self):
         return self.var_map[-1]
