@@ -21,6 +21,7 @@ class Settings:
         self.only_min_opt = False
         self.extract_implications = False
         self.write_statistics = False
+        self.output_hoa = None
 
         self.stdlib_prog = None
 
@@ -103,6 +104,13 @@ class Settings:
 
     def should_load_stdlib(self):
         return self.load_stdlib
+
+    def set_output_hoa(self, hoa_file):
+        self.output_hoa = hoa_file
+        return self
+
+    def get_output_hoa(self):
+        return self.output_hoa
 
     def log(self, level, msg=None):
         if msg is None:

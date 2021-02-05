@@ -88,7 +88,14 @@ class BuchiAutomaton(Automaton):
     def complement(self):
         if settings.get_simplication_level() > 0:
             self.postprocess()
+        self.dump_aut()
         return BuchiAutomaton(spot.complement(self.get_aut()), self.var_map)
+
+    def dump_aut(self):
+        hoa_file = settings.get_output_hoa()
+        if hoa_file:
+            with open(hoa_file, "a") as fd:
+                fd.write(self.get_aut().to_str() + "\n\n")
 
     def relabel(self):
         level_before = settings.get_simplication_level()
