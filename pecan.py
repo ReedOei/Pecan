@@ -66,6 +66,7 @@ def main():
     parser.add_argument('--extract-implications', help='Alternate mode of running a program involving going through each theorem, extracting the top-level implication that needs to be checked (if applicable).', required=False, action='store_true')
     parser.add_argument('--use-var-map', help='Use the var_map from the specified file and convert the main file to use the same var map (i.e., the argument corresponding to <file>)', required=False, type=str)
     parser.add_argument('--stats', help='Write out statistics about each predicate defined and theorem tested (i.e., in save_aut and assert_prop)', required=False, action='store_true')
+    parser.add_argument('--output-hoa', help='Outputs encountered Buchi automata into the file', required=False, type=str, dest="output_hoa", metavar="HOA_FILE")
 
     args = parser.parse_args()
 
@@ -76,6 +77,7 @@ def main():
     settings.set_min_opt(args.min_opt)
     settings.set_extract_implications(args.extract_implications)
     settings.set_write_statistics(args.stats)
+    settings.set_output_hoa(args.output_hoa)
 
     if args.debug is None:
         settings.set_debug_level(0)
