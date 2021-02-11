@@ -8,7 +8,7 @@ fi
 
 date
 
-SPOT_VERSION="2.9.4"
+SPOT_VERSION="2.9.6"
 
 # download/uncompress spot
 
