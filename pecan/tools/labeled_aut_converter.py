@@ -18,6 +18,9 @@ class Transition:
     def input_str(self):
         return ' '.join(self.inputs)
 
+    def __repr__(self):
+        return 'Transition({}, {})'.format(self.inputs, self.dest_label)
+
 class State:
     def __init__(self, idx, input_line):
         self.idx = idx
@@ -37,6 +40,9 @@ class State:
         for transition in self.transitions:
             lines.append(transition.to_str(state_map))
         return lines
+
+    def __repr__(self):
+        return 'State({}, {}, {})'.format(self.label, self.acc, self.transitions)
 
 # TODO: It would be nice if we used a real parser for all this stuff
 def convert_labeled_aut(filename, input_names):

@@ -80,15 +80,27 @@ class BuchiAutomaton(Automaton):
         return BuchiAutomaton.as_buchi(FalseAutomaton()).with_var_map(self.var_map)
 
     def conjunction(self, other):
-        return merge(spot.product, self, other)
+        result = merge(spot.product, self, other)
+        result.dump_aut()
+        return result
 
     def disjunction(self, other):
-        return merge(spot.product_or, self, other)
+        result = merge(spot.product_or, self, other)
+        result.dump_aut()
+        return result
 
     def complement(self):
         if settings.get_simplication_level() > 0:
             self.postprocess()
-        return BuchiAutomaton(spot.complement(self.get_aut()), self.var_map)
+        result = BuchiAutomaton(spot.complement(self.get_aut()), self.var_map)
+        result.dump_aut()
+        return result
+
+    def dump_aut(self):
+        hoa_file = settings.get_output_hoa()
+        if hoa_file:
+            with open(hoa_file, "a") as fd:
+                fd.write(self.get_aut().to_str() + "\n\n")
 
     def relabel(self):
         level_before = settings.get_simplication_level()

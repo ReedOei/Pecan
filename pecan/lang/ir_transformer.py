@@ -77,6 +77,9 @@ class IRTransformer:
     def transform_Sub(self, node):
         return Sub(self.transform(node.a), self.transform(node.b)).with_type(node.get_type())
 
+    def transform_Mul(self, node):
+        return Mul(self.transform(node.a), self.transform(node.b)).with_type(node.get_type())
+
     def transform_Div(self, node):
         return Div(self.transform(node.a), self.transform(node.b)).with_type(node.get_type())
 

@@ -18,8 +18,33 @@ class Settings:
         self.history_file = 'pecan_history'
         self.simplication_level = 1
         self.should_use_heuristics = False
+        self.only_min_opt = False
+        self.extract_implications = False
+        self.write_statistics = False
+        self.output_hoa = None
 
         self.stdlib_prog = None
+
+    def should_write_statistics(self):
+        return self.write_statistics
+
+    def set_write_statistics(self, write_statistics):
+        self.write_statistics = write_statistics
+        return self
+
+    def get_extract_implications(self):
+        return self.extract_implications
+
+    def set_extract_implications(self, b):
+        self.extract_implications = b
+        return self
+
+    def min_opt(self):
+        return self.only_min_opt
+
+    def set_min_opt(self, min_opt):
+        self.only_min_opt = min_opt
+        return self
 
     def get_simplication_level(self):
         return self.simplication_level
@@ -79,6 +104,13 @@ class Settings:
 
     def should_load_stdlib(self):
         return self.load_stdlib
+
+    def set_output_hoa(self, hoa_file):
+        self.output_hoa = hoa_file
+        return self
+
+    def get_output_hoa(self):
+        return self.output_hoa
 
     def log(self, level, msg=None):
         if msg is None:

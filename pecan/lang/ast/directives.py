@@ -76,7 +76,7 @@ class DirectiveLoadAut(ASTNode):
         return transformer.transform_DirectiveLoadAut(self)
 
     def __repr__(self):
-        return '#load({}, {}, {})'.format(self.filename, self.aut_format, repr(self.pred))
+        return '#load("{}", "{}", {})'.format(self.filename, self.aut_format, repr(self.pred))
 
 class DirectiveImport(ASTNode):
     def __init__(self, filename):

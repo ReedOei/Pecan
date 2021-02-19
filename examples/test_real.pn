@@ -51,9 +51,9 @@ reals_dense() := forall x. forall y. x < y => exists z. x < z & z < y
 can_divide_by_2() := forall x. exists y. x=2*y
 #assert_prop(true, can_divide_by_2)
 
-can_divide_by_negative_10() := forall x. exists y. x=(-10)*y
-#assert_prop(true, can_divide_by_negative_10)
+can_divide_by_negative_7() := forall x. exists y. x=(-7)*y
+#assert_prop(true, can_divide_by_negative_7)
 
-can_divide_by_17() := forall x. exists y. x=17*y
-#assert_prop(true, can_divide_by_17)
+can_divide_by_12() := forall x. exists y. x=12*y
+#assert_prop(true, can_divide_by_12)
 

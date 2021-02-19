@@ -1,4 +1,6 @@
 Long:
+- Create a plugin for some proof assistant like Lean, Isabelle, Coq, etc.
+
 - Convert all operators to predicate calls after the last stage of optimizations
     - Long because this may introduce new issues (including performance issues)
 
@@ -6,15 +8,33 @@ Long:
     - Maybe have a context thing that tells us whether we're using MSD or LSD
     - Or we could just stick sonmthing in the structure that's like "LSD": f() where f() := true or sometihng.
 - Reduce other arithmetic things to just use the PredicateExpr, potentially (maybe this would hurt our ability to do optimizations?)
+- Rework finite automata to use a more efficient library (e.g., foma, which is currently a submodule but unused)
+
+- Maybe multithreading:
+    - We need to determine the actual theoretical benefit of this.
+    - We also need to determine whether this will cause issues with Spot, or if we will need to potentially use multiple processes to keep their memory separate.
+    - Lastly, implement, if worth it.
+
+- We can check whether certain parts of a definition are redundant.
+    - For example, if forall x. P(x) => Q(x)
+    then it is redundant to write
+    forall x. P(x) & Q(x)
+    we should instead suggest writing
+    forall x. P(x)
+- "Speculative execution"
+    - For example, if we have multiple conjucntions P & Q & R, it may be better to run (P & Q) & R or P & (Q & R) (or even Q & (P & R)) We can try running both/all of them, or using some heuristic like number of shared variables to guess which order will be the best (either in terms of time or number of states/edges).
+
+- Fix the CSE optimization.
 
 Medium:
 - Simplify automata loading (e.g., format detection, unify the various loaders for pecan/walnut/hoa/finite automata)
+
+- We should add more "sanity checks", like checking that predicates used as functions (including those for addition/subtraction) are actually functions. This should probably be disabled by default, but be a part of a new "safe mode".
 
 - In `let x be { ... } in ...`, we should allow binding multiple variables so we could do something like:
 
 let (x,y,z) be { x + y = z } in blah
 
-- Rework finite automata to use a more efficient library (e.g., foma, which is currently a submodule but unused)
 - Improve optimization so that we don't need to do what we do in test_bounded_ostrowski_2
 - Improve CSE optimization so that we use `forall` or `exists` to reduce the number of complements, when valid.
     For example, we should optimize
@@ -30,6 +50,7 @@ let (x,y,z) be { x + y = z } in blah
     forall x. exists yz. y + z = yz & x + yz = k
 
     when these two statements are equivalent (probably as long as addition is real function (i.e., with unique output)).
+    - This requires that we first fix CSE (see above).
 
 - Add new __repr__ functions that do a more standard repr (e.g., Class(field_1, field_2, ...)) that turn on with debug 2
 - See if we can reduce the usage of the `type` function...(either replace with isinstance or just remove altogether)
@@ -42,7 +63,6 @@ let (x,y,z) be { x + y = z } in blah
 - Add a cache mode to predicates (or maybe an annotation?) so that we can save to disk and reload automatically instead of recomputing without having to save/load manually
 - Add the ability to make Praline builtins out of arbitrary Python functions
 - Add option to output intermediate results .
-- Add integer division
 - Remove FunctionExpression from the IR and make it into a PredicateExpr
 - Optmize PredicateExprs (e.g., if we have Expr(a, P) = b, make this into P[b/a])
 - See if we can remove anything from the TypedIRLowering (and therefore from the IR entirely) by using TypeHint
@@ -55,4 +75,5 @@ Short:
     - Also, add a setting to disable this in the context
 - Allow matching on booleans in Praline. Practically, this is useless (it's just an if expression), but it'd be nice to have for consistency's sake. Although this would let us compile if expressions into match-case expressions, which would simplify other stuff a tad.
 - Improve error messages when there is no accepting word (right now it just crashes).
+- Warn if loading an automaton with a variable map that has non-disjoint AP sets.
 

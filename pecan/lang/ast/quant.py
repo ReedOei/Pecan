@@ -32,7 +32,7 @@ class Forall(Predicate):
         return reduce(Conjunction, [c for c in self.conds if c is not None], BoolConst(True))
 
     def __repr__(self):
-        return '(∀{} {})'.format(self.vars, Implies(self.build_cond(), self.pred))
+        return '(∀{}. {})'.format(','.join(map(str, self.vars)), Implies(self.build_cond(), self.pred))
 
 class Exists(Predicate):
     def __init__(self, var_preds, pred):
@@ -48,5 +48,5 @@ class Exists(Predicate):
         return reduce(Conjunction, [c for c in self.conds if c is not None], BoolConst(True))
 
     def __repr__(self):
-        return '(∃{} {})'.format(self.vars, Conjunction(self.build_cond(), self.pred))
+        return '(∃{}. {})'.format(','.join(map(str, self.vars)), Conjunction(self.build_cond(), self.pred))
 
