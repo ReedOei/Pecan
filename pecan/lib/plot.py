@@ -232,20 +232,9 @@ class BuchiPlotter:
     { "a": 1, "b": 0 } { "a": 1, "b": 2 } ...
     """
     def accept_prefix(self, prefix, n=3):
-        # check if the variables match
-        # if len(prefix):
-        #     first_letter = prefix[0]
-        #     word_variables = set(first_letter.keys())
-        #     aut_vars = set(buchi_aut.var_map.var_reps.keys())
-        #     assert aut_vars.issubset(word_variables), \
-        #            "missing dimensions for variable(s) {}".format(bdd_variables.difference(word_variables))
-
-        # syms = 'cycle{1}'
         self.prefix_word.prefix.clear()
         for dict_letter in prefix:
             assignment_bdd = buddy.bddtrue
-            # TODO: check if the most significant bit corresponds to
-            # the last item in the var_map lists
             for var, letter in dict_letter.items():
                 if (var,letter) not in self.translation_cache:
                     m = len(self.bdds[var])
@@ -259,21 +248,6 @@ class BuchiPlotter:
                     self.translation_cache[(var,letter)] = sym
                 assignment_bdd &= self.translation_cache[(var,letter)]
             self.prefix_word.prefix.append(assignment_bdd)
-            # sym = '1'
-            # for var, letter in dict_letter.items():
-            #     if (var,letter) not in self.translation_cache:
-            #         res = ''
-            #         m = len(self.buchi_aut.var_map[var])
-            #         for i, ap in enumerate(self.buchi_aut.var_map[var]):
-            #             # test if the ith bit is 1
-            #             if letter & (1 << (m - i - 1)):
-            #                 res += '&' + ap
-            #             else:
-            #                 res += '&!' + ap
-            #         self.translation_cache[(var,letter)] = res
-            #     sym += self.translation_cache[(var,letter)]
-
-            # syms = sym + ';' + syms
 
         prefix_aut = self.prefix_word.as_automaton()
         accepts = self.buchi_aut.aut.intersects(prefix_aut)
