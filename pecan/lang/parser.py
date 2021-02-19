@@ -270,11 +270,6 @@ class PecanTransformer(Transformer):
     directive_import = DirectiveImport
     directive_forget = DirectiveForget
 
-    def directive_plot(self, pred_name, *args):
-        assert len(args) % 2 == 0
-        kwargs = { args[2 * i]: args[2 * i + 1] for i in range(len(args) // 2) }
-        return DirectivePlot(pred_name, kwargs)
-
     def directive_shuffle(self, pred_a, pred_b, output_pred):
         return DirectiveShuffle(False, pred_a, pred_b, output_pred)
 

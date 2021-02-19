@@ -12,8 +12,6 @@ from pecan.tools.finite_loader import load_finite
 from pecan.automata.buchi import BuchiAutomaton
 from pecan.lang.ir import *
 
-from pecan.lib.plot import BuchiPlotter
-
 from pecan.settings import settings
 
 class DirectiveSaveAut(IRNode):
@@ -295,20 +293,3 @@ class DirectiveShuffle(IRNode):
     def __repr__(self):
         return '#shuffle({}, {}, {})'.format(self.pred_a, self.pred_b, self.output_pred)
 
-class DirectivePlot(IRNode):
-    def __init__(self, pred_name, **kwargs):
-        super().__init__()
-        self.pred_name = pred_name
-        self.kwargs = kwargs
-
-    def transform(self, transformer):
-        return transformer.transform_DirectivePlot(self)
-
-    def evaluate(self, prog):
-        print("plotting {}".format(self.pred_name))
-        buchi_aut = Call(self.pred_name, []).evaluate(prog)
-        plotter = BuchiPlotter(buchi_aut, **self.kwargs)
-        plotter.plot()
-
-    def __repr__(self):
-        return '#plot({})'.format(self.pred_name)

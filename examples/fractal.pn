@@ -11,7 +11,9 @@
 #load("fractal/cantor-distance.txt", "walnut", cantord(x, y))
 #load("fractal/cantor-distance-hmm.txt", "walnut", cantord_hmm(x, y))
 
-#plot(cantord, alphabet_x=3, alphabet_y=3, layer=5)
+Execute plot [("layer",2),("color_by_axis","t")] [("x", 3), ("y",3), ("t",9)] { peano(x,y,t) } .
+
+// #plot(cantord, alphabet_x=3, alphabet_y=3, layer=5)
 // #plot(cantord_hmm, alphabet_x=3, alphabet_y=3, layer=5)
 
 // #plot(peano, alphabet_x=3, alphabet_y=3, alphabet_t=9, layer=2, color_by_axis="t")

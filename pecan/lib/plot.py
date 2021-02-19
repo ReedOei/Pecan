@@ -143,7 +143,7 @@ class Matplotlib3DPlotMethod(MatplotlibPlotMethod):
             for x in range(k1 ** layer):
                 for y in range(k2 ** layer):
                     for z in range(k3 ** layer):
-                        if axis_index == 0:                    
+                        if axis_index == 0:
                             colors[x, y, z] = cmap(x / k1 ** layer)
                         elif axis_index == 1:
                             colors[x, y, z] = cmap(y / k2 ** layer)
@@ -181,6 +181,7 @@ class BuchiPlotter:
 
     def __init__(
         self,
+        alphabets,
         buchi_aut,
         layer=None,
         layer_from=None,
@@ -188,7 +189,6 @@ class BuchiPlotter:
         save_to=None,
         plot_method="matplotlib",
         color_by_axis=None,
-        **kwargs,
     ):
         super().__init__()
         self.buchi_aut = buchi_aut
@@ -200,9 +200,8 @@ class BuchiPlotter:
         self.alphabet_sizes = {}
         self.color_by_axis = color_by_axis # only available for 3d
 
-        for key in kwargs:
-            if key.startswith("alphabet_"):
-                self.alphabet_sizes[key[len("alphabet_"):]] = kwargs[key]
+        for k in alphabets:
+            self.alphabet_sizes[k] = alphabets[k]
 
         # fix an arbitrary order of the arguments
         self.dimensions = list(self.alphabet_sizes.keys())
@@ -347,7 +346,7 @@ class BuchiPlotter:
     as a voxel map of dimension (<k> ** <layer>) x (<k> ** <layer>) x ... x (<k> ** <layer>)
                                 |______________________<dim> mults_________________________|
     where k is the maximum alphabet size, dim is the number of variables in the buchi automata var_map
-    
+
     In the bitmap, each true bit means the corresponding cell contains an omega word that
     is accepted by <buchi_aut>
     """
@@ -419,11 +418,11 @@ class BuchiPlotter:
                 layers.append((layer, self.get_hit_cell_bitmap(self.buchi_aut, layer)))
         else:
             layers = [(self.layer, self.get_hit_cell_bitmap(self.buchi_aut, self.layer))]
-        
+
         # plot all layers in the specified method
         if self.plot_method not in BuchiPlotter.PLOT_METHOD_MAP:
             raise Exception("unsupported plot method {}".format(self.plot_method))
-        
+
         if dim not in BuchiPlotter.PLOT_METHOD_MAP[self.plot_method]:
             raise Exception("plot method {} cannot plot in dimension {}".format(self.plot_method, dim))
 
@@ -440,3 +439,6 @@ class BuchiPlotter:
             plot_method.save(self.save_to)
         else:
             plot_method.show()
+
+        return plot_method
+
