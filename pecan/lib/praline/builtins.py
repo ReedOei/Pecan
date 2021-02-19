@@ -285,7 +285,9 @@ class Plot(Builtin):
     def evaluate(self, prog):
         options = dict(as_python(prog.praline_lookup('options').evaluate(prog)))
         num_systems = dict(as_python(prog.praline_lookup('numSystems').evaluate(prog)))
-        aut = as_python(prog.praline_lookup('aut').evaluate(prog), PralinePecanLiteral).evaluate(prog)
+        term = as_python(prog.praline_lookup('aut').evaluate(prog), PralinePecanLiteral)
+        print('Plotting {} using numeration systems {} with options: {}'.format(term, num_systems, options))
+        aut = term.evaluate(prog)
         plotter = BuchiPlotter(num_systems, aut, **options)
         plotter.plot()
         return PralineBool(True)

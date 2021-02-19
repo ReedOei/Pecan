@@ -63,6 +63,8 @@ class MatplotlibPlotMethod(PlotMethod):
         self.pt.tight_layout()
         self.pt.savefig(path)
 
+    def cleanup(self):
+        self.pt.close()
 
 """
 Plot the given cell bitmap in 1D
@@ -100,7 +102,7 @@ class Matplotlib2DPlotMethod(MatplotlibPlotMethod):
 
         for x in range(k1 ** layer):
             for y in range(k2 ** layer):
-                print("\r\033[2Kdrawing {}/{} squares".format(x * k2 ** layer + y + 1, total), end="")
+                # print("\r\033[2Kdrawing {}/{} squares".format(x * k2 ** layer + y + 1, total), end="")
 
                 if cell_bitmap[x, y]:
                     self.pt.fill(
@@ -108,7 +110,7 @@ class Matplotlib2DPlotMethod(MatplotlibPlotMethod):
                         [ y, y, y + 1, y + 1 ],
                         self.color,
                     )
-        print("")
+        # print("")
 
         assert len(labels) == 2
         self.pt.xlabel(labels[0])
@@ -173,9 +175,9 @@ class Matplotlib3DPlotMethod(MatplotlibPlotMethod):
 class BuchiPlotter:
     PLOT_METHOD_MAP = {
         "matplotlib": {
-            1: Matplotlib1DPlotMethod(),
-            2: Matplotlib2DPlotMethod(),
-            3: Matplotlib3DPlotMethod(),
+            1: Matplotlib1DPlotMethod,
+            2: Matplotlib2DPlotMethod,
+            3: Matplotlib3DPlotMethod,
         },
     }
 
@@ -187,6 +189,7 @@ class BuchiPlotter:
         layer_from=None,
         layer_to=None,
         save_to=None,
+        show=False,
         plot_method="matplotlib",
         color_by_axis=None,
     ):
@@ -196,9 +199,15 @@ class BuchiPlotter:
         self.layer_from = layer_from
         self.layer_to = layer_to
         self.save_to = save_to
-        self.plot_method = plot_method
         self.alphabet_sizes = {}
         self.color_by_axis = color_by_axis # only available for 3d
+        self.show = show
+
+        self.bdds = {}
+        for var, aps in buchi_aut.var_map.items():
+            self.bdds[var] = [ buddy.bdd_ithvar(buchi_aut.aut.register_ap(ap)) for ap in aps ]
+        self.prefix_word = spot.twa_word(buchi_aut.aut.get_dict())
+        self.prefix_word.cycle.append(buddy.bddtrue)
 
         for k in alphabets:
             self.alphabet_sizes[k] = alphabets[k]
@@ -206,23 +215,14 @@ class BuchiPlotter:
         # fix an arbitrary order of the arguments
         self.dimensions = list(self.alphabet_sizes.keys())
 
-    # find the reachable states from the given initial states
-    @staticmethod
-    def find_reachable(buchi_aut, states):
-        reachable = set(states)
-        queue = list(states)
-        mark = spot.mark_t()
-        while len(queue):
-            state = queue.pop()
-            for edge in buchi_aut.aut.out(state):
-                # only follow satisfiable edges
-                if edge.cond != buddy.bddfalse:
-                    if edge.dst in states:
-                        mark |= edge.acc
-                    if edge.dst not in reachable:
-                        reachable.add(edge.dst)
-                        queue = [edge.dst] + queue
-        return reachable, mark
+        if plot_method not in BuchiPlotter.PLOT_METHOD_MAP:
+            raise Exception("unsupported plot method {}".format(plot_method))
+
+        dim = len(self.dimensions)
+        if dim not in BuchiPlotter.PLOT_METHOD_MAP[plot_method]:
+            raise Exception("plot method {} cannot plot in dimension {}".format(plot_method, dim))
+
+        self.plot_method = BuchiPlotter.PLOT_METHOD_MAP[plot_method][dim]()
 
     """
     Given a buchi automata, checks if there exists an omega word
@@ -231,109 +231,53 @@ class BuchiPlotter:
     prefix is a word on python dictionaries, e.g.
     { "a": 1, "b": 0 } { "a": 1, "b": 2 } ...
     """
-    @staticmethod
-    def accept_prefix(buchi_aut, prefix, n=3):
-        twa = buchi_aut.aut
-
-        # only support one argument case right now
-        # assert len(buchi_aut.var_map.items()) == 1, "#plot only support predicates with one free variable right now"
-
-        # get bdd representations of each ap var
-        bdd_dict = twa.get_dict()
-
-        bdds = {}
-        for var, aps in buchi_aut.var_map.items():
-            bdds[var] = [ buddy.bdd_ithvar(bdd_dict.varnum(spot.formula(ap))) for ap in aps ]
-
+    def accept_prefix(self, prefix, n=3):
         # check if the variables match
-        if len(prefix):
-            first_letter = prefix[0]
-            word_variables = set(first_letter.keys())
-            bdd_variables = set(bdds.keys())
-            assert bdd_variables.issubset(word_variables), \
-                   "missing dimensions for variable(s) {}".format(bdd_variables.difference(word_variables))
+        # if len(prefix):
+        #     first_letter = prefix[0]
+        #     word_variables = set(first_letter.keys())
+        #     aut_vars = set(buchi_aut.var_map.var_reps.keys())
+        #     assert aut_vars.issubset(word_variables), \
+        #            "missing dimensions for variable(s) {}".format(bdd_variables.difference(word_variables))
 
-        # # build a machine that only accepts strings with a certain prefix
-        # edge_conditions = []
-        # for dict_letter in prefix:
-        #     # NOTE: letter is a dictionary from variable => actual letters
-        #     assignment_bdd = buddy.bddtrue
-        #     # TODO: check if the most significant bit corresponds to
-        #     # the last item in the var_map lists
-        #     for var, letter in dict_letter.items():
-        #         if var not in bdds: continue
-        #         for i, bdd in enumerate(bdds[var]):
-        #             # test if the ith bit is 1
-        #             if letter & (1 << (len(bdds[var]) - i - 1)):
-        #                 assignment_bdd = buddy.bdd_and(assignment_bdd, bdd)
-        #             else:
-        #                 assignment_bdd = buddy.bdd_and(assignment_bdd, buddy.bdd_not(bdd))
-
-        #     edge_conditions.append(assignment_bdd)
-
-        # prefix_twa = spot.make_twa_graph(bdd_dict)
-        # prefix_twa.copy_ap_of(twa)
-
-        # prev_state = prefix_twa.new_state()
-        # prefix_twa.set_init_state(prev_state)
-
-        # for i, edge_cond in enumerate(edge_conditions):
-        #     next_state = prefix_twa.new_state()
-        #     if i + 1 != len(edge_conditions):
-        #         prefix_twa.new_edge(prev_state, next_state, edge_cond)
-        #     else:
-        #         prefix_twa.new_edge(prev_state, next_state, edge_cond, [0])
-        #     prev_state = next_state
-
-        # prefix_twa.new_edge(prev_state, prev_state, buddy.bddtrue, [0])
-        # prefix_twa.set_acceptance(1, "Inf(0)")
-        # prefix_buchi_automata = BuchiAutomaton(prefix_twa, buchi_aut.var_map)
-        # return prefix_buchi_automata.conjunction(buchi_aut).truth_value() != "false"
-
-        # since the automata may be non-deterministic
-        # keep a set of states
-        current_states = { twa.state_number(twa.get_init_state()) }
+        # syms = 'cycle{1}'
+        self.prefix_word.prefix.clear()
         for dict_letter in prefix:
-            # NOTE: letter is a dictionary from variable => actual letters
             assignment_bdd = buddy.bddtrue
             # TODO: check if the most significant bit corresponds to
             # the last item in the var_map lists
             for var, letter in dict_letter.items():
-                if var not in bdds: continue
-                for i, bdd in enumerate(bdds[var]):
-                    # test if the ith bit is 1
-                    if letter & (1 << (len(bdds[var]) - i - 1)):
-                        assignment_bdd = buddy.bdd_and(assignment_bdd, bdd)
-                    else:
-                        assignment_bdd = buddy.bdd_and(assignment_bdd, buddy.bdd_not(bdd))
+                if (var,letter) not in self.translation_cache:
+                    m = len(self.bdds[var])
+                    sym = buddy.bddtrue
+                    for i, bdd in enumerate(self.bdds[var]):
+                        # test if the ith bit is 1
+                        if letter & (1 << (m - i - 1)):
+                            sym &= bdd
+                        else:
+                            sym &= buddy.bdd_not(bdd)
+                    self.translation_cache[(var,letter)] = sym
+                assignment_bdd &= self.translation_cache[(var,letter)]
+            self.prefix_word.prefix.append(assignment_bdd)
+            # sym = '1'
+            # for var, letter in dict_letter.items():
+            #     if (var,letter) not in self.translation_cache:
+            #         res = ''
+            #         m = len(self.buchi_aut.var_map[var])
+            #         for i, ap in enumerate(self.buchi_aut.var_map[var]):
+            #             # test if the ith bit is 1
+            #             if letter & (1 << (m - i - 1)):
+            #                 res += '&' + ap
+            #             else:
+            #                 res += '&!' + ap
+            #         self.translation_cache[(var,letter)] = res
+            #     sym += self.translation_cache[(var,letter)]
 
-            # check all outgoing edges and update the current state set
-            next_states = set()
+            # syms = sym + ';' + syms
 
-            for state in current_states:
-                for edge in twa.out(state):
-                    # print(buddy.bdd_printset(edge.cond))
-                    satisfiable = buddy.bdd_and(edge.cond, assignment_bdd) != buddy.bddfalse
-                    # print(edge.cond, assignment_bdd, buddy.bdd_and(edge.cond, assignment_bdd))
-                    if satisfiable:
-                        next_states.add(edge.dst)
-
-            # print(current_states, letter, next_states)
-
-            current_states = next_states
-
-        # # find all reachable states T1
-        # # find all states reachable by T, T2
-        # # take T = T1 /\ T2, which is the set of states
-        # # that can be visited infinitely many times
-        t1, _ = BuchiPlotter.find_reachable(buchi_aut, current_states)
-        _, mark2 = BuchiPlotter.find_reachable(buchi_aut, t1)
-        # inf_set = t1.intersection(t2)
-
-        inf_mark = mark2
-
-        # TODO: this check may be too conservative
-        return twa.get_acceptance().inf_satisfiable(inf_mark)
+        prefix_aut = self.prefix_word.as_automaton()
+        accepts = self.buchi_aut.aut.intersects(prefix_aut)
+        return accepts
 
     @staticmethod
     def encode_word(n, layer, radix):
@@ -358,9 +302,10 @@ class BuchiPlotter:
 
         hit_bitmap = Bitmap(*[ self.alphabet_sizes[dim] ** layer for dim in self.dimensions ])
 
-        # TODO: parallelize this
+        # TODO: parallelize this. If we do parallelize this, remove the translation cache probably
+        self.translation_cache = {}
         for n in range(radix ** layer):
-            print("\r\033[2Kplotting layer {}: {}/{} prefixes tested".format(layer, n + 1, radix ** layer), end="")
+            # print("\r\033[2Kplotting layer {}: {}/{} prefixes tested".format(layer, n + 1, radix ** layer), end="")
 
             word = BuchiPlotter.encode_word(n, layer, radix)
             splitted_word = []
@@ -379,7 +324,9 @@ class BuchiPlotter:
 
                 splitted_word.append(splitted_letter)
 
-            possibly_acc = BuchiPlotter.accept_prefix(buchi_aut, splitted_word)
+            possibly_acc = self.accept_prefix(splitted_word)
+
+            # print('\n', possibly_acc, splitted_word)
 
             if possibly_acc:
                 # each word component corresponds to one (sub)index in the bitmap
@@ -396,13 +343,12 @@ class BuchiPlotter:
                 hit_bitmap[indices] = True
 
         # newline
-        print("")
+        # print("")
 
         return hit_bitmap
 
     def plot(self):
         dim = len(self.dimensions)
-
         if dim == 1:
             assert (self.layer is not None or
                     (self.layer_from is not None and self.layer_to is not None)), \
@@ -420,25 +366,18 @@ class BuchiPlotter:
             layers = [(self.layer, self.get_hit_cell_bitmap(self.buchi_aut, self.layer))]
 
         # plot all layers in the specified method
-        if self.plot_method not in BuchiPlotter.PLOT_METHOD_MAP:
-            raise Exception("unsupported plot method {}".format(self.plot_method))
-
-        if dim not in BuchiPlotter.PLOT_METHOD_MAP[self.plot_method]:
-            raise Exception("plot method {} cannot plot in dimension {}".format(self.plot_method, dim))
-
-        plot_method = BuchiPlotter.PLOT_METHOD_MAP[self.plot_method][dim]
-
         for layer, cell_bitmap in layers:
-            plot_method.plot_layer(
+            self.plot_method.plot_layer(
                 [ self.alphabet_sizes[dim] for dim in self.dimensions],
                 layer, cell_bitmap, self.dimensions,
                 color_by_axis=self.color_by_axis
             )
 
         if self.save_to:
-            plot_method.save(self.save_to)
-        else:
-            plot_method.show()
+            self.plot_method.save(self.save_to)
 
-        return plot_method
+        if self.show:
+            self.plot_method.show()
+
+        self.plot_method.cleanup()
 

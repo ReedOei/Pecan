@@ -11,28 +11,24 @@
 #load("fractal/cantor-distance.txt", "walnut", cantord(x, y))
 #load("fractal/cantor-distance-hmm.txt", "walnut", cantord_hmm(x, y))
 
+Execute plot [("layer",6)] [("x",3), ("y",3)] { cantord(x,y) }.
+Execute plot [("layer",6)] [("x",3),("y",3)] { cantord_hmm(x,y) }.
+
 Execute plot [("layer",2),("color_by_axis","t")] [("x", 3), ("y",3), ("t",9)] { peano(x,y,t) } .
+Execute plot [("layer",2),("color_by_axis","t")] [("x",2), ("y",2), ("t",4)] { hilbert(x,y,t) } .
 
-// #plot(cantord, alphabet_x=3, alphabet_y=3, layer=5)
-// #plot(cantord_hmm, alphabet_x=3, alphabet_y=3, layer=5)
+Execute plot [("layer",7)] [("x",2),("y",2)] { pascal2(x,y) } .
+Execute plot [("layer",5)] [("x",3),("y",3)] { pascal3(x,y) } .
 
-// #plot(peano, alphabet_x=3, alphabet_y=3, alphabet_t=9, layer=2, color_by_axis="t")
-// #plot(hilbert, alphabet_x=2, alphabet_y=2, alphabet_t=4, layer=2, color_by_axis="t")
+Execute plot [("layer",5)] [("x",2),("y",2),("z",2)] { pascal2_3d(x,y,z) } .
 
-// #plot(pascal2, alphabet_x=2, alphabet_y=2, layer=7)
-// #plot(pascal3, alphabet_x=3, alphabet_y=3, layer=5)
+Execute plot [("layer",4),("save_to","sierpinski5.png")] [("x",3),("y",3)] { sierpinski5(x,y) } .
+Execute plot [("layer",4)] [("x",3),("y",3)] { sierpinski5(x,y) } .
+Execute plot [("layer",4)] [("x",3),("y",3)] { sierpinski3(x,y) } .
 
-// #plot(pascal2_3d, alphabet_x=2, alphabet_y=2, alphabet_z=2, layer=5)
-
-// #plot(sierpinski5, alphabet_x=3, alphabet_y=3, save_to="sierpinski5.png")
-// #plot(sierpinski5, alphabet_x=3, alphabet_y=3, layer=4)
-// #plot(sierpinski3, alphabet_x=3, alphabet_y=3, layer=4)
-
-// #plot(cantor3, alphabet_x=3, layer_from=0, layer_to=10)
-
-// #plot(menger3, alphabet_x=3, alphabet_y=3, alphabet_z=3, layer=3, color_by_axis="z")
-
-// #plot(cantor_dust3, alphabet_x=3, alphabet_y=3, alphabet_z=3, layer=3)
+Execute plot [("layer_from",0),("layer_to",10)] [("x",3)] { cantor3(x) } .
+Execute plot [("layer",3),("color_by_axis","z")] [("x",3),("y",3),("z",3)] { menger3(x,y,z) }.
+Execute plot [("layer",3)] [("x",3),("y",3),("z",3)] { cantor_dust3(x,y,z) }.
 
 // test(n is nat, a is nat) := n < a
 
@@ -67,3 +63,4 @@ Execute plot [("layer",2),("color_by_axis","t")] [("x", 3), ("y",3), ("t",9)] { 
 // lt(a is real, b is real) := a = b
 
 // #plot(lt, alphabet_a=2, alphabet_b=2, layer=5)
+
