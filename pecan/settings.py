@@ -22,16 +22,18 @@ class Settings:
         self.extract_implications = False
         self.write_statistics = False
         self.output_hoa = None
-        self.output_files = False
+        self.output_json = False
+
+        self.output = ''
 
         self.stdlib_prog = None
 
-    def set_output_files(self, output_files):
-        self.output_files = output_files
+    def set_output_json(self, output_json):
+        self.output_json = output_json
         return self
 
-    def get_output_files(self):
-        return self.output_files
+    def get_output_json(self):
+        return self.output_json
 
     def should_write_statistics(self):
         return self.write_statistics
@@ -124,9 +126,15 @@ class Settings:
         if msg is None:
             msg = level
             if not self.is_quiet():
-                print(msg())
+                if self.get_output_json():
+                    self.output += msg() + '\n'
+                else:
+                    print(msg())
         elif self.get_debug_level() > level:
-            print(msg())
+            if self.get_output_json():
+                self.output += msg() + '\n'
+            else:
+                print(msg())
 
     def include_stdlib(self, prog, loader, args, kwargs):
         if self.should_load_stdlib():
