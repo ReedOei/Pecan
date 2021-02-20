@@ -23,8 +23,16 @@ class Settings:
         self.write_statistics = False
         self.output_hoa = None
         self.output_files = False
+        self.show_progress = True
 
         self.stdlib_prog = None
+
+    def set_show_progress(self, show_progress):
+        self.show_progress = show_progress
+        return self
+
+    def get_show_progress(self):
+        return self.show_progress and not self.quiet
 
     def set_output_files(self, output_files):
         self.output_files = output_files

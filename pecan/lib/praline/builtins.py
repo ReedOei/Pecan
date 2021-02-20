@@ -245,7 +245,7 @@ class WriteFile(Builtin):
         with open(filepath, 'w') as f:
             f.write(s)
 
-        prog.add_generate_file(filepath)
+        prog.add_generated_file(filepath)
 
         return PralineBool(True)
 
