@@ -29,6 +29,9 @@ class Settings:
 
         self.stdlib_prog = None
 
+    def get_output(self):
+        return self.output
+
     def set_output_json(self, output_json):
         self.output_json = output_json
         return self
