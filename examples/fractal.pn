@@ -30,37 +30,3 @@ Execute plot [("layer_from",0),("layer_to",10)] [("x",3)] { cantor3(x) } .
 Execute plot [("layer",3),("color_by_axis","z")] [("x",3),("y",3),("z",3)] { menger3(x,y,z) }.
 Execute plot [("layer",3)] [("x",3),("y",3),("z",3)] { cantor_dust3(x,y,z) }.
 
-// test(n is nat, a is nat) := n < a
-
-// #import("../SturmianWords/ostrowski_defs.pn")
-// #load("../SturmianWords/automata/pow_5.aut", "hoa", pow_5(a, i, n))
-// #load("../SturmianWords/automata/pow_6.aut", "hoa", pow_6(a, i, n))
-// #load("../SturmianWords/automata/pow_7.aut", "hoa", pow_7(a, i, n))
-// #load("../SturmianWords/automata/pow_8.aut", "hoa", pow_8(a, i, n))
-
-// has_pow_5(a) := exists i, n. bco_positive(n) & pow_5(a, i, n)
-// has_pow_6(a) := exists i, n. bco_positive(n) & pow_6(a, i, n)
-// has_pow_7(a) := exists i, n. bco_positive(n) & pow_7(a, i, n)
-// has_pow_8(a) := exists i, n. bco_positive(n) & pow_8(a, i, n) & pow_7(a, i, n) & pow_6(a, i, n) & pow_5(a, i, n)
-
-// what() := not (exists a. has_pow_8(a))
-
-// #assert_prop(false, what)
-
-// #import("reals.pn")
-
-// huaaaah(a is nat, b is nat) := a != b * 2 // or (exists b is nat. a = b * 4) // and (not (exists b is nat. a = b * 2))
-
-// // #plot(ostrowski, alphabet_alpha=3, alphabet_x=3, layer=5)
-// // #plot(bco_eq, alphabet_x=3, alphabet_y=3, layer=5)
-
-// #plot(huaaaah, alphabet_a=2, alphabet_b=2, layer=5)
-
-// #plot(has_pow_8, alphabet_a=3, layer=5)
-
-// line(a is real, b is real, c is real) := a + b = c
-
-// lt(a is real, b is real) := a = b
-
-// #plot(lt, alphabet_a=2, alphabet_b=2, layer=5)
-
