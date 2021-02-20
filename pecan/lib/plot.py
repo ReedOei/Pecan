@@ -103,7 +103,7 @@ class Matplotlib2DPlotMethod(MatplotlibPlotMethod):
 
         for x in range(k1 ** layer):
             for y in range(k2 ** layer):
-                if settings.show_progress():
+                if settings.get_show_progress():
                     print("\r\033[2Kdrawing {}/{} squares".format(x * k2 ** layer + y + 1, total), end="")
 
                 if cell_bitmap[x, y]:
@@ -112,7 +112,7 @@ class Matplotlib2DPlotMethod(MatplotlibPlotMethod):
                         [ y, y, y + 1, y + 1 ],
                         self.color,
                     )
-        if settings.show_progress():
+        if settings.get_show_progress():
             print("")
 
         assert len(labels) == 2
@@ -285,7 +285,7 @@ class BuchiPlotter:
 
         # TODO: parallelize this. If we do parallelize this, remove the translation cache probably
         for n in range(radix ** layer):
-            if settings.show_progress():
+            if settings.get_show_progress():
                 print("\r\033[2Kplotting layer {}: {}/{} prefixes tested".format(layer, n + 1, radix ** layer), end="")
 
             word = BuchiPlotter.encode_word(n, layer, radix)
@@ -320,7 +320,7 @@ class BuchiPlotter:
                 hit_bitmap[indices] = True
 
         # newline
-        if settings.show_progress():
+        if settings.get_show_progress():
             print("")
 
         return hit_bitmap
