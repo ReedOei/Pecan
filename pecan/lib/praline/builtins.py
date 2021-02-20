@@ -90,7 +90,7 @@ class PralinePrint(Builtin):
         super().__init__(PralineVar('print'), [PralineVar('s')])
 
     def evaluate(self, prog):
-        print(prog.praline_lookup('s').evaluate(prog).display())
+        settings.print(prog.praline_lookup('s').evaluate(prog).display())
         return PralineBool(True)
 
 class Emit(Builtin):

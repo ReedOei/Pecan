@@ -36,6 +36,10 @@ class Settings:
         self.output_json = output_json
         return self
 
+    def print(self, s):
+        self.output += s + "\n"
+        return self
+
     def set_show_progress(self, show_progress):
         self.show_progress = show_progress
         return self
