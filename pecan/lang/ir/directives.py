@@ -51,8 +51,8 @@ class DirectiveSaveAutImage(IRNode):
         settings.log(lambda: f'[INFO] Saving {self.pred_name} as an SVG in {self.filename}')
 
         evaluated = prog.call(self.pred_name)
-        with open(self.filename, 'w') as f:
-            f.write(evaluated.show().data) # Write the raw svg data into the file
+        with open(self.filename, 'wb') as f:
+            f.write(evaluated.show().data.encode('utf-8')) # Write the raw svg data into the file
 
         prog.add_generated_file(self.filename)
 
