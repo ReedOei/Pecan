@@ -22,8 +22,16 @@ class Settings:
         self.extract_implications = False
         self.write_statistics = False
         self.output_hoa = None
+        self.output_files = False
 
         self.stdlib_prog = None
+
+    def set_output_files(self, output_files):
+        self.output_files = output_files
+        return self
+
+    def get_output_files(self):
+        return self.output_files
 
     def should_write_statistics(self):
         return self.write_statistics

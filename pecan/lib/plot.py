@@ -5,6 +5,7 @@ import numpy as np
 
 from pecan.automata.buchi import BuchiAutomaton
 
+from pecan.settings import settings
 
 # A multidimensional bitmap
 class Bitmap:
@@ -102,7 +103,8 @@ class Matplotlib2DPlotMethod(MatplotlibPlotMethod):
 
         for x in range(k1 ** layer):
             for y in range(k2 ** layer):
-                # print("\r\033[2Kdrawing {}/{} squares".format(x * k2 ** layer + y + 1, total), end="")
+                if not settings.is_quiet():
+                    print("\r\033[2Kdrawing {}/{} squares".format(x * k2 ** layer + y + 1, total), end="")
 
                 if cell_bitmap[x, y]:
                     self.pt.fill(
@@ -110,7 +112,8 @@ class Matplotlib2DPlotMethod(MatplotlibPlotMethod):
                         [ y, y, y + 1, y + 1 ],
                         self.color,
                     )
-        # print("")
+        if not settings.is_quiet():
+            print("")
 
         assert len(labels) == 2
         self.pt.xlabel(labels[0])
@@ -127,7 +130,7 @@ class Matplotlib3DPlotMethod(MatplotlibPlotMethod):
 
         voxels = np.zeros((k1 ** layer, k2 ** layer, k3 ** layer), dtype=np.uint8)
 
-        print("preparing voxel map")
+        settings.log(lambda: "Preparing voxel map...")
 
         for x in range(k1 ** layer):
             for y in range(k2 ** layer):
@@ -136,7 +139,7 @@ class Matplotlib3DPlotMethod(MatplotlibPlotMethod):
                         voxels[x, y, z] = 1
 
         if color_by_axis is not None:
-            print("preparing color map")
+            settings.log(lambda: "Preparing color map...")
             colors = np.empty(np.shape(voxels), dtype=object)
             cmap = self.pt.get_cmap("jet")
 
@@ -152,7 +155,7 @@ class Matplotlib3DPlotMethod(MatplotlibPlotMethod):
                         elif axis_index == 2:
                             colors[x, y, z] = cmap(z / k3 ** layer)
 
-        print("drawing voxels")
+        settings.log(lambda: "Drawing voxels...")
 
         fig = self.pt.figure()
         ax = fig.gca(projection="3d")
@@ -183,17 +186,19 @@ class BuchiPlotter:
 
     def __init__(
         self,
+        prog,
         alphabets,
         buchi_aut,
         layer=None,
         layer_from=None,
         layer_to=None,
-        save_to=None,
+        save_to='plot.png',
         show=False,
         plot_method="matplotlib",
         color_by_axis=None,
     ):
         super().__init__()
+        self.prog = prog
         self.buchi_aut = buchi_aut
         self.layer = layer
         self.layer_from = layer_from
@@ -202,6 +207,8 @@ class BuchiPlotter:
         self.alphabet_sizes = {}
         self.color_by_axis = color_by_axis # only available for 3d
         self.show = show
+
+        self.translation_cache = {}
 
         self.bdds = {}
         for var, aps in buchi_aut.var_map.items():
@@ -277,9 +284,9 @@ class BuchiPlotter:
         hit_bitmap = Bitmap(*[ self.alphabet_sizes[dim] ** layer for dim in self.dimensions ])
 
         # TODO: parallelize this. If we do parallelize this, remove the translation cache probably
-        self.translation_cache = {}
         for n in range(radix ** layer):
-            # print("\r\033[2Kplotting layer {}: {}/{} prefixes tested".format(layer, n + 1, radix ** layer), end="")
+            if not settings.is_quiet():
+                print("\r\033[2Kplotting layer {}: {}/{} prefixes tested".format(layer, n + 1, radix ** layer), end="")
 
             word = BuchiPlotter.encode_word(n, layer, radix)
             splitted_word = []
@@ -298,11 +305,7 @@ class BuchiPlotter:
 
                 splitted_word.append(splitted_letter)
 
-            possibly_acc = self.accept_prefix(splitted_word)
-
-            # print('\n', possibly_acc, splitted_word)
-
-            if possibly_acc:
+            if self.accept_prefix(splitted_word):
                 # each word component corresponds to one (sub)index in the bitmap
                 indices = []
                 for var in self.dimensions:
@@ -317,7 +320,8 @@ class BuchiPlotter:
                 hit_bitmap[indices] = True
 
         # newline
-        # print("")
+        if not settings.is_quiet():
+            print("")
 
         return hit_bitmap
 
@@ -348,7 +352,9 @@ class BuchiPlotter:
             )
 
         if self.save_to:
+            settings.log(lambda: '[INFO] Saving plot to {}'.format(self.save_to))
             self.plot_method.save(self.save_to)
+            self.prog.add_generated_file(self.save_to)
 
         if self.show:
             self.plot_method.show()

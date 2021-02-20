@@ -23,6 +23,8 @@ class DirectiveSaveAut(IRNode):
     def evaluate(self, prog):
         settings.log(lambda: f'[INFO] Saving {self.pred_name} as {self.filename}')
 
+        prog.add_generated_file(self.filename)
+
         prog.call(self.pred_name).save(self.filename)
         return None
 
@@ -51,6 +53,8 @@ class DirectiveSaveAutImage(IRNode):
         evaluated = prog.call(self.pred_name)
         with open(self.filename, 'w') as f:
             f.write(evaluated.show().data) # Write the raw svg data into the file
+
+        prog.add_generated_file(self.filename)
 
         return None
 

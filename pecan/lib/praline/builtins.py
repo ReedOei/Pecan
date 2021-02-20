@@ -245,6 +245,8 @@ class WriteFile(Builtin):
         with open(filepath, 'w') as f:
             f.write(s)
 
+        prog.add_generate_file(filepath)
+
         return PralineBool(True)
 
 class ReadFile(Builtin):
@@ -286,9 +288,9 @@ class Plot(Builtin):
         options = dict(as_python(prog.praline_lookup('options').evaluate(prog)))
         num_systems = dict(as_python(prog.praline_lookup('numSystems').evaluate(prog)))
         term = as_python(prog.praline_lookup('aut').evaluate(prog), PralinePecanLiteral)
-        print('Plotting {} using numeration systems {} with options: {}'.format(term, num_systems, options))
+        settings.log(lambda: '[INFO] Plotting {} using numeration systems {} with options: {}'.format(term, num_systems, options))
         aut = term.evaluate(prog)
-        plotter = BuchiPlotter(num_systems, aut, **options)
+        plotter = BuchiPlotter(prog, num_systems, aut, **options)
         plotter.plot()
         return PralineBool(True)
 

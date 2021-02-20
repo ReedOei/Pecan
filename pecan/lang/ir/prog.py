@@ -305,6 +305,8 @@ class Program(IRNode):
 
         self.var_map = []
 
+        self.generated_files = kwargs.get('generated_files', [])
+
         from pecan.lang.type_inference import TypeInferer
         self.type_inferer = TypeInferer(self)
 
@@ -389,6 +391,14 @@ class Program(IRNode):
 
         self.praline_defs.update(other_prog.praline_defs)
         self.praline_aliases.update(other_prog.praline_aliases)
+
+        self.generated_files.extend(other_prog.generated_files)
+
+    def add_generated_file(self, path):
+        self.generated_files.append(path)
+
+    def get_generated_files(self):
+        return self.generated_files
 
     def include_with_restrictions(self, other_prog):
         self.include(other_prog)
