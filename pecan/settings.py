@@ -37,7 +37,10 @@ class Settings:
         return self
 
     def print(self, s):
-        self.output += s + "\n"
+        if self.get_output_json():
+            self.output += s + "\n"
+        else:
+            print(s)
         return self
 
     def set_show_progress(self, show_progress):
@@ -141,15 +144,9 @@ class Settings:
         if msg is None:
             msg = level
             if not self.is_quiet():
-                if self.get_output_json():
-                    self.output += msg() + '\n'
-                else:
-                    print(msg())
+                self.print(msg())
         elif self.get_debug_level() > level:
-            if self.get_output_json():
-                self.output += msg() + '\n'
-            else:
-                print(msg())
+            self.print(msg())
 
     def include_stdlib(self, prog, loader, args, kwargs):
         if self.should_load_stdlib():
