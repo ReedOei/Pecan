@@ -23,6 +23,7 @@ class Settings:
         self.write_statistics = False
         self.output_hoa = None
         self.output_json = False
+        self.show_progress = True
 
         self.output = ''
 
@@ -31,6 +32,13 @@ class Settings:
     def set_output_json(self, output_json):
         self.output_json = output_json
         return self
+
+    def set_show_progress(self, show_progress):
+        self.show_progress = show_progress
+        return self
+
+    def get_show_progress(self):
+        return self.show_progress and not self.quiet
 
     def get_output_json(self):
         return self.output_json
