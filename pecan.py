@@ -87,7 +87,9 @@ def main():
     settings.set_show_progress(not args.no_progress)
 
     if args.debug is None:
-        settings.set_debug_level(0) else: settings.set_debug_level(args.debug)
+        settings.set_debug_level(0)
+    else:
+        settings.set_debug_level(args.debug)
 
     if args.use_var_map is not None:
         if args.file is None:
@@ -140,7 +142,7 @@ def main():
 
     if settings.get_output_json():
         if prog is not None:
-            print(json.dumps({'output': settings.get_output(), 'files': prog.get_generated_files()))
+            print(json.dumps({'output': settings.get_output(), 'files': prog.get_generated_files()}))
         else:
             print(json.dumps({'output': '', 'files': []}))
 
