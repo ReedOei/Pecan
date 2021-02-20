@@ -658,10 +658,13 @@ class Result:
         return self.msg
 
     def result_str(self):
-        if self.succeeded():
-            return f'{Fore.GREEN}{self.msg}{Style.RESET_ALL}'
-        else:
-            return f'{Fore.RED}{self.msg}{Style.RESET_ALL}'
+        if settings.get_show_progress():
+            if self.succeeded():
+                return f'{Fore.GREEN}{self.msg}{Style.RESET_ALL}'
+            else:
+                return f'{Fore.RED}{self.msg}{Style.RESET_ALL}'
+        else: # No colors
+            return self.msg
 
 class Restriction(IRNode):
     def __init__(self, restrict_vars, pred):
