@@ -124,3 +124,8 @@ def test_website():
 def test_praline_constant_mul():
     run_file('examples/praline_constant_mul.pn')
 
+def test_fractal():
+    # NOTE: This isn't a correctness test so much as it is a "this shouldn't crash test."
+    # TODO: Add some correctness testing for fractals
+    run_file('examples/fractal.pn')
+

@@ -7,6 +7,7 @@ import pathlib
 
 from pecan.lang.ir.praline import *
 from pecan.lang.ir import AutLiteral
+from pecan.lib.plot import BuchiPlotter
 
 from pecan.settings import settings
 
@@ -29,24 +30,38 @@ def as_praline(val):
     else:
         raise Exception("Can't convert {} ({}) to a Praline value".format(type(val), val))
 
-def as_python(val):
-    if type(val) is PralineList:
-        result = []
-        while val.a is not None:
-            result.append(as_python(val.a))
-            val = val.b
+def as_python(val, expected=None):
+    if isinstance(val, PralineList):
+        if expected is None or isinstance(val, expected):
+            result = []
+            while val.a is not None:
+                result.append(as_python(val.a))
+                val = val.b
 
-        return result
-    elif type(val) is PralineString:
-        return val.val
-    elif type(val) is PralineBool:
-        return val.val
-    elif type(val) is PralineInt:
-        return val.val
-    elif type(val) is PralineTuple:
-        return tuple([as_python(v) for v in val.vals])
+            return result
+    elif isinstance(val, PralineString):
+        if expected is None or isinstance(val, expected):
+            return val.val
+    elif isinstance(val, PralineBool):
+        if expected is None or isinstance(val, expected):
+            return val.val
+    elif isinstance(val, PralineInt):
+        if expected is None or isinstance(val, expected):
+            return val.val
+    elif isinstance(val, PralineTuple):
+        if expected is None or isinstance(val, expected):
+            return tuple([as_python(v) for v in val.vals])
+    # Currently, this is **only** for unwrapping automata
+    elif isinstance(val, PralinePecanLiteral):
+        if expected is None or isinstance(val, expected):
+            return val.get_term()
     else:
         raise Exception("Can't convert {} ({}) to a Python value".format(type(val), val))
+
+    if expected is not None:
+        raise Exception('Expected type was {}, but got value: {}'.format(expected, val))
+    else:
+        raise Exception('Unexpected error while converting {} to a Python value (expected type: {})'.format(val, expected))
 
 class TruthValue(Builtin):
     def __init__(self):
@@ -230,6 +245,8 @@ class WriteFile(Builtin):
         with open(filepath, 'w') as f:
             f.write(s)
 
+        prog.add_generate_file(filepath)
+
         return PralineBool(True)
 
 class ReadFile(Builtin):
@@ -260,6 +277,23 @@ class Split(Builtin):
 
         return as_praline(s.split(sep))
 
+#plot(peano, alphabet_x=3, alphabet_y=3, alphabet_t=9, layer=2, color_by_axis="t")
+#plot(hilbert, alphabet_x=2, alphabet_y=2, alphabet_t=4, layer=2, color_by_axis="t")
+
+class Plot(Builtin):
+    def __init__(self):
+        super().__init__(PralineVar('plot'), [PralineVar('options'), PralineVar('numSystems'), PralineVar('aut')])
+
+    def evaluate(self, prog):
+        options = dict(as_python(prog.praline_lookup('options').evaluate(prog)))
+        num_systems = dict(as_python(prog.praline_lookup('numSystems').evaluate(prog)))
+        term = as_python(prog.praline_lookup('aut').evaluate(prog), PralinePecanLiteral)
+        settings.log(lambda: '[INFO] Plotting {} using numeration systems {} with options: {}'.format(term, num_systems, options))
+        aut = term.evaluate(prog)
+        plotter = BuchiPlotter(prog, num_systems, aut, **options)
+        plotter.plot()
+        return PralineBool(True)
+
 builtins = [
     TruthValue().definition(),
     ToString().definition(),
@@ -279,6 +313,7 @@ builtins = [
     AutToStr().definition(),
     DeleteFile().definition(),
     WriteFile().definition(),
-    ReadFile().definition()
+    ReadFile().definition(),
+    Plot().definition()
 ]
 

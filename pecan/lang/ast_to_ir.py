@@ -88,6 +88,9 @@ class ASTToIR(AstTransformer):
     def transform_DirectiveShuffle(self, node):
         return ir.DirectiveShuffle(node.disjunction, self.transform(node.pred_a), self.transform(node.pred_b), self.transform(node.output_pred))
 
+    def transform_DirectivePlot(self, node):
+        return ir.DirectivePlot(self.transform(node.pred_name), **node.kwargs)
+
     def transform_Add(self, node):
         self.expr_depth += 1
         res = ir.Add(self.transform(node.a), self.transform(node.b))
