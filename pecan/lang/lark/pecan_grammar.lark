@@ -81,6 +81,7 @@ COLON: ":"
 
 ?pecan_term: "{" pred "}" -> praline_pecan_term
            | "{" def "}" -> praline_pecan_term
+           | "{" expr "}" -> praline_pecan_term
 
 ?praline_list: "[" (term ("," term)*)? "]" -> praline_list_literal
              | "[" term "." "." ["."] term "]" -> praline_list_gen
@@ -121,7 +122,9 @@ varlist: var ("," var)*
 
 ?bool: expr
      | "true"  -> formula_true
-     | "false" -> formal_false
+     | "⊤"  -> formula_true
+     | "false" -> formula_false
+     | "⊥" -> formula_false
      | string                           -> spot_formula
      | rstring                          -> omega_regular_expr
      | "(" pred ")"

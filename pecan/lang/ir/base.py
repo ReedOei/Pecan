@@ -59,9 +59,7 @@ class IRNode:
     def evaluate(self, prog):
         prog.eval_level += 1
 
-        if settings.get_debug_level() > 0:
-            start_time = time.time()
-            # settings.log(0, lambda: self.indented(prog, 'Evaluating {}'.format(self))
+        start_time = time.time()
 
         result = self.evaluate_node(prog)
 
@@ -78,15 +76,18 @@ class IRNode:
 
         prog.eval_level -= 1
 
-        if settings.get_debug_level() > 0:
-            if type(result) is tuple:
-                sn, en = result[0].num_states(), result[0].num_edges()
-            else:
-                sn, en = result.num_states(), result.num_edges()
-            end_time = time.time()
+        if type(result) is tuple:
+            sn, en = result[0].num_states(), result[0].num_edges()
+        else:
+            sn, en = result.num_states(), result.num_edges()
 
-            if sn >= 0 and en >= 0:
-                settings.log(0, lambda: self.indented(prog, '{} has {} states and {} edges ({:.2f} seconds)'.format(self.get_display_node(prog), sn, en, end_time - start_time)))
+        end_time = time.time()
+
+        if settings.should_write_statistics():
+            prog.update_max_aut(sn, en, end_time - start_time)
+
+        if settings.get_debug_level() > 0 and sn >= 0 and en >= 0:
+            settings.log(0, lambda: self.indented(prog, '{} has {} states and {} edges ({:.2f} seconds)'.format(self.get_display_node(prog), sn, en, end_time - start_time)))
 
         return result
 

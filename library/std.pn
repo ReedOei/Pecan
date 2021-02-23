@@ -94,6 +94,10 @@ Define isEmpty l :=
 Define concat := flip (foldr cons).
 Define a @ b := concat a b.
 
+Define idx xs i :=
+    if i = 0 then head xs
+    else idx (tail xs) (i - 1) .
+
 Define flatten := foldr (\a b => a @ b) [].
 
 Define length := foldl (\cur _ => cur + 1) 0.
@@ -105,6 +109,16 @@ Define all f := foldl (\a b => a & f b) true.
 Define any f := foldl (\a b => a | f b) false.
 Define sum := foldl (\a b => a + b) 0.
 Define product := foldl (\a b => a * b) 1.
+
+Define cart_prod xss :=
+    match xss with
+    case [] => [[]]
+    case ys :: yss => flatMap (\suf => map (\y => y :: suf) ys) (cart_prod yss)
+    end.
+
+Define replicate n x :=
+    if n = 0 then []
+    else x :: replicate (n - 1) x .
 
 Define factorial n := product [1..n].
 
@@ -159,6 +173,12 @@ Define lookup key assocs :=
 Define delete key := filter (\kv => fst kv != key).
 
 Define concatenate := foldl (\a b => a ^ toString b) "".
+Define intercalate delim xs :=
+    match xs with
+    case [] => ""
+    case [x] => toString x
+    case x :: y :: ys => toString x ^ delim ^ intercalate delim (y :: ys)
+    end.
 
 Define boolToInt b := if b then 1 else 0 .
 Define check t := truthValue t = "true" .

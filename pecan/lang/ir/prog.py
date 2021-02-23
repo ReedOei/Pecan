@@ -6,6 +6,7 @@ from colorama import Fore, Style
 import os
 from functools import reduce
 import time
+from typing import Tuple
 
 from lark import Lark, Transformer, v_args
 import spot
@@ -39,10 +40,10 @@ class VarRef(IRExpression):
         return self.show()
 
     def __eq__(self, other):
-        return other is not None and type(other) is self.__class__ and self.var_name == other.var_name and self.get_type() == other.get_type()
+        return other is not None and type(other) is self.__class__ and self.var_name == other.var_name
 
     def __hash__(self):
-        return hash((self.var_name, self.get_type()))
+        return hash(self.var_name)
 
 class AutLiteral(IRPredicate):
     def __init__(self, aut, display_node=None):
@@ -290,13 +291,25 @@ class NamedPred(IRNode):
 
         try:
             if self.body_evaluated is None:
+                # TODO: START AND FINISH HERE!!!!
+                if settings.should_write_statistics():
+                    prog.start_max_aut(self.name)
+
                 self.body_evaluated = self.body.evaluate(prog).relabel()
+
+                if settings.should_write_statistics():
+                    sn, en, runtime = prog.finish_max_aut(self.name)
+                    sn = max(self.body_evaluated.num_states(), sn)
+                    en = max(self.body_evaluated.num_edges(), en)
+                    print('[INFO] Max states for {} is {}'.format(self.name, sn))
+                    print('[INFO] Max edges for {} is {}'.format(self.name, en))
+                    print('[INFO] Runtime for {} is {}'.format(self.name, runtime))
 
             if not arg_names:
                 return self.body_evaluated
             else:
                 if len(arg_names) < len(self.args):
-                    raise Exception('Not enough arugments for {}. Expected {}, got {}'.format(self.name, len(self.args), len(arg_names)))
+                    raise Exception('Not enough arguments for {}. Expected {}, got {}'.format(self.name, len(self.args), len(arg_names)))
                 subs_dict = {arg.var_name: name.var_name for arg, name in zip(self.args, arg_names)}
                 return self.body_evaluated.substitute(subs_dict, prog.get_var_map())
         finally:
@@ -337,10 +350,30 @@ class Program(IRNode):
         self.idx = None
         self.emit_offset = 0
 
+        self.aut_stats = {}
+
         self.var_map = []
+
+        self.generated_files = kwargs.get('generated_files', [])
 
         from pecan.lang.type_inference import TypeInferer
         self.type_inferer = TypeInferer(self)
+
+    def start_max_aut(self, name : str):
+        self.aut_stats[name] = { 'states': 0, 'edges': 0, 'runtime': 0 }
+        return self
+
+    def finish_max_aut(self, name : str) -> Tuple[int, int, float]:
+        stats = self.aut_stats.pop(name)
+        return stats['states'], stats['edges'], stats['runtime']
+
+    def update_max_aut(self, sn : int, en : int, runtime : float):
+        for name in self.aut_stats:
+            if sn > self.aut_stats[name]['states']:
+                self.aut_stats[name]['states'] = sn
+                self.aut_stats[name]['edges'] = en
+
+            self.aut_stats[name]['runtime'] = max(self.aut_stats[name]['runtime'], runtime)
 
     def get_var_map(self):
         return self.var_map[-1]
@@ -407,6 +440,14 @@ class Program(IRNode):
 
         self.praline_defs.update(other_prog.praline_defs)
         self.praline_aliases.update(other_prog.praline_aliases)
+
+        self.generated_files.extend(other_prog.generated_files)
+
+    def add_generated_file(self, path):
+        self.generated_files.append(path)
+
+    def get_generated_files(self):
+        return self.generated_files
 
     def include_with_restrictions(self, other_prog):
         self.include(other_prog)
@@ -543,7 +584,7 @@ class Program(IRNode):
     def get_restrictions(self, var_name: str):
         result = []
         # for scope in self.restrictions:
-        for r in self.restrictions[-1].get(var_name, []) + self.global_restrictions.get(var_name, []):
+        for r in self.get_restriction_env().get(var_name, []):
             if not r in result:
                 result.append(r)
         return result
@@ -666,10 +707,13 @@ class Result:
         return self.msg
 
     def result_str(self):
-        if self.succeeded():
-            return f'{Fore.GREEN}{self.msg}{Style.RESET_ALL}'
-        else:
-            return f'{Fore.RED}{self.msg}{Style.RESET_ALL}'
+        if settings.get_show_progress():
+            if self.succeeded():
+                return f'{Fore.GREEN}{self.msg}{Style.RESET_ALL}'
+            else:
+                return f'{Fore.RED}{self.msg}{Style.RESET_ALL}'
+        else: # No colors
+            return self.msg
 
 class Restriction(IRNode):
     def __init__(self, restrict_vars, pred):

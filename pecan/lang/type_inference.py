@@ -176,6 +176,12 @@ class TypeInferer(IRTransformer):
         res_type = self.type_env.unify(a, b)
         return Add(a, b).with_type(res_type)
 
+    def transform_Mul(self, node: Mul):
+        a = self.transform(node.a)
+        b = self.transform(node.b)
+        res_type = self.type_env.unify(a, b)
+        return Mul(a, b).with_type(res_type)
+
     def transform_Sub(self, node: Sub):
         a = self.transform(node.a)
         b = self.transform(node.b)
@@ -186,7 +192,8 @@ class TypeInferer(IRTransformer):
         return node.with_type(InferredType())
 
     def transform_VarRef(self, node: VarRef):
-        if node.get_type() is not None:
+        # TODO: It would be nice not to have this kludge and either remove the condition "node.get_type() != AnyType" or remove the first branch altogether and always recalculate the type.
+        if node.get_type() is not None and node.get_type() != AnyType():
             return node
         else:
             restrictions = self.prog.get_restrictions(node.var_name)

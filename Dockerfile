@@ -10,7 +10,7 @@ RUN git --version
 
 # Install python
 RUN apt-get update
-RUN apt-get install -y python3 python3-dev python3-pip
+RUN apt-get install -y python3 python3-dev python3-pip graphviz
 RUN pip3 install pytest
 RUN rm -rf /var/lib/apt/lists/*
 
@@ -25,11 +25,11 @@ RUN curl -sSL https://raw.githubusercontent.com/ReedOei/Pecan/master/scripts/ins
 
 WORKDIR /home/pecan
 
-RUN git clone "https://github.com/ReedOei/Pecan" "ReedOei/Pecan" --recursive
+RUN git clone --recursive "https://github.com/ReedOei/Pecan" "ReedOei/Pecan"
+RUN git clone --recursive "https://github.com/ReedOei/SturmianWords" "ReedOei/Pecan/SturmianWords"
 
 WORKDIR /home/pecan/ReedOei/Pecan
 
-RUN git pull
 RUN pip3 install -r requirements.txt
 # Install my custom version of PySimpleAutomata
 RUN ( cd PySimpleAutomata; pip3 install . )

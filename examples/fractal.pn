@@ -1,0 +1,32 @@
+#load("fractal/cantor-3-self-similar.txt", "walnut", cantor3(x))
+#load("fractal/sierpinski-3-self-similar.txt", "walnut", sierpinski3(x, y))
+#load("fractal/sierpinski-5-self-similar.txt", "walnut", sierpinski5(x, y))
+#load("fractal/menger-3-self-similar.txt", "walnut", menger3(x, y, z))
+#load("fractal/cantor-dust-3-self-similar.txt", "walnut", cantor_dust3(x, y, z))
+#load("fractal/pascal-mod-2.txt", "walnut", pascal2(x, y))
+#load("fractal/pascal-mod-2-3d.txt", "walnut", pascal2_3d(x, y, z))
+#load("fractal/pascal-mod-3.txt", "walnut", pascal3(x, y))
+#load("fractal/peano.txt", "walnut", peano(x, y, t))
+#load("fractal/hilbert.txt", "walnut", hilbert(x, y, t))
+#load("fractal/cantor-distance.txt", "walnut", cantord(x, y))
+#load("fractal/cantor-distance-hmm.txt", "walnut", cantord_hmm(x, y))
+
+Execute plot [("layer",5)] [("x",3), ("y",3)] { cantord(x,y) }.
+Execute plot [("layer",5)] [("x",3),("y",3)] { cantord_hmm(x,y) }.
+
+Execute plot [("layer",2),("color_by_axis","t")] [("x", 3), ("y",3), ("t",9)] { peano(x,y,t) } .
+Execute plot [("layer",2),("color_by_axis","t")] [("x",2), ("y",2), ("t",4)] { hilbert(x,y,t) } .
+
+Execute plot [("layer",7)] [("x",2),("y",2)] { pascal2(x,y) } .
+Execute plot [("layer",5)] [("x",3),("y",3)] { pascal3(x,y) } .
+
+Execute plot [("layer",5)] [("x",2),("y",2),("z",2)] { pascal2_3d(x,y,z) } .
+
+Execute plot [("layer",4)] [("x",3),("y",3)] { sierpinski5(x,y) } .
+Execute plot [("layer",4)] [("x",3),("y",3)] { sierpinski5(x,y) } .
+Execute plot [("layer",4)] [("x",3),("y",3)] { sierpinski3(x,y) } .
+
+Execute plot [("layer_from",0),("layer_to",10)] [("x",3)] { cantor3(x) } .
+Execute plot [("layer",3),("color_by_axis","z")] [("x",3),("y",3),("z",3)] { menger3(x,y,z) }.
+Execute plot [("layer",3)] [("x",3),("y",3),("z",3)] { cantor_dust3(x,y,z) }.
+

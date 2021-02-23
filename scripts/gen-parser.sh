@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 grammar_file="$1"
 output_file="$2"
 
@@ -11,8 +13,9 @@ if [[ -z "$output_file" ]]; then
     output_file="pecan/lang/lark/parser.py"
 fi
 
+set -x
 python3 -m lark.tools.standalone "$grammar_file" "start" > "$output_file"
 
-echo "Grammar size (lines, words, characters): "
-python3 -m lark.tools.standalone "$grammar_file" "start" | wc
+# echo "Grammar size (lines, words, characters): "
+# python3 -m lark.tools.standalone "$grammar_file" "start" | wc
 

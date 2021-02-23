@@ -1,0 +1,71 @@
+Define mkShiftStates alphabet k :=
+    if k = 1 then map (\a => (a, true)) alphabet
+    else mkShiftStates alphabet (k - 1)
+         @
+         map (\sts => (intercalate "," sts, true)) (cart_prod (replicate k alphabet)) .
+
+Define mkShiftInit alphabet aut :=
+    foldl (\curAut sym => addTransition curAut "init" sym (sym ^ " 0")) aut alphabet.
+
+// The difference between mkShiftPrefix and mkShiftTransitions is that mkShiftTransitions considers states with *at most* k symbols (we truncate with tail),
+// whereas mkShiftPrefix will just add the symbol to the end of the current state.
+Define mkShiftPrefix alphabet k aut :=
+    if k = 0 then aut
+    else mkShiftPrefix alphabet (k - 1) (
+        foldl (\curAut curState =>
+                foldl (\innerAut sym =>
+                        addTransition innerAut (intercalate "," curState)
+                                               (intercalate "," (curState @ [sym]))
+                                               (sym ^ " 0"))
+                      curAut alphabet)
+              aut (cart_prod (replicate k alphabet))).
+
+Define mkShiftTransitions alphabet k aut :=
+    mkShiftPrefix alphabet (k - 1) (
+        foldl (\curAut curState =>
+                foldl (\innerAut sym =>
+                        addTransition innerAut (intercalate "," curState)
+                                               (intercalate "," (tail curState @ [sym]))
+                                               (sym ^ " " ^ head curState))
+                      curAut alphabet)
+               aut (cart_prod (replicate k alphabet))).
+
+Define makeShift base k :=
+    let $SHIFT := "shift_" ^ toString k in
+    let alphabet := map toString [0..base - 1] in
+    let states := ("init", true) :: mkShiftStates alphabet k in
+    let baseAut := withStates (mkAut ["n", "m"] [base, base]) states in
+    let finalAut := buildAut (mkShiftTransitions alphabet k (mkShiftInit alphabet baseAut)) in do
+
+    emit { $SHIFT(n, m) := finalAut }.
+
+Define qseq q2 q1 cf :=
+    match cf with
+    case [] => [q2,q1]
+    case a :: as => q2 :: qseq q1 (a * q1 + q2) as
+    end.
+
+Define q cf := tail (tail (qseq 1 0 cf)) .
+
+Define makeSum var n :=
+    if n < 0 then let temp := makeSum var (-n) in { -temp }
+    else if n = 0 then { 0 }
+    else if n = 1 then { var }
+    else let rest := makeSum var (n - 1) in { rest + var } .
+
+#import("../SturmianWords/ostrowski_defs.pn")
+
+// TODO: Currently requires some manual repetition of a (unfortunately, unlike Haskell, Praline doesn't do infinite lists)
+// TODO: Make specific numeration system for the alpha using our general automata/the quadratic irrational representation.
+Define makeGAlpha k as :=
+    let $SHIFT := "shift_" ^ toString k in
+    let (a0 :: a1 :: _) := as in
+    let qk := idx (q as) k in
+    let qk1 := idx (q as) (k + 1) in
+    let mu_num := (a0*a1 + 1)*qk - a0*qk1 in
+    let d := a1*qk - qk1 in
+    let yd := makeSum "y" d in do
+    makeShift 3 k;
+    emit { g_alpha(a, x is ostrowski(a), y is ostrowski(a)) := exists z is ostrowski(a). $SHIFT(x, z) & z + yd = x };
+    emit { #save_aut("test.aut", g_alpha) }.
+
