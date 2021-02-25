@@ -288,11 +288,11 @@ class BuchiAutomaton(Automaton):
             else:
                 postprocess_settings = ['BA']
 
-            settings.log(3, lambda: 'Postprocessing (before) using {}: {} states and {} edges'.format(postprocess_settings, self.num_states(), self.num_edges()))
+            settings.log(1, lambda: 'Postprocessing (before) using {}: {} states and {} edges'.format(postprocess_settings, self.num_states(), self.num_edges()))
 
             self.aut = self.aut.postprocess(*postprocess_settings)
 
-            settings.log(3, lambda: 'Postprocessing (after): {} states and {} edges'.format(self.num_states(), self.num_edges()))
+            settings.log(1, lambda: 'Postprocessing (after): {} states and {} edges'.format(self.num_states(), self.num_edges()))
         return self
 
     def simplify(self):
@@ -399,7 +399,7 @@ def buchi_transform(original_aut, builder):
 
     ne = original_aut.num_edges()
 
-    if settings.get_debug_level() > 1:
+    if settings.get_debug_level() > 2:
         import sys
 
         for i, e in enumerate(original_aut.edges()):
