@@ -26,6 +26,12 @@ class Annotation(IRPredicate):
             return res
         elif self.annotation_name == '@postprocess':
             return self.body.evaluate(prog).postprocess()
+        elif self.annotation_name == '@postprocess_high':
+            return self.body.evaluate(prog).postprocess(level='High')
+        elif self.annotation_name == '@postprocess_medium':
+            return self.body.evaluate(prog).postprocess(level='Medium')
+        elif self.annotation_name == '@postprocess_low':
+            return self.body.evaluate(prog).postprocess(level='Low')
         elif self.annotation_name == '@simplify_states':
             return self.body.evaluate(prog).simplify_states()
         elif self.annotation_name == '@simplify_edges':

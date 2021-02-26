@@ -275,18 +275,21 @@ class BuchiAutomaton(Automaton):
 
         return self
 
-    def postprocess(self):
+    def postprocess(self, level=None):
+        postprocess_settings = ['BA']
+        if level is not None:
+            postprocess_settings.append(level)
         if not self.aut.is_sba():
             # Use 'BA' in the option list to ensure that the automata we have is a Buchi (possible nondeterministic) automata
             if settings.use_heuristics():
-                if self.aut.num_states() > 300:
-                    postprocess_settings = ['BA', 'Deterministic', 'Low']
-                elif self.aut.num_states() > 100:
-                    postprocess_settings = ['BA', 'Deterministic', 'Medium']
-                else:
-                    postprocess_settings = ['BA', 'Deterministic', 'High']
-            else:
-                postprocess_settings = ['BA']
+                postprocess_settings.append('Deterministic')
+                if level is None:
+                    if self.aut.num_states() > 300:
+                        postprocess_settings.append('Low')
+                    elif self.aut.num_states() > 100:
+                        postprocess_settings.append('Medium')
+                    else:
+                        postprocess_settings.append('High')
 
             settings.log(1, lambda: 'Postprocessing (before) using {}: {} states and {} edges'.format(postprocess_settings, self.num_states(), self.num_edges()))
 
