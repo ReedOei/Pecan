@@ -294,6 +294,37 @@ class Plot(Builtin):
         plotter.plot()
         return PralineBool(True)
 
+class SetSettings(Builtin):
+    def __init__(self):
+        super().__init__(PralineVar('set'), [PralineVar('name'), PralineVar('value')])
+
+    def evaluate(self, prog):
+        name = as_python(prog.praline_lookup('name').evaluate(prog), PralineString)
+        value = as_python(prog.praline_lookup('value').evaluate(prog))
+
+        settings_dict = {
+            'output_json': settings.set_output_json,
+            'show_progress': settings.set_show_progress,
+            'write_statistics': settings.set_write_statistics,
+            'extract_implications': settings.set_extract_implications,
+            'min_opt': settings.set_min_opt,
+            'simplication_level': settings.set_simplification_level,
+            'history_file': settings.set_history_file,
+            'debug_level': settings.set_debug_level,
+            'quiet': settings.set_quiet,
+            'opt_level': settings.set_opt_level,
+            'heuristics': settings.set_use_heuristics,
+            'load_stdlib': settings.set_load_stdlib,
+            'output_hoa': settings.set_output_hoa,
+        }
+
+        if name in settings_dict:
+            settings_dict[name](value)
+        else:
+            raise Exception('Tried to set unknown setting {} to {}'.format(name, value))
+
+        return PralineBool(True)
+
 builtins = [
     TruthValue().definition(),
     ToString().definition(),
@@ -314,6 +345,7 @@ builtins = [
     DeleteFile().definition(),
     WriteFile().definition(),
     ReadFile().definition(),
-    Plot().definition()
+    Plot().definition(),
+    SetSettings().definition(),
 ]
 

@@ -378,6 +378,8 @@ Define isFunction $FUNC $DOMAIN $CODOMAIN :=
         theoremCheck $EXIST_NAME { forall $X is $DOMAIN. exists $Y is $CODOMAIN. $FUNC($X, $Y) };
         theoremCheck $UNIQUE_NAME { forall $X is $DOMAIN. forall $Y, $Z are $CODOMAIN. if $FUNC($X, $Y) & $FUNC($X, $Z) then $Y = $Z } .
 
+Alias "Set" ==> Execute uncurry set .
+
 Alias "Theorem" ==> Execute uncurry theoremCheck .
 Alias "Display" ==> Execute print .
 
