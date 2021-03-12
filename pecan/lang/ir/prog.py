@@ -429,6 +429,7 @@ class Program(IRNode):
                 transformed_def = Optimizer(self).optimize(transformed_def)
 
             transformed_def = TypedIRLowering(self).transform(transformed_def)
+
             settings.log(1, lambda: 'Lowered IR:')
             settings.log(1, lambda: transformed_def)
 

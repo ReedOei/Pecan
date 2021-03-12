@@ -156,12 +156,15 @@ class IntConst(IRExpression):
 
             # This means we didn't find a user-defined "one", so just use the default expression
             if res.name == 'one':
+                print(type(self.get_type()))
                 b_const = VarRef(prog.fresh_name()).with_type(self.get_type())
                 zero_const = IntConst(0).with_type(self.get_type())
 
                 leq = Disjunction(Less(self.label_var(), b_const), Equals(self.label_var(), b_const))
                 b_in_0_1 = Conjunction(Less(zero_const, b_const), Less(b_const, self.label_var()))
-                formula_1 = Conjunction(Less(zero_const, self.label_var()), Complement(Exists([b_const], [self.get_type().restrict(b_const)], b_in_0_1)))
+                formula_1 = Conjunction(self.get_type().restrict(self.label_var()),
+                                        Conjunction(Less(zero_const, self.label_var()),
+                                            Complement(Exists([b_const], [self.get_type().restrict(b_const)], b_in_0_1))))
                 constants_map[(self.val, self.get_type())] = (formula_1.evaluate(prog), self.label_var())
             else:
                 res = prog.call('one', [self.label_var()])
