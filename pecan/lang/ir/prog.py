@@ -499,7 +499,7 @@ class Program(IRNode):
                 self.global_restrictions[var_name] = [pred]
 
     def restrict(self, var_name, pred):
-        if pred is not None and pred not in self.get_restrictions(var_name):
+        if pred is not None and pred not in self.get_restrictions(var_name, local_only=True):
             if type(pred) is not Call or not pred.args:
                 raise Exception('Unexpected predicate used as restriction (must be Call with the first argument as the variable to restrict): {}'.format(pred))
 
@@ -508,9 +508,10 @@ class Program(IRNode):
             else:
                 self.restrictions[-1][var_name] = [pred]
 
-    def get_restriction_env(self):
+    def get_restriction_env(self, local_only=False):
         result = {}
-        result.update(self.global_restrictions)
+        if not local_only:
+            result.update(self.global_restrictions)
         result.update(self.restrictions[-1])
 
         return result
@@ -532,10 +533,10 @@ class Program(IRNode):
     def exit_var_map_scope(self):
         return self.var_map.pop()
 
-    def get_restrictions(self, var_name: str):
+    def get_restrictions(self, var_name: str, local_only=False):
         result = []
         # for scope in self.restrictions:
-        for r in self.get_restriction_env().get(var_name, []):
+        for r in self.get_restriction_env(local_only=local_only).get(var_name, []):
             if not r in result:
                 result.append(r)
         return result
