@@ -36,6 +36,12 @@ class ArithmeticOptimizer(BasicOptimizer):
             elif type(node.b) is VarRef and type(node.a) is Add:
                 self.changed = True
                 return self.transform(Call('adder', [node.a.a, node.a.b, node.b]))
+            # elif type(node.a) is VarRef and type(node.b) is Sub:
+            #     self.changed = True
+            #     return self.transform(Call('adder', [node.a, node.b.b, node.b.a]))
+            # elif type(node.b) is VarRef and type(node.a) is Sub:
+            #     self.changed = True
+            #     return self.transform(Call('adder', [node.b, node.a.b, node.a.a]))
 
         return super().transform_Equals(node)
 
