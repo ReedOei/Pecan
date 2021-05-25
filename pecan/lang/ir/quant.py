@@ -13,8 +13,6 @@ class Exists(IRPredicate):
         self.pred = pred
 
     def evaluate_node(self, prog):
-        print(self.var_refs, self.conds)
-        print(prog.restrictions)
         for v, cond in zip(self.var_refs, self.conds):
             if cond is not None:
                 prog.restrict(v.var_name, cond)
@@ -23,7 +21,6 @@ class Exists(IRPredicate):
         aut = self.with_cond(all_constraints + self.conds, self.pred).evaluate(prog)
         res = aut.project(self.var_refs, prog.get_var_map())
 
-        print(prog.restrictions)
         for v, cond in zip(self.var_refs, self.conds):
             if cond is not None:
                 prog.forget(v.var_name)
