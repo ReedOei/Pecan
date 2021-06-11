@@ -277,6 +277,7 @@ class BuchiAutomaton(Automaton):
 
     def postprocess(self, level=None):
         settings.log(3, lambda: 'Empty: {}'.format(self.is_empty()))
+        # settings.log(3, lambda: 'Universal: {}'.format(spot.is_universal(self.get_aut())))
 
         postprocess_settings = ['BA']
         if level is not None:

@@ -19,6 +19,12 @@ for level in "low" "medium" "high"; do
     for typ in "det" "small"; do
         for acc in "generic" "ba"; do
             new_name="${fname}_${acc}_${typ}_${level}.aut"
+
+            if [[ -e "$new_name" ]]; then
+                echo "[INFO] Skipped creating $new_name, already exists."
+                continue
+            fi
+
             set -x
             time autfilt "--$acc" "--$level" "--$typ" "$fname" > "$new_name"
             autfilt --stats="states: %S, edges: %E" "$new_name"
