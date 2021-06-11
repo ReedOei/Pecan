@@ -22,6 +22,7 @@ for level in "low" "medium" "high"; do
 
             if [[ -e "$new_name" ]]; then
                 echo "[INFO] Skipped creating $new_name, already exists."
+                autfilt --stats="states: %S, edges: %E" "$new_name"
                 continue
             fi
 
