@@ -18,5 +18,8 @@ class PredicateExpander(IRTransformer):
             final_call = self.prog.lookup_dynamic_call(node.name, node.args)
         pred = self.prog.lookup_pred_by_name(final_call.name)
         subs = { arg: arg_val for arg, arg_val in zip(final_call.args, node.args) }
-        return self.transform(IRSubstitution(subs).transform(pred.body))
+        if isinstance(pred.body, AutLiteral):
+            return node
+        else:
+            return self.transform(IRSubstitution(subs).transform(pred.body))
 
