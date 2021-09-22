@@ -156,7 +156,6 @@ class IntConst(IRExpression):
 
             # This means we didn't find a user-defined "one", so just use the default expression
             if res.name == 'one':
-                print(type(self.get_type()))
                 b_const = VarRef(prog.fresh_name()).with_type(self.get_type())
                 zero_const = IntConst(0).with_type(self.get_type())
 
