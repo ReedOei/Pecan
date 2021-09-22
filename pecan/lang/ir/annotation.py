@@ -13,14 +13,20 @@ class Annotation(IRPredicate):
 
     def evaluate_node(self, prog):
         if self.annotation_name == '@no_simplify':
-            orig_level = settings.get_simplication_level()
+            orig_level = settings.get_simplification_level()
             settings.set_simplification_level(0)
             res = self.body.evaluate(prog)
             settings.set_simplification_level(orig_level)
             return res
         elif self.annotation_name == '@simplify':
-            orig_level = settings.get_simplication_level()
+            orig_level = settings.get_simplification_level()
             settings.set_simplification_level(1)
+            res = self.body.evaluate(prog)
+            settings.set_simplification_level(orig_level)
+            return res
+        elif self.annotation_name == '@simplify_high':
+            orig_level = settings.get_simplification_level()
+            settings.set_simplification_level(2)
             res = self.body.evaluate(prog)
             settings.set_simplification_level(orig_level)
             return res
@@ -40,8 +46,13 @@ class Annotation(IRPredicate):
             return self.body.evaluate(prog).merge_states()
         elif self.annotation_name == '@merge_edges':
             return self.body.evaluate(prog).merge_edges()
-        # elif self.annotation_name == '@minimize':
-        #     return self.body.evaluate(prog).minimize()
+        elif self.annotation_name == '@merge_states_loop':
+            aut = self.body.evaluate(prog)
+            n = aut.num_states() + 1
+            while aut.num_states() < n:
+                n = aut.num_states()
+                aut.merge_states()
+            return aut
         else:
             raise Exception('Unknown annotation: {}'.format(self.annotation_name))
 

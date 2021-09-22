@@ -308,7 +308,7 @@ class SetSettings(Builtin):
             'write_statistics': settings.set_write_statistics,
             'extract_implications': settings.set_extract_implications,
             'min_opt': settings.set_min_opt,
-            'simplication_level': settings.set_simplification_level,
+            'simplification_level': settings.set_simplification_level,
             'history_file': settings.set_history_file,
             'debug_level': settings.set_debug_level,
             'quiet': settings.set_quiet,

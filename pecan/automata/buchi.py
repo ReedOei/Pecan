@@ -90,7 +90,7 @@ class BuchiAutomaton(Automaton):
         return result
 
     def complement(self):
-        if settings.get_simplication_level() > 0:
+        if settings.get_simplification_level() > 0:
             self.postprocess()
         result = BuchiAutomaton(spot.complement(self.get_aut()), self.var_map)
         result.dump_aut()
@@ -103,7 +103,7 @@ class BuchiAutomaton(Automaton):
                 fd.write(self.get_aut().to_str() + "\n\n")
 
     def relabel(self):
-        level_before = settings.get_simplication_level()
+        level_before = settings.get_simplification_level()
         settings.set_simplification_level(0)
 
         ap_set = set(map(str, self.aut.ap()))
@@ -158,7 +158,7 @@ class BuchiAutomaton(Automaton):
 
         settings.log(3, lambda: 'ap_subs: {}'.format(ap_subs))
 
-        if settings.get_simplication_level() > 0:
+        if settings.get_simplification_level() > 0:
             self.postprocess()
 
         new_var_map = VarMap()
@@ -193,7 +193,7 @@ class BuchiAutomaton(Automaton):
 
         result = self.ap_project(aps)
 
-        if settings.get_simplication_level() > 0:
+        if settings.get_simplification_level() > 0:
             result.merge_states()
             result.postprocess()
 
@@ -305,8 +305,19 @@ class BuchiAutomaton(Automaton):
         return self.postprocess()
 
     def merge_states(self):
-        self.get_aut().merge_states()
-        settings.log(3, lambda: 'after merge_states: {}'.format(self.num_states()))
+        if settings.get_simplification_level() > 1:
+            ran = False
+            while self.get_aut().merge_states() > 0:
+                ran = True
+                settings.log(3, lambda: 'after merge_states: {}'.format(self.num_states()))
+
+            # If we didn't merge any states, we still want to show the message once
+            if not ran:
+                settings.log(3, lambda: 'after merge_states: {}'.format(self.num_states()))
+        else:
+            self.get_aut().merge_states()
+            settings.log(3, lambda: 'after merge_states: {}'.format(self.num_states()))
+
         return self
 
     def merge_edges(self):

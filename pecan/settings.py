@@ -16,7 +16,7 @@ class Settings:
         self.load_stdlib = True
         self.pecan_path_var = 'PECAN_PATH'
         self.history_file = 'pecan_history'
-        self.simplication_level = 1
+        self.simplification_level = 1
         self.should_use_heuristics = False
         self.only_min_opt = False
         self.extract_implications = False
@@ -74,11 +74,11 @@ class Settings:
         self.only_min_opt = min_opt
         return self
 
-    def get_simplication_level(self):
-        return self.simplication_level
+    def get_simplification_level(self):
+        return self.simplification_level
 
     def set_simplification_level(self, new_level):
-        self.simplication_level = new_level
+        self.simplification_level = new_level
         return self
 
     def get_history_file(self):
